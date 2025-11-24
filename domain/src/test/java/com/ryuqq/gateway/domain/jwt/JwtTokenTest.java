@@ -1,4 +1,4 @@
-package com.ryuqq.gateway.gateway.domain.jwt;
+package com.ryuqq.gateway.domain.jwt;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -66,7 +66,7 @@ class JwtTokenTest {
     class ArchUnitTests {
 
         private final JavaClasses jwtClasses = new ClassFileImporter()
-                .importPackages("com.ryuqq.gateway.gateway.domain.jwt");
+                .importPackages("com.ryuqq.gateway.domain.jwt");
 
         @Test
         @DisplayName("JwtToken은 final 클래스여야 함 (불변성)")
