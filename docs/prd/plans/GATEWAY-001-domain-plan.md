@@ -10,7 +10,7 @@
 
 ## 📝 TDD 사이클 체크리스트
 
-### 1️⃣ JwtToken Aggregate Root (Cycle 1)
+### 1️⃣ JwtToken Aggregate Root (Cycle 1) ⏳ IN-PROGRESS
 
 #### 🔴 Red: 테스트 작성
 - [ ] `domain/src/test/java/com/ryuqq/connectly/gateway/domain/jwt/JwtTokenTest.java` 파일 생성
