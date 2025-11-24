@@ -26,9 +26,9 @@
 ## 2️⃣ 기본 템플릿
 
 ```java
-package com.company.adapter.out.persistence.order.repository;
+package com.ryuqq.adapter.out.persistence.order.repository;
 
-import com.company.adapter.out.persistence.order.entity.OrderJpaEntity;
+import com.ryuqq.adapter.out.persistence.order.entity.OrderJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**

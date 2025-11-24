@@ -38,14 +38,14 @@
 ## 2️⃣ 기본 템플릿
 
 ```java
-package com.company.adapter.out.persistence.order.repository;
+package com.ryuqq.adapter.out.persistence.order.repository;
 
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import com.company.adapter.out.persistence.order.entity.OrderJpaEntity;
-import com.company.adapter.out.persistence.order.entity.QOrderJpaEntity;
-import com.company.application.order.dto.query.SearchOrderQuery;
+import com.ryuqq.adapter.out.persistence.order.entity.OrderJpaEntity;
+import com.ryuqq.adapter.out.persistence.order.entity.QOrderJpaEntity;
+import com.ryuqq.application.order.dto.query.SearchOrderQuery;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;

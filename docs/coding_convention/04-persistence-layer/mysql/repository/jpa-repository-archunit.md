@@ -24,7 +24,7 @@
 ### 전체 테스트 구조
 
 ```java
-package com.company.adapter.out.persistence.architecture.repository;
+package com.ryuqq.adapter.out.persistence.architecture.repository;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -69,7 +69,7 @@ class JpaRepositoryArchTest {
     @BeforeAll
     static void setUp() {
         allClasses = new ClassFileImporter()
-            .importPackages("com.company.adapter.out.persistence");
+            .importPackages("com.ryuqq.adapter.out.persistence");
 
         // JpaRepository 인터페이스만 (QueryDsl 제외)
         jpaRepositoryClasses = allClasses.that(

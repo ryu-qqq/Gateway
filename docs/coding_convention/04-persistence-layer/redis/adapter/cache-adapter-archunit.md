@@ -20,7 +20,7 @@
 ## 2️⃣ 기본 템플릿
 
 ```java
-package com.company.adapter.out.persistence.architecture.cache;
+package com.ryuqq.adapter.out.persistence.architecture.cache;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -54,7 +54,7 @@ class CacheAdapterArchUnitTest {
     @BeforeAll
     static void setUp() {
         importedClasses = new ClassFileImporter()
-            .importPackages("com.company.adapter.out.persistence.redis");
+            .importPackages("com.ryuqq.adapter.out.persistence.redis");
     }
 
     @Test
@@ -183,7 +183,7 @@ class CacheAdapterArchUnitTest {
 ## 3️⃣ 실전 예시 (Order)
 
 ```java
-package com.company.adapter.out.persistence.architecture.cache;
+package com.ryuqq.adapter.out.persistence.architecture.cache;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -206,7 +206,7 @@ class OrderCacheAdapterArchUnitTest {
     @BeforeAll
     static void setUp() {
         importedClasses = new ClassFileImporter()
-            .importPackages("com.company.adapter.out.persistence.redis.order");
+            .importPackages("com.ryuqq.adapter.out.persistence.redis.order");
     }
 
     @Test
@@ -215,7 +215,7 @@ class OrderCacheAdapterArchUnitTest {
         ArchRule rule = classes()
             .that().haveSimpleName("OrderCacheAdapter")
             .should().implement(
-                com.company.application.order.port.out.OrderCachePort.class
+                com.ryuqq.application.order.port.out.OrderCachePort.class
             );
 
         rule.check(importedClasses);

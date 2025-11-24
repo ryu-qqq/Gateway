@@ -321,7 +321,7 @@ spring:
 ### 테스트 클래스 기본 템플릿
 
 ```java
-package com.company.adapter.in.restapi;
+package com.ryuqq.adapter.in.restapi;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

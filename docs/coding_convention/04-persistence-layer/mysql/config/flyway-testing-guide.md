@@ -50,7 +50,7 @@ adapter-out/persistence-mysql/
 ├── src/
 │   ├── main/
 │   │   ├── java/
-│   │   │   └── com.company.adapter.out.persistence/
+│   │   │   └── com.ryuqq.adapter.out.persistence/
 │   │   └── resources/
 │   │       ├── application.yml
 │   │       └── db/
@@ -61,7 +61,7 @@ adapter-out/persistence-mysql/
 │   │               └── V4__add_customer_email_column.sql
 │   └── test/
 │       ├── java/
-│       │   └── com.company.adapter.out.persistence/
+│       │   └── com.ryuqq.adapter.out.persistence/
 │       └── resources/
 │           └── application-test.yml        # 테스트용 Flyway 설정
 ```
@@ -401,9 +401,9 @@ void myTest() {
 ### 전체 테스트 클래스
 
 ```java
-package com.company.adapter.out.persistence.repository;
+package com.ryuqq.adapter.out.persistence.repository;
 
-import com.company.adapter.out.persistence.entity.OrderJpaEntity;
+import com.ryuqq.adapter.out.persistence.entity.OrderJpaEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

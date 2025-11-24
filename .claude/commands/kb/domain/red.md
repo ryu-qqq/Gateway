@@ -42,11 +42,11 @@ domain/src/
 
 ### TestFixture Template (Domain Layer)
 ```java
-package com.company.template.domain.fixture;
+package com.ryuqq.template.domain.fixture;
 
-import com.company.template.domain.OrderDomain;
-import com.company.template.domain.OrderId;
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.domain.OrderDomain;
+import com.ryuqq.template.domain.OrderId;
+import com.ryuqq.template.domain.OrderStatus;
 
 /**
  * TestFixture for OrderDomain.
@@ -121,9 +121,9 @@ public class OrderDomainFixture {
 
 ### Value Object Fixture Example
 ```java
-package com.company.template.domain.fixture;
+package com.ryuqq.template.domain.fixture;
 
-import com.company.template.domain.OrderId;
+import com.ryuqq.template.domain.OrderId;
 
 import java.util.UUID;
 
@@ -178,9 +178,9 @@ touch domain/src/testFixtures/java/.../OrderIdFixture.java
 
 **Step 2: Write Tests Using Fixtures**
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
-import com.company.template.domain.fixture.OrderDomainFixture;
+import com.ryuqq.template.domain.fixture.OrderDomainFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 

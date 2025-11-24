@@ -418,13 +418,13 @@ public List<OrderDto> findByCustomerId(Long customerId) {
 ### Command Adapter 템플릿
 
 ```java
-package com.company.template.adapter.out.persistence.order.adapter;
+package com.ryuqq.template.adapter.out.persistence.order.adapter;
 
-import com.company.template.adapter.out.persistence.order.entity.OrderJpaEntity;
-import com.company.template.adapter.out.persistence.order.mapper.OrderEntityMapper;
-import com.company.template.adapter.out.persistence.order.repository.OrderRepository;
-import com.company.template.application.order.port.out.SaveOrderPort;
-import com.company.template.domain.order.Order;
+import com.ryuqq.template.adapter.out.persistence.order.entity.OrderJpaEntity;
+import com.ryuqq.template.adapter.out.persistence.order.mapper.OrderEntityMapper;
+import com.ryuqq.template.adapter.out.persistence.order.repository.OrderRepository;
+import com.ryuqq.template.application.order.port.out.SaveOrderPort;
+import com.ryuqq.template.domain.order.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -458,11 +458,11 @@ public class OrderCommandPersistenceAdapter implements SaveOrderPort {
 ### Query Adapter 템플릿
 
 ```java
-package com.company.template.adapter.out.persistence.order.adapter;
+package com.ryuqq.template.adapter.out.persistence.order.adapter;
 
-import com.company.template.adapter.out.persistence.order.repository.OrderQueryDslRepository;
-import com.company.template.application.order.port.out.LoadOrderPort;
-import com.company.template.domain.order.Order;
+import com.ryuqq.template.adapter.out.persistence.order.repository.OrderQueryDslRepository;
+import com.ryuqq.template.application.order.port.out.LoadOrderPort;
+import com.ryuqq.template.domain.order.Order;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -495,10 +495,10 @@ public class OrderQueryPersistenceAdapter implements LoadOrderPort {
 ### QueryDSL Repository 템플릿
 
 ```java
-package com.company.template.adapter.out.persistence.order.repository;
+package com.ryuqq.template.adapter.out.persistence.order.repository;
 
-import com.company.template.adapter.out.persistence.order.entity.QOrderJpaEntity;
-import com.company.template.domain.order.Order;
+import com.ryuqq.template.adapter.out.persistence.order.entity.QOrderJpaEntity;
+import com.ryuqq.template.domain.order.Order;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;

@@ -79,11 +79,11 @@ dependencies {
 ### 테스트 클래스 구조
 
 ```java
-package com.company.adapter.out.persistence.repository;
+package com.ryuqq.adapter.out.persistence.repository;
 
-import com.company.adapter.out.persistence.entity.OrderJpaEntity;
-import com.company.adapter.out.persistence.entity.OrderStatus;
-import com.company.application.port.in.dto.query.SearchOrderQuery;
+import com.ryuqq.adapter.out.persistence.entity.OrderJpaEntity;
+import com.ryuqq.adapter.out.persistence.entity.OrderStatus;
+import com.ryuqq.application.port.in.dto.query.SearchOrderQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

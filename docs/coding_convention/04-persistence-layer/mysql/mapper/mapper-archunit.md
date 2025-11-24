@@ -424,7 +424,7 @@ public class OrderJpaEntityMapper {  // ✅ *Mapper
 ### MapperArchTest.java
 
 ```java
-package com.company.adapter.out.persistence.architecture.mapper;
+package com.ryuqq.adapter.out.persistence.architecture.mapper;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -471,7 +471,7 @@ class MapperArchTest {
     @BeforeAll
     static void setUp() {
         allClasses = new ClassFileImporter()
-            .importPackages("com.company.adapter.out.persistence");
+            .importPackages("com.ryuqq.adapter.out.persistence");
 
         mapperClasses = allClasses.that(
             DescribedPredicate.describe(
@@ -780,7 +780,7 @@ MapperArchTest > 규칙 1: @Component 어노테이션 필수 FAILED
     com.tngtech.archunit.lang.ArchRule$AssertionError:
     Architecture Violation [Priority: MEDIUM] - Rule 'classes that have simple name ending with 'Mapper'
     should be annotated with @Component' was violated (1 times):
-    Class <com.company.adapter.out.persistence.order.mapper.OrderJpaEntityMapper>
+    Class <com.ryuqq.adapter.out.persistence.order.mapper.OrderJpaEntityMapper>
     is not annotated with @Component in (OrderJpaEntityMapper.java:0)
 ```
 

@@ -48,10 +48,10 @@ persistence/src/
 
 ### TestFixture Template (JPA Entity)
 ```java
-package com.company.template.persistence.fixture;
+package com.ryuqq.template.persistence.fixture;
 
-import com.company.template.persistence.entity.OrderJpaEntity;
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.persistence.entity.OrderJpaEntity;
+import com.ryuqq.template.domain.OrderStatus;
 
 /**
  * TestFixture for OrderJpaEntity.
@@ -131,10 +131,10 @@ public class OrderJpaEntityFixture {
 
 ### QueryDSL DTO Fixture
 ```java
-package com.company.template.persistence.fixture;
+package com.ryuqq.template.persistence.fixture;
 
-import com.company.template.persistence.dto.OrderDto;
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.persistence.dto.OrderDto;
+import com.ryuqq.template.domain.OrderStatus;
 
 /**
  * TestFixture for OrderDto (QueryDSL Projection).
@@ -196,13 +196,13 @@ touch persistence/src/testFixtures/java/.../OrderDtoFixture.java
 
 **Step 2: Write Tests Using Fixtures**
 ```java
-package com.company.template.persistence.adapter;
+package com.ryuqq.template.persistence.adapter;
 
-import com.company.template.persistence.fixture.OrderJpaEntityFixture;
-import com.company.template.persistence.entity.OrderJpaEntity;
-import com.company.template.persistence.repository.OrderJpaRepository;
-import com.company.template.domain.OrderDomain;
-import com.company.template.domain.fixture.OrderDomainFixture;
+import com.ryuqq.template.persistence.fixture.OrderJpaEntityFixture;
+import com.ryuqq.template.persistence.entity.OrderJpaEntity;
+import com.ryuqq.template.persistence.repository.OrderJpaRepository;
+import com.ryuqq.template.domain.OrderDomain;
+import com.ryuqq.template.domain.fixture.OrderDomainFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

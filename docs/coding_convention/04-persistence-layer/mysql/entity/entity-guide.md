@@ -239,7 +239,7 @@ public class OrderJpaEntity extends SoftDeletableEntity {
 ### 템플릿 1: BaseAuditEntity 상속 (시간 정보만)
 
 ```java
-package com.company.adapter.out.persistence.{module}.entity;
+package com.ryuqq.adapter.out.persistence.{module}.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -250,7 +250,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import com.company.adapter.out.persistence.common.entity.BaseAuditEntity;
+import com.ryuqq.adapter.out.persistence.common.entity.BaseAuditEntity;
 
 import java.time.LocalDateTime;
 
@@ -398,7 +398,7 @@ public class {Domain}JpaEntity extends BaseAuditEntity {
 ### 템플릿 2: SoftDeletableEntity 상속 (소프트 딜리트)
 
 ```java
-package com.company.adapter.out.persistence.{module}.entity;
+package com.ryuqq.adapter.out.persistence.{module}.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -409,7 +409,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
-import com.company.adapter.out.persistence.common.entity.SoftDeletableEntity;
+import com.ryuqq.adapter.out.persistence.common.entity.SoftDeletableEntity;
 
 import java.time.LocalDateTime;
 
@@ -561,7 +561,7 @@ public class {Domain}JpaEntity extends SoftDeletableEntity {
 ### 템플릿 3: 상속 없음 (시간/삭제 불필요)
 
 ```java
-package com.company.adapter.out.persistence.{module}.entity;
+package com.ryuqq.adapter.out.persistence.{module}.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

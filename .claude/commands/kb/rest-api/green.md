@@ -28,7 +28,7 @@ You are in the 🟢 GREEN phase of Kent Beck's TDD cycle for **REST API Layer**.
 
 **Step 1: Request DTO (Record 패턴)**
 ```java
-package com.company.template.restapi.dto.request;
+package com.ryuqq.template.restapi.dto.request;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -59,9 +59,9 @@ public record PlaceOrderRequest(
 
 **Step 2: Response DTO (Record 패턴)**
 ```java
-package com.company.template.restapi.dto.response;
+package com.ryuqq.template.restapi.dto.response;
 
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.domain.OrderStatus;
 
 /**
  * 주문 응답 DTO.
@@ -85,10 +85,10 @@ public record OrderResponse(
 
 **Step 3: Request Mapper**
 ```java
-package com.company.template.restapi.mapper;
+package com.ryuqq.template.restapi.mapper;
 
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
-import com.company.template.application.dto.command.PlaceOrderCommand;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.application.dto.command.PlaceOrderCommand;
 
 /**
  * Request DTO to Command Mapper.
@@ -129,10 +129,10 @@ public class OrderRequestMapper {
 
 **Step 4: Response Mapper**
 ```java
-package com.company.template.restapi.mapper;
+package com.ryuqq.template.restapi.mapper;
 
-import com.company.template.restapi.dto.response.OrderResponse;
-import com.company.template.application.dto.response.OrderApplicationResponse;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.application.dto.response.OrderApplicationResponse;
 
 /**
  * Application Response to REST Response Mapper.
@@ -165,19 +165,19 @@ public class OrderResponseMapper {
 
 **Step 5: Controller (RESTful 설계)**
 ```java
-package com.company.template.restapi.controller;
+package com.ryuqq.template.restapi.controller;
 
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
-import com.company.template.restapi.dto.request.CancelOrderRequest;
-import com.company.template.restapi.dto.response.OrderResponse;
-import com.company.template.restapi.mapper.OrderRequestMapper;
-import com.company.template.restapi.mapper.OrderResponseMapper;
-import com.company.template.application.port.in.PlaceOrderPort;
-import com.company.template.application.port.in.LoadOrderPort;
-import com.company.template.application.port.in.CancelOrderPort;
-import com.company.template.application.dto.command.PlaceOrderCommand;
-import com.company.template.application.dto.command.CancelOrderCommand;
-import com.company.template.application.dto.response.OrderApplicationResponse;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.restapi.dto.request.CancelOrderRequest;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.restapi.mapper.OrderRequestMapper;
+import com.ryuqq.template.restapi.mapper.OrderResponseMapper;
+import com.ryuqq.template.application.port.in.PlaceOrderPort;
+import com.ryuqq.template.application.port.in.LoadOrderPort;
+import com.ryuqq.template.application.port.in.CancelOrderPort;
+import com.ryuqq.template.application.dto.command.PlaceOrderCommand;
+import com.ryuqq.template.application.dto.command.CancelOrderCommand;
+import com.ryuqq.template.application.dto.response.OrderApplicationResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -306,7 +306,7 @@ public class OrderController {
 
 **Step 6: Error Response DTO**
 ```java
-package com.company.template.restapi.dto.response;
+package com.ryuqq.template.restapi.dto.response;
 
 import java.time.LocalDateTime;
 
@@ -342,11 +342,11 @@ public record ErrorResponse(
 
 **Step 7: Global Exception Handler**
 ```java
-package com.company.template.restapi.exception;
+package com.ryuqq.template.restapi.exception;
 
-import com.company.template.restapi.dto.response.ErrorResponse;
-import com.company.template.domain.exception.DomainException;
-import com.company.template.application.exception.ResourceNotFoundException;
+import com.ryuqq.template.restapi.dto.response.ErrorResponse;
+import com.ryuqq.template.domain.exception.DomainException;
+import com.ryuqq.template.application.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -452,7 +452,7 @@ public class GlobalExceptionHandler {
 
 **Step 8: Page Response DTO (페이징 결과)**
 ```java
-package com.company.template.restapi.dto.response;
+package com.ryuqq.template.restapi.dto.response;
 
 import java.util.List;
 

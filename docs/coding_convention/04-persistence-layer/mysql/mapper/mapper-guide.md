@@ -181,10 +181,10 @@ public class ExampleEntityMapper {
 ### 템플릿 1: BaseAuditEntity 상속 경우
 
 ```java
-package com.company.adapter.out.persistence.{module}.mapper;
+package com.ryuqq.adapter.out.persistence.{module}.mapper;
 
-import com.company.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
-import com.company.domain.{module}.{Domain};
+import com.ryuqq.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
+import com.ryuqq.domain.{module}.{Domain};
 
 import org.springframework.stereotype.Component;
 
@@ -274,10 +274,10 @@ public class {Domain}JpaEntityMapper {
 ### 템플릿 2: SoftDeletableEntity 상속 경우
 
 ```java
-package com.company.adapter.out.persistence.{module}.mapper;
+package com.ryuqq.adapter.out.persistence.{module}.mapper;
 
-import com.company.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
-import com.company.domain.{module}.{Domain};
+import com.ryuqq.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
+import com.ryuqq.domain.{module}.{Domain};
 
 import org.springframework.stereotype.Component;
 
@@ -344,10 +344,10 @@ public class {Domain}JpaEntityMapper {
 ### 템플릿 3: 상속 없음 (생성/수정 시간 미관리)
 
 ```java
-package com.company.adapter.out.persistence.{module}.mapper;
+package com.ryuqq.adapter.out.persistence.{module}.mapper;
 
-import com.company.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
-import com.company.domain.{module}.{Domain};
+import com.ryuqq.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
+import com.ryuqq.domain.{module}.{Domain};
 
 import org.springframework.stereotype.Component;
 

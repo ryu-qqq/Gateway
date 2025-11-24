@@ -41,7 +41,7 @@
 ## 3️⃣ ArchUnit 테스트 (완전 강제 버전)
 
 ```java
-package com.company.architecture;
+package com.ryuqq.architecture;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -71,7 +71,7 @@ class AssemblerArchTest {
     @BeforeAll
     static void setUp() {
         classes = new ClassFileImporter()
-            .importPackages("com.company.application");
+            .importPackages("com.ryuqq.application");
     }
 
     /**
@@ -314,8 +314,8 @@ class AssemblerArchTest {
             .that().haveSimpleNameEndingWith("Assembler")
             .should().onlyAccessClassesThat()
             .resideInAnyPackage(
-                "com.company.application..",
-                "com.company.domain..",
+                "com.ryuqq.application..",
+                "com.ryuqq.domain..",
                 "org.springframework..",
                 "java..",
                 "jakarta.."

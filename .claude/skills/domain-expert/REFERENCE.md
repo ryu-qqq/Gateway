@@ -245,7 +245,7 @@ public class Order {
 ### Aggregate Root 템플릿
 
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -362,7 +362,7 @@ public class Order {
 ### Value Object 템플릿 (Record)
 
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
 import java.util.UUID;
 
@@ -409,7 +409,7 @@ public record OrderId(String value) {
 ### Enum 템플릿
 
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
 /**
  * Order Status Enum.

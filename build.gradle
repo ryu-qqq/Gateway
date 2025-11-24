@@ -14,7 +14,7 @@ plugins {
 // Global Configuration
 // ========================================
 allprojects {
-    group = 'com.company.connectly'
+    group = 'com.ryuqq.connectly'
     version = '1.0.0-SNAPSHOT'
 
     repositories {

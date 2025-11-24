@@ -53,9 +53,9 @@ application/src/
 
 ### TestFixture Template (Command DTO)
 ```java
-package com.company.template.application.fixture;
+package com.ryuqq.template.application.fixture;
 
-import com.company.template.application.port.in.command.PlaceOrderCommand;
+import com.ryuqq.template.application.port.in.command.PlaceOrderCommand;
 
 /**
  * TestFixture for PlaceOrderCommand.
@@ -123,10 +123,10 @@ public class PlaceOrderCommandFixture {
 
 ### Response DTO Fixture
 ```java
-package com.company.template.application.fixture;
+package com.ryuqq.template.application.fixture;
 
-import com.company.template.application.dto.response.OrderResponse;
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.application.dto.response.OrderResponse;
+import com.ryuqq.template.domain.OrderStatus;
 
 import java.time.LocalDateTime;
 
@@ -186,15 +186,15 @@ touch application/src/testFixtures/java/.../OrderResponseFixture.java
 
 **Step 2: Write Tests Using Fixtures**
 ```java
-package com.company.template.application.usecase;
+package com.ryuqq.template.application.usecase;
 
-import com.company.template.application.fixture.PlaceOrderCommandFixture;
-import com.company.template.application.port.in.command.PlaceOrderCommand;
-import com.company.template.application.port.out.LoadCustomerPort;
-import com.company.template.application.port.out.SaveOrderPort;
-import com.company.template.domain.OrderDomain;
-import com.company.template.domain.fixture.CustomerFixture;
-import com.company.template.domain.fixture.OrderDomainFixture;
+import com.ryuqq.template.application.fixture.PlaceOrderCommandFixture;
+import com.ryuqq.template.application.port.in.command.PlaceOrderCommand;
+import com.ryuqq.template.application.port.out.LoadCustomerPort;
+import com.ryuqq.template.application.port.out.SaveOrderPort;
+import com.ryuqq.template.domain.OrderDomain;
+import com.ryuqq.template.domain.fixture.CustomerFixture;
+import com.ryuqq.template.domain.fixture.OrderDomainFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

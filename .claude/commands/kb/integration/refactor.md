@@ -64,7 +64,7 @@ class CustomerIntegrationTest {
 
 **After** (Extract Base Class):
 ```java
-package com.company.template.integration.support;
+package com.ryuqq.template.integration.support;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -281,7 +281,7 @@ class OrderExternalApiIntegrationTest {
 
 **After** (Extract WireMockTestSupport):
 ```java
-package com.company.template.integration.support;
+package com.ryuqq.template.integration.support;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -543,10 +543,10 @@ void shouldCompleteOrderProcess() {
 ## Final IntegrationTestSupport Structure
 
 ```java
-package com.company.template.integration.support;
+package com.ryuqq.template.integration.support;
 
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
-import com.company.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;

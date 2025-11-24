@@ -28,18 +28,18 @@ You are in the 🟢 GREEN phase of Kent Beck's TDD cycle for **Application Layer
 
 **Step 1: Command UseCase (트랜잭션 내부)**
 ```java
-package com.company.template.application.usecase;
+package com.ryuqq.template.application.usecase;
 
-import com.company.template.application.annotation.UseCase;
-import com.company.template.application.port.in.command.PlaceOrderCommand;
-import com.company.template.application.port.in.command.PlaceOrderPort;
-import com.company.template.application.dto.response.OrderResponse;
-import com.company.template.application.assembler.OrderAssembler;
-import com.company.template.application.port.out.LoadCustomerPort;
-import com.company.template.application.port.out.SaveOrderPort;
-import com.company.template.domain.CustomerDomain;
-import com.company.template.domain.OrderDomain;
-import com.company.template.domain.OrderId;
+import com.ryuqq.template.application.annotation.UseCase;
+import com.ryuqq.template.application.port.in.command.PlaceOrderCommand;
+import com.ryuqq.template.application.port.in.command.PlaceOrderPort;
+import com.ryuqq.template.application.dto.response.OrderResponse;
+import com.ryuqq.template.application.assembler.OrderAssembler;
+import com.ryuqq.template.application.port.out.LoadCustomerPort;
+import com.ryuqq.template.application.port.out.SaveOrderPort;
+import com.ryuqq.template.domain.CustomerDomain;
+import com.ryuqq.template.domain.OrderDomain;
+import com.ryuqq.template.domain.OrderId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,14 +95,14 @@ public class PlaceOrderUseCase implements PlaceOrderPort {
 
 **Step 2: Query UseCase (읽기 전용)**
 ```java
-package com.company.template.application.usecase;
+package com.ryuqq.template.application.usecase;
 
-import com.company.template.application.annotation.UseCase;
-import com.company.template.application.port.in.query.FindOrderPort;
-import com.company.template.application.dto.response.OrderResponse;
-import com.company.template.application.assembler.OrderAssembler;
-import com.company.template.application.port.out.LoadOrderPort;
-import com.company.template.domain.OrderDomain;
+import com.ryuqq.template.application.annotation.UseCase;
+import com.ryuqq.template.application.port.in.query.FindOrderPort;
+import com.ryuqq.template.application.dto.response.OrderResponse;
+import com.ryuqq.template.application.assembler.OrderAssembler;
+import com.ryuqq.template.application.port.out.LoadOrderPort;
+import com.ryuqq.template.domain.OrderDomain;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -144,10 +144,10 @@ public class FindOrderUseCase implements FindOrderPort {
 
 **Step 3: Assembler (DTO 변환)**
 ```java
-package com.company.template.application.assembler;
+package com.ryuqq.template.application.assembler;
 
-import com.company.template.application.dto.response.OrderResponse;
-import com.company.template.domain.OrderDomain;
+import com.ryuqq.template.application.dto.response.OrderResponse;
+import com.ryuqq.template.domain.OrderDomain;
 
 /**
  * Order Assembler.
@@ -179,7 +179,7 @@ public class OrderAssembler {
 
 **Step 4: Command DTO (Record)**
 ```java
-package com.company.template.application.port.in.command;
+package com.ryuqq.template.application.port.in.command;
 
 /**
  * 주문 생성 Command.
@@ -214,9 +214,9 @@ public record PlaceOrderCommand(
 
 **Step 5: Response DTO (Record)**
 ```java
-package com.company.template.application.dto.response;
+package com.ryuqq.template.application.dto.response;
 
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.domain.OrderStatus;
 
 import java.time.LocalDateTime;
 

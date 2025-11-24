@@ -414,13 +414,13 @@ class OrderExternalApiIntegrationTest extends WireMockTestSupport {
 ## Final Clean Test Structure Example
 
 ```java
-package com.company.template.integration;
+package com.ryuqq.template.integration;
 
-import com.company.template.integration.fixture.PlaceOrderRequestFixture;
-import com.company.template.integration.support.IntegrationTestSupport;
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
-import com.company.template.restapi.dto.response.OrderResponse;
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.integration.fixture.PlaceOrderRequestFixture;
+import com.ryuqq.template.integration.support.IntegrationTestSupport;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.domain.OrderStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

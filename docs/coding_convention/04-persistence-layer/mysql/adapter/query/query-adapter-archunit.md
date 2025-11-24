@@ -40,7 +40,7 @@
 ## 3️⃣ ArchUnit 테스트 (완전 강제 버전)
 
 ```java
-package com.company.architecture;
+package com.ryuqq.architecture;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -70,7 +70,7 @@ class QueryAdapterArchTest {
     @BeforeAll
     static void setUp() {
         classes = new ClassFileImporter()
-            .importPackages("com.company.adapter.out.persistence");
+            .importPackages("com.ryuqq.adapter.out.persistence");
     }
 
     /**
@@ -353,8 +353,8 @@ class QueryAdapterArchTest {
             .that().haveSimpleNameEndingWith("QueryAdapter")
             .should().onlyAccessClassesThat()
             .resideInAnyPackage(
-                "com.company.domain..",
-                "com.company.adapter.out.persistence..",
+                "com.ryuqq.domain..",
+                "com.ryuqq.adapter.out.persistence..",
                 "org.springframework..",
                 "java..",
                 "jakarta.."

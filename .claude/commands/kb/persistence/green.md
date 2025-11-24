@@ -28,9 +28,9 @@ You are in the 🟢 GREEN phase of Kent Beck's TDD cycle for **Persistence Layer
 
 **Step 1: JPA Entity (Long FK 전략)**
 ```java
-package com.company.template.persistence.entity;
+package com.ryuqq.template.persistence.entity;
 
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.domain.OrderStatus;
 import jakarta.persistence.*;
 
 /**
@@ -121,7 +121,7 @@ public class OrderJpaEntity extends BaseAuditEntity {
 
 **Step 2: BaseAuditEntity (Audit 정보)**
 ```java
-package com.company.template.persistence.entity;
+package com.ryuqq.template.persistence.entity;
 
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -162,9 +162,9 @@ public abstract class BaseAuditEntity {
 
 **Step 3: JPA Repository**
 ```java
-package com.company.template.persistence.repository;
+package com.ryuqq.template.persistence.repository;
 
-import com.company.template.persistence.entity.OrderJpaEntity;
+import com.ryuqq.template.persistence.entity.OrderJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -191,13 +191,13 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
 
 **Step 4: Command Adapter (저장)**
 ```java
-package com.company.template.persistence.adapter;
+package com.ryuqq.template.persistence.adapter;
 
-import com.company.template.application.port.out.SaveOrderPort;
-import com.company.template.domain.OrderDomain;
-import com.company.template.persistence.entity.OrderJpaEntity;
-import com.company.template.persistence.mapper.OrderEntityMapper;
-import com.company.template.persistence.repository.OrderJpaRepository;
+import com.ryuqq.template.application.port.out.SaveOrderPort;
+import com.ryuqq.template.domain.OrderDomain;
+import com.ryuqq.template.persistence.entity.OrderJpaEntity;
+import com.ryuqq.template.persistence.mapper.OrderEntityMapper;
+import com.ryuqq.template.persistence.repository.OrderJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -231,12 +231,12 @@ public class SaveOrderAdapter implements SaveOrderPort {
 
 **Step 5: Query Adapter (조회 with DTO Projection)**
 ```java
-package com.company.template.persistence.adapter;
+package com.ryuqq.template.persistence.adapter;
 
-import com.company.template.application.port.out.LoadOrderPort;
-import com.company.template.domain.OrderDomain;
-import com.company.template.persistence.dto.OrderDto;
-import com.company.template.persistence.mapper.OrderEntityMapper;
+import com.ryuqq.template.application.port.out.LoadOrderPort;
+import com.ryuqq.template.domain.OrderDomain;
+import com.ryuqq.template.persistence.dto.OrderDto;
+import com.ryuqq.template.persistence.mapper.OrderEntityMapper;
 import com.querydsl.core.types.Projections;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -244,7 +244,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-import static com.company.template.persistence.entity.QOrderJpaEntity.orderJpaEntity;
+import static com.ryuqq.template.persistence.entity.QOrderJpaEntity.orderJpaEntity;
 
 /**
  * 주문 조회 Adapter (QueryDSL DTO Projection).
@@ -284,9 +284,9 @@ public class LoadOrderQueryAdapter implements LoadOrderPort {
 
 **Step 6: DTO for QueryDSL Projection**
 ```java
-package com.company.template.persistence.dto;
+package com.ryuqq.template.persistence.dto;
 
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.domain.OrderStatus;
 
 /**
  * Order DTO for QueryDSL Projection.
@@ -310,12 +310,12 @@ public record OrderDto(
 
 **Step 7: Entity Mapper**
 ```java
-package com.company.template.persistence.mapper;
+package com.ryuqq.template.persistence.mapper;
 
-import com.company.template.domain.OrderDomain;
-import com.company.template.domain.OrderId;
-import com.company.template.persistence.dto.OrderDto;
-import com.company.template.persistence.entity.OrderJpaEntity;
+import com.ryuqq.template.domain.OrderDomain;
+import com.ryuqq.template.domain.OrderId;
+import com.ryuqq.template.persistence.dto.OrderDto;
+import com.ryuqq.template.persistence.entity.OrderJpaEntity;
 
 /**
  * Order Entity Mapper.

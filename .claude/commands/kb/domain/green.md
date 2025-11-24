@@ -28,7 +28,7 @@ You are in the **🟢 GREEN phase** of Kent Beck's TDD cycle for **Domain Layer*
 
 **Step 1: Start with the Domain Class**
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
 import java.time.LocalDateTime;
 
@@ -122,7 +122,7 @@ public class OrderDomain {
 
 **Step 2: Implement Value Objects (if needed)**
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -174,7 +174,7 @@ public class OrderId {
 
 **Step 3: Implement Enums**
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
 /**
  * Order Status Enum.
@@ -194,7 +194,7 @@ public enum OrderStatus {
 
 **Step 4: Implement Domain Exceptions**
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
 /**
  * Exception thrown when order cannot be cancelled.

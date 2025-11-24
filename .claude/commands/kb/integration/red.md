@@ -42,9 +42,9 @@ bootstrap-web-api/src/
 
 ### IntegrationTestFixture Template (Request DTO)
 ```java
-package com.company.template.integration.fixture;
+package com.ryuqq.template.integration.fixture;
 
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
 
 /**
  * IntegrationTestFixture for PlaceOrderRequest.
@@ -114,10 +114,10 @@ public class PlaceOrderRequestFixture {
 
 ### IntegrationTestFixture Template (Response DTO)
 ```java
-package com.company.template.integration.fixture;
+package com.ryuqq.template.integration.fixture;
 
-import com.company.template.restapi.dto.response.OrderResponse;
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.domain.OrderStatus;
 
 /**
  * IntegrationTestFixture for OrderResponse.
@@ -248,12 +248,12 @@ touch bootstrap-web-api/src/testFixtures/java/.../OrderResponseFixture.java
 
 **Step 4: Write Tests Using Fixtures**
 ```java
-package com.company.template.integration;
+package com.ryuqq.template.integration;
 
-import com.company.template.integration.fixture.PlaceOrderRequestFixture;
-import com.company.template.integration.fixture.OrderResponseFixture;
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
-import com.company.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.integration.fixture.PlaceOrderRequestFixture;
+import com.ryuqq.template.integration.fixture.OrderResponseFixture;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

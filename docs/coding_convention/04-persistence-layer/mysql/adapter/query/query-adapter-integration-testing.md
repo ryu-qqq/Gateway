@@ -73,16 +73,16 @@ dependencies {
 ### 테스트 클래스 구조
 
 ```java
-package com.company.adapter.out.persistence.adapter;
+package com.ryuqq.adapter.out.persistence.adapter;
 
-import com.company.adapter.out.persistence.entity.CustomerJpaEntity;
-import com.company.adapter.out.persistence.entity.OrderJpaEntity;
-import com.company.adapter.out.persistence.entity.OrderStatus;
-import com.company.adapter.out.persistence.mapper.OrderJpaEntityMapper;
-import com.company.adapter.out.persistence.repository.CustomerRepository;
-import com.company.adapter.out.persistence.repository.OrderRepository;
-import com.company.application.port.in.dto.query.SearchOrderQuery;
-import com.company.domain.order.OrderDomain;
+import com.ryuqq.adapter.out.persistence.entity.CustomerJpaEntity;
+import com.ryuqq.adapter.out.persistence.entity.OrderJpaEntity;
+import com.ryuqq.adapter.out.persistence.entity.OrderStatus;
+import com.ryuqq.adapter.out.persistence.mapper.OrderJpaEntityMapper;
+import com.ryuqq.adapter.out.persistence.repository.CustomerRepository;
+import com.ryuqq.adapter.out.persistence.repository.OrderRepository;
+import com.ryuqq.application.port.in.dto.query.SearchOrderQuery;
+import com.ryuqq.domain.order.OrderDomain;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

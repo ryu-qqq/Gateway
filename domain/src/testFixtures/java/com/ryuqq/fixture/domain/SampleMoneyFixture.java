@@ -1,18 +1,18 @@
-package com.company.connectly.fixture.domain;
+package com.ryuqq.connectly.fixture.domain;
 
-import com.company.connectly.domain.sample.vo.SampleMoney;
-
+import com.ryuqq.connectly.domain.sample.vo.SampleMoney;
 import java.math.BigDecimal;
 
 /**
  * SampleMoney Domain 객체 Test Fixture (domain testFixtures)
  *
- * <p><strong>Fixture 패턴:</strong></p>
+ * <p><strong>Fixture 패턴:</strong>
+ *
  * <ul>
- *   <li>✅ forNew(): 기본 테스트 값 생성</li>
- *   <li>✅ of(): 특정 값으로 테스트 데이터 생성</li>
- *   <li>✅ reconstitute(): DB에서 조회한 것처럼 테스트 데이터 생성</li>
- *   <li>❌ create*() 메서드 금지</li>
+ *   <li>✅ forNew(): 기본 테스트 값 생성
+ *   <li>✅ of(): 특정 값으로 테스트 데이터 생성
+ *   <li>✅ reconstitute(): DB에서 조회한 것처럼 테스트 데이터 생성
+ *   <li>❌ create*() 메서드 금지
  * </ul>
  *
  * @author development-team
@@ -27,7 +27,7 @@ public class SampleMoneyFixture {
     /**
      * Factory Method - 기본 테스트 Money 생성
      *
-     * <p>테스트 시 기본 금액(1,000원)을 사용합니다.</p>
+     * <p>테스트 시 기본 금액(1,000원)을 사용합니다.
      *
      * @return SampleMoney 인스턴스 (1,000원)
      */
@@ -58,8 +58,9 @@ public class SampleMoneyFixture {
     /**
      * Factory Method - DB 재구성 시뮬레이션
      *
-     * <p>DB에서 조회한 Money를 재구성하는 경우를 시뮬레이션합니다.</p>
-     * <p>Value Object이므로 of()와 동일합니다.</p>
+     * <p>DB에서 조회한 Money를 재구성하는 경우를 시뮬레이션합니다.
+     *
+     * <p>Value Object이므로 of()와 동일합니다.
      *
      * @param amount 금액
      * @return SampleMoney 인스턴스

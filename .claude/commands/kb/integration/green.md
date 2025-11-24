@@ -21,12 +21,12 @@ You are in the GREEN phase of Kent Beck's TDD cycle for **Integration Layer (E2E
 
 ### Step 1: Controller (REST API Layer)
 ```java
-package com.company.template.restapi.controller;
+package com.ryuqq.template.restapi.controller;
 
-import com.company.template.application.port.in.PlaceOrderUseCase;
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
-import com.company.template.restapi.dto.response.OrderResponse;
-import com.company.template.restapi.mapper.OrderRequestMapper;
+import com.ryuqq.template.application.port.in.PlaceOrderUseCase;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.restapi.mapper.OrderRequestMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -95,13 +95,13 @@ public class OrderController {
 
 ### Step 2: UseCase (Application Layer)
 ```java
-package com.company.template.application.usecase;
+package com.ryuqq.template.application.usecase;
 
-import com.company.template.application.port.in.PlaceOrderUseCase;
-import com.company.template.application.port.in.command.PlaceOrderCommand;
-import com.company.template.application.port.out.SaveOrderPort;
-import com.company.template.domain.Order;
-import com.company.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.application.port.in.PlaceOrderUseCase;
+import com.ryuqq.template.application.port.in.command.PlaceOrderCommand;
+import com.ryuqq.template.application.port.out.SaveOrderPort;
+import com.ryuqq.template.domain.Order;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -148,13 +148,13 @@ public class PlaceOrderService implements PlaceOrderUseCase {
 
 ### Step 3: Repository (Persistence Layer)
 ```java
-package com.company.template.persistence.adapter;
+package com.ryuqq.template.persistence.adapter;
 
-import com.company.template.application.port.out.SaveOrderPort;
-import com.company.template.domain.Order;
-import com.company.template.persistence.entity.OrderJpaEntity;
-import com.company.template.persistence.mapper.OrderEntityMapper;
-import com.company.template.persistence.repository.OrderJpaRepository;
+import com.ryuqq.template.application.port.out.SaveOrderPort;
+import com.ryuqq.template.domain.Order;
+import com.ryuqq.template.persistence.entity.OrderJpaEntity;
+import com.ryuqq.template.persistence.mapper.OrderEntityMapper;
+import com.ryuqq.template.persistence.repository.OrderJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -192,7 +192,7 @@ public class OrderSaveAdapter implements SaveOrderPort {
 
 ### Step 4: JPA Entity (Persistence Layer)
 ```java
-package com.company.template.persistence.entity;
+package com.ryuqq.template.persistence.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -265,9 +265,9 @@ public class OrderJpaEntity extends BaseAuditEntity {
 
 ### Step 5: JPA Repository (Persistence Layer)
 ```java
-package com.company.template.persistence.repository;
+package com.ryuqq.template.persistence.repository;
 
-import com.company.template.persistence.entity.OrderJpaEntity;
+import com.ryuqq.template.persistence.entity.OrderJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
@@ -292,7 +292,7 @@ public interface OrderJpaRepository extends JpaRepository<OrderJpaEntity, Long> 
 
 ### Step 6: Domain (Domain Layer)
 ```java
-package com.company.template.domain;
+package com.ryuqq.template.domain;
 
 import java.time.LocalDate;
 
@@ -421,7 +421,7 @@ spring:
 
 logging:
   level:
-    com.company.template: DEBUG
+    com.ryuqq.template: DEBUG
     org.hibernate.SQL: DEBUG
     org.springframework.jdbc.core: DEBUG
 ```

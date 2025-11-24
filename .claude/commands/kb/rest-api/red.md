@@ -50,9 +50,9 @@ rest-api/src/
 
 ### TestFixture Template (Request DTO)
 ```java
-package com.company.template.restapi.fixture;
+package com.ryuqq.template.restapi.fixture;
 
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
 
 /**
  * TestFixture for PlaceOrderRequest.
@@ -131,10 +131,10 @@ public class PlaceOrderRequestFixture {
 
 ### TestFixture Template (Response DTO)
 ```java
-package com.company.template.restapi.fixture;
+package com.ryuqq.template.restapi.fixture;
 
-import com.company.template.restapi.dto.response.OrderResponse;
-import com.company.template.domain.OrderStatus;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.domain.OrderStatus;
 
 /**
  * TestFixture for OrderResponse.
@@ -209,13 +209,13 @@ touch rest-api/src/testFixtures/java/.../OrderResponseFixture.java
 
 **Step 2: Write Tests Using Fixtures**
 ```java
-package com.company.template.restapi.controller;
+package com.ryuqq.template.restapi.controller;
 
-import com.company.template.restapi.fixture.PlaceOrderRequestFixture;
-import com.company.template.restapi.fixture.OrderResponseFixture;
-import com.company.template.restapi.dto.request.PlaceOrderRequest;
-import com.company.template.restapi.dto.response.OrderResponse;
-import com.company.template.application.port.in.PlaceOrderPort;
+import com.ryuqq.template.restapi.fixture.PlaceOrderRequestFixture;
+import com.ryuqq.template.restapi.fixture.OrderResponseFixture;
+import com.ryuqq.template.restapi.dto.request.PlaceOrderRequest;
+import com.ryuqq.template.restapi.dto.response.OrderResponse;
+import com.ryuqq.template.application.port.in.PlaceOrderPort;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
