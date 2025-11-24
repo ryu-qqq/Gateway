@@ -1,5 +1,6 @@
-package com.ryuqq.gateway.domain.jwt;
+package com.ryuqq.gateway.domain.authentication.vo;
 
+import com.ryuqq.gateway.fixture.domain.JwtTokenFixture;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.junit.jupiter.api.DisplayName;
@@ -28,10 +29,10 @@ class JwtTokenTest {
             JwtToken jwtToken = JwtTokenFixture.aValidJwtToken();
 
             // Then
-            assertThat(jwtToken.getAccessToken()).isNotNull();
-            assertThat(jwtToken.getExpiresAt()).isNotNull();
-            assertThat(jwtToken.getCreatedAt()).isNotNull();
-            assertThat(jwtToken.getExpiresAt()).isAfter(jwtToken.getCreatedAt());
+            assertThat(jwtToken.accessToken()).isNotNull();
+            assertThat(jwtToken.expiresAt()).isNotNull();
+            assertThat(jwtToken.createdAt()).isNotNull();
+            assertThat(jwtToken.expiresAt()).isAfter(jwtToken.createdAt());
         }
 
         @Test
@@ -66,7 +67,7 @@ class JwtTokenTest {
     class ArchUnitTests {
 
         private final JavaClasses jwtClasses = new ClassFileImporter()
-                .importPackages("com.ryuqq.gateway.domain.jwt");
+                .importPackages("com.ryuqq.gateway.domain.authentication.vo");
 
         @Test
         @DisplayName("JwtToken은 final 클래스여야 함 (불변성)")
@@ -96,7 +97,7 @@ class JwtTokenTest {
         @DisplayName("Domain Layer는 외부 의존성이 없어야 함 (production 코드만)")
         void domainLayerShouldNotDependOnExternalLibraries() {
             classes()
-                    .that().resideInAPackage("..domain.jwt..")
+                    .that().resideInAPackage("..domain.authentication.vo..")
                     .and().haveSimpleNameNotEndingWith("Test")
                     .and().haveSimpleNameNotEndingWith("Tests")
                     .should().onlyDependOnClassesThat().resideInAnyPackage(

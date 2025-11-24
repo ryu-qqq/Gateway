@@ -1,4 +1,4 @@
-package com.ryuqq.gateway.gateway.domain.jwt;
+package com.ryuqq.gateway.domain.authentication.vo;
 
 /**
  * JWT Access Token Value Object
