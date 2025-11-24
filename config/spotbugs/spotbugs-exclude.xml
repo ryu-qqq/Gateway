@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SpotBugs Exclusion Configuration
+    Enterprise Spring Boot Standards
+
+    @author Architecture Team (arch-team@company.com)
+    @since 2024-01-01
+-->
+<FindBugsFilter>
+    <!-- ========================================
+         Exclude Generated Code
+         ======================================== -->
+    <Match>
+        <Class name="~.*\.Q.*"/>  <!-- QueryDSL generated classes -->
+    </Match>
+
+    <Match>
+        <Package name="~.*\.generated\..*"/>
+    </Match>
+
+    <!-- ========================================
+         Exclude Test Code from Certain Rules
+         ======================================== -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+    </Match>
+
+    <!-- ========================================
+         Configuration Classes
+         ======================================== -->
+    <Match>
+        <Class name="~.*Configuration"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+</FindBugsFilter>

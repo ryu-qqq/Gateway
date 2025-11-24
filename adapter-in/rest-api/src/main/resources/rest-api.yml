@@ -1,0 +1,41 @@
+# ===============================================
+# REST API Adapter Configuration
+# ===============================================
+# REST API 어댑터 전용 설정
+# 애플리케이션 런타임 설정은 bootstrap/bootstrap-web-api/application.yml 참조
+#
+# @author windsurf
+# @since 1.0.0
+# ===============================================
+
+# ===============================================
+# API Endpoint Configuration
+# ===============================================
+# REST API 엔드포인트 경로 중앙 관리
+# @see com.ryuqq.adapter.in.rest.config.properties.ApiEndpointProperties
+api:
+  endpoints:
+    # API v1 베이스 경로
+    base-v1: /api/v1
+
+    # Seller 도메인 엔드포인트
+    seller:
+      base: /sellers
+      by-id: /{id}
+      status: /{id}/status
+
+    # Schedule 도메인 엔드포인트
+    schedule:
+      base: /schedules
+      by-id: /{id}
+
+  # 에러 응답 설정 (RFC 7807 Problem Details)
+  # @see com.ryuqq.adapter.in.rest.config.properties.ApiErrorProperties
+  error:
+    # 에러 타입 문서 베이스 URL
+    # 프로덕션: https://api.example.com/problems
+    # 개발: about:blank (기본값)
+    base-url: about:blank
+
+    # about:blank 사용 여부 (true: 문서 URL 무시, false: base-url 사용)
+    use-about-blank: true

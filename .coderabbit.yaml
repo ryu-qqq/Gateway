@@ -1,0 +1,350 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+# CodeRabbit Configuration for Spring Standards Project
+# This configuration enforces our Zero-Tolerance rules and project conventions
+# Based on: docs/coding_convention/ (98 rules analyzed)
+
+language: ko-KR
+tone_instructions: "Be ASSERTIVE on Zero-Tolerance rules (Lombok, Law of Demeter, Long FK, Transaction Boundary). Be CHILL on style/formatting. Enforce TDD discipline: test:/feat:/struct: commits must match changes."
+
+early_access: true
+enable_free_tier: false
+
+reviews:
+  profile: assertive
+  high_level_summary: true
+  high_level_summary_placeholder: |
+    ## 📊 Summary
+
+    This PR implements...
+
+    ### ✅ Compliance Status
+    - Zero-Tolerance Rules: [Pass/Fail]
+    - Architecture: [Pass/Fail]
+    - Testing: [Pass/Fail]
+
+  poem: false
+  collapse_walkthrough: false
+
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    ignore_title_keywords:
+      - "WIP"
+      - "Draft"
+      - "DO NOT MERGE"
+    drafts: false
+    base_branches:
+      - "main"
+      - "develop"
+    ignore_usernames:
+      - "dependabot"
+      - "renovate"
+
+  # 파일 필터링 (빌드 산출물 제외)
+  path_filters:
+    - "!**/build/**"
+    - "!**/target/**"
+    - "!**/.gradle/**"
+    - "!**/node_modules/**"
+    - "!**/*.class"
+    - "!**/*.jar"
+    - "!**/*.war"
+
+  # TDD + Tidy First 검증 (전체 PR 대상)
+  commit_instructions: |
+    **TDD + Tidy First Validation**:
+
+    1. **Commit Prefix Validation**
+       - ✅ test: - Red Phase (failing tests)
+       - ✅ feat: - Green Phase (make it work)
+       - ✅ struct: - Refactor Phase (structural changes, behavior unchanged)
+       - ✅ fix: - Bug fixes
+       - ✅ chore: - Build/config changes
+       - ❌ Flag commits without proper prefix
+
+    2. **Tidy First Compliance**
+       - ❌ **CRITICAL**: Never allow Structural + Behavioral in same commit
+       - Structural: rename, extract method, move code, remove duplication
+       - Behavioral: new feature, logic change, algorithm improvement
+       - Example violations:
+         * "feat: Add validation + rename variables" ❌
+         * "struct: Extract method + add new feature" ❌
+       - Correct approach:
+         * "struct: Rename variables" → separate commit
+         * "test: Add validation test" → separate commit
+         * "feat: Implement validation" → separate commit
+
+    3. **Commit Size Check**
+       - ✅ Ideal: 1-3 files per commit
+       - ⚠️ Warning: 4-10 files (suggest splitting)
+       - ❌ Too large: 10+ files (must split)
+
+    4. **Test Coverage**
+       - test: commits MUST include test files
+       - feat: commits SHOULD reference test: commits
+       - struct: commits MUST keep all tests passing
+
+  # Layer별 커스텀 리뷰 규칙
+  path_instructions:
+    # Domain Layer (Pure Java - 가장 엄격)
+    - path: "domain/src/main/java/**/*.java"
+      instructions: |
+        🚨 **CRITICAL ZERO-TOLERANCE RULES** (Must enforce):
+
+        1. **Lombok 절대 금지**
+           - ❌ @Data, @Builder, @Getter, @Setter, @Value, @With, @AllArgsConstructor, @NoArgsConstructor
+           - ✅ Plain Java getters/setters only
+           - **Reason**: Domain은 비즈니스 로직의 핵심, 명시적 코드 필수
+
+        2. **Law of Demeter (Getter 체이닝 금지)**
+           - ❌ order.getCustomer().getAddress().getZipCode()
+           - ✅ order.getCustomerZipCode()
+           - **Pattern**: Tell, Don't Ask 원칙 준수
+
+        3. **No Setters on Aggregate Root**
+           - ❌ public void setStatus(OrderStatus status)
+           - ✅ public void cancel(CancelReason reason)
+           - **Reason**: 상태 변경은 비즈니스 메서드로만
+
+        4. **No External Dependencies**
+           - ❌ JPA annotations (@Entity, @Table, @Column)
+           - ❌ Spring annotations (@Component, @Service)
+           - ✅ Pure Java only
+           - **Reason**: Domain은 기술 독립적
+
+        5. **Immutability**
+           - ✅ final fields where possible
+           - ✅ Collections should be unmodifiable (Collections.unmodifiableList)
+           - ✅ Value Objects are immutable
+
+        6. **Static Factory Methods (3종)**
+           - ✅ forNew(): 신규 생성 (Auto Increment, ID null)
+           - ✅ of(): ID 기반 생성 (ID null 체크 필수)
+           - ✅ reconstitute(): 영속성 복원 (Mapper 전용)
+           - ❌ public 생성자 금지 (생성자 private)
+
+        7. **Foreign Key as Value Object**
+           - ❌ private Long paymentId; (원시 타입 금지)
+           - ✅ private PaymentId paymentId; (VO 사용 필수)
+           - **Pattern**: Law of Demeter 준수 (getPaymentIdValue() 제공)
+
+        8. **Clock Dependency**
+           - ✅ Clock 의존성 주입 (createdAt, updatedAt)
+           - ❌ LocalDateTime.now() 직접 호출 금지
+
+        **Architecture Patterns**:
+        - Aggregate Root pattern 준수
+        - Value Objects are immutable
+        - Domain Events for side effects
+
+    # Application Layer (UseCase + Transaction)
+    - path: "application/src/main/java/**/*.java"
+      instructions: |
+        🚨 **CRITICAL ZERO-TOLERANCE RULES**:
+
+        1. **Transaction Boundary Violation**
+           - ❌ External API calls (RestTemplate, WebClient, Feign) inside @Transactional
+           - ✅ Keep transactions SHORT and ISOLATED
+           - **Reason**: 외부 API는 불안정, 트랜잭션은 DB 작업만
+
+        2. **Spring Proxy Constraints**
+           - ❌ @Transactional on private methods
+           - ❌ @Transactional on final methods
+           - ❌ this.methodWithTransactional() (same-class call)
+           - ✅ public methods only, called from other beans
+
+        3. **CQRS Separation (절대 분리)**
+           - ❌ Command + Query in same UseCase
+           - ✅ Command UseCase: port/in/command/
+           - ✅ Query UseCase: port/in/query/
+           - **Pattern**: 패키지도 service/command/, service/query/로 분리
+
+        4. **DTO Package Separation**
+           - ❌ UseCase 내부에 inner Record 정의
+           - ✅ Command DTO: dto/command/
+           - ✅ Query DTO: dto/query/
+           - ✅ Response DTO: dto/response/
+
+        5. **Single Responsibility**
+           - Each UseCase handles ONE business operation
+           - Compose multiple UseCases via Facade
+
+        6. **Assembler Pattern**
+           - ✅ DTO ↔ Domain 변환은 Assembler에 집중
+           - ❌ Service에서 직접 변환 로직 작성 금지
+
+        **Transaction Management**:
+        - @Transactional은 UseCase(Service)에만
+        - Facade는 트랜잭션 밖에서 조합
+        - Transaction Manager: 단일 Port 트랜잭션 처리
+
+    # Persistence Layer (Adapter-out)
+    - path: "adapter-out/persistence-**/src/main/java/**/*.java"
+      instructions: |
+        🚨 **CRITICAL RULES**:
+
+        1. **Long FK Strategy (엄격)**
+           - ❌ @ManyToOne private Customer customer;
+           - ❌ @OneToMany private List<OrderLineItem> items;
+           - ✅ @Column private Long customerId;
+           - **Reason**: JPA 관계는 N+1, Lazy Loading 문제 발생
+
+        2. **Entity Construction Pattern**
+           - ❌ public 생성자 노출
+           - ✅ of() 스태틱 메서드만 public (Mapper 전용)
+           - ✅ protected 기본 생성자 (JPA 스펙, 빈 상태 유지)
+           - ✅ 전체 필드 생성자 private (무분별한 생성 방지)
+
+        3. **BaseAuditEntity / SoftDeletableEntity 활용**
+           - ✅ 시간 정보 필요 시 → BaseAuditEntity 상속
+           - ✅ 소프트 삭제 필요 시 → SoftDeletableEntity 상속
+           - ✅ 불필요 시 → 상속 안 함
+
+        4. **Entity Immutability**
+           - ❌ Setter 제공 금지
+           - ✅ Getter만 제공
+           - ✅ Entities should be immutable after construction
+
+        5. **CQRS Separation**
+           - ✅ Command Adapter: JpaRepository 사용 (save만)
+           - ✅ Query Adapter: QueryDSL 사용 (조회만)
+           - ❌ JPA + QueryDSL 혼합 구현 금지
+
+        6. **Transaction은 Application Layer 전용**
+           - ❌ @Transactional on Repository/Adapter/Entity
+           - ✅ Transaction은 UseCase에서만
+
+        **QueryDSL Optimization**:
+        - Use fetchJoin() for collections
+        - Check query execution plans
+        - Avoid N+1 problems
+
+    # REST API Layer (Adapter-in)
+    - path: "adapter-in/rest-api/src/main/java/**/*.java"
+      instructions: |
+        🚨 **CRITICAL RULES**:
+
+        1. **Thin Controller**
+           - ❌ No business logic in controllers
+           - ✅ Only request/response transformation
+           - **Pattern**: HTTP → Mapper → UseCase → Mapper → HTTP
+
+        2. **ResponseEntity<ApiResponse<T>> 래핑 필수**
+           - ❌ ResponseEntity<T> 금지
+           - ❌ ApiResponse<T> 금지
+           - ✅ ResponseEntity<ApiResponse<T>> 필수
+
+        3. **@Valid 검증 필수**
+           - ✅ 모든 Request DTO에 @Valid
+           - ✅ PathVariable, RequestParam에 @Positive, @Max 등
+
+        4. **DELETE 메서드 금지**
+           - ❌ @DeleteMapping 금지
+           - ✅ 소프트 삭제는 PATCH로 처리
+
+        5. **Exception Handling**
+           - ❌ Controller에서 try-catch 금지
+           - ✅ GlobalExceptionHandler 위임
+
+        6. **Mapper DI**
+           - ✅ @Component DI (생성자 주입)
+           - ❌ Static 메서드 금지
+
+        7. **DTO Pattern**
+           - ✅ Java 21 Record 사용
+           - ❌ Lombok 금지
+           - ✅ Command: *ApiRequest (POST, PUT, PATCH, DELETE)
+           - ✅ Query: *ApiRequest (GET)
+           - ✅ Response: *ApiResponse
+
+        **RESTful URI**:
+        - 리소스 복수형 사용 (/orders)
+        - 동사 금지 (/createOrder ❌)
+        - 상태 변경은 PATCH (/orders/{id}/cancel)
+
+    # Test Code
+    - path: "**/src/test/java/**/*.java"
+      instructions: |
+        **Test Requirements**:
+
+        1. **Test Coverage**
+           - Domain layer: 90%+ required
+           - Application layer: 80%+ required
+
+        2. **Test Patterns**
+           - Use Test Fixtures for complex objects
+           - Given-When-Then structure
+           - Descriptive test names (@DisplayName)
+
+        3. **Test Fixtures**
+           - Layer별 독립적인 Fixture 모듈
+           - Pure Java (Lombok 금지)
+           - Reusable test data
+
+        4. **ArchUnit**
+           - Verify layer dependencies
+           - Verify naming conventions
+           - Verify Zero-Tolerance rules
+
+        5. **Integration Tests**
+           - Use Testcontainers for DB
+           - Clean up test data
+           - Test tags strategy (@Tag)
+
+  # 도구 활성화 (Java/Spring 전용)
+  tools:
+    # Java 정적 분석
+    pmd:
+      enabled: true
+
+    # 보안 스캔
+    gitleaks:
+      enabled: true
+
+    # Dependency 취약점
+    trivy:
+      enabled: true
+
+    # Dockerfile 검증
+    hadolint:
+      enabled: true
+
+    # YAML 검증
+    yamllint:
+      enabled: true
+
+chat:
+  auto_reply: true
+  art: false
+
+knowledge_base:
+  opt_out: false
+
+  # 프로젝트 컨벤션 파일 자동 학습
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "**/.claude/CLAUDE.md"
+      - "**/docs/coding_convention/**/*.md"
+      - "**/CODING_STANDARDS.md"
+      - "**/.cursorrules"
+      - "**/.claude/scripts/README-langfuse-trace.md"
+
+  learnings:
+    scope: "organization"
+
+  # 외부 지식 통합 (선택)
+  web_search:
+    enabled: true
+
+  # TDD 메트릭 추적 (참고)
+  # - LangFuse Dashboard: https://us.cloud.langfuse.com
+  # - 자동 수집: TDD Phase, 커밋 크기, Tidy First 준수율
+  # - JSONL 로그: ~/.claude/logs/tdd-cycle.jsonl
+
+code_generation:
+  docstrings:
+    language: ko-KR
+  unit_tests:
+    language: ko-KR

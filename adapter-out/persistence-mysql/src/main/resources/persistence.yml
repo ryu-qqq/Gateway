@@ -1,0 +1,85 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:crawler}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD}
+
+    hikari:
+      # Pool Size
+      maximum-pool-size: 20
+      minimum-idle: 10
+
+      # Timeout
+      connection-timeout: 30000  # 30초 (밀리초)
+      idle-timeout: 600000  # 10분
+      max-lifetime: 1800000  # 30분 (DB wait_timeout의 70-80%)
+
+      # Leak Detection (Prod: 활성화)
+      leak-detection-threshold: 60000  # 60초
+
+      # Pool Name
+      pool-name: CrawlingHubHikariPool
+
+      # Connection Init SQL (헬스체크)
+      connection-init-sql: SELECT 1
+
+      # MySQL 최적화 속성
+      data-source-properties:
+        # PreparedStatement 캐시
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+        # Batch 최적화
+        rewriteBatchedStatements: true
+        # 메타데이터 캐시
+        cacheResultSetMetadata: true
+        cacheServerConfiguration: true
+        # AutoCommit 최적화
+        elideSetAutoCommits: true
+        # 성능 통계 비활성화 (운영 환경 성능 향상)
+        maintainTimeStats: false
+
+  jpa:
+    # OSIV 비활성화 (필수!)
+    open-in-view: false
+
+    hibernate:
+      # Flyway가 스키마 관리, Hibernate는 검증만
+      ddl-auto: validate
+
+    properties:
+      hibernate:
+        # SQL 포매팅 (운영 환경에서는 false)
+        format_sql: false
+        use_sql_comments: false
+
+        # Batch Processing
+        jdbc:
+          batch_size: 50
+          fetch_size: 50
+        order_inserts: true
+        order_updates: true
+        batch_versioned_data: true
+
+        # Query Plan Cache
+        query:
+          plan_cache_max_size: 2048
+          in_clause_parameter_padding: true
+
+    # SQL 로그 (Logback 사용, show-sql 비활성화)
+    show-sql: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+    out-of-order: false
+
+logging:
+  level:
+    com.ryuqq.crawlinghub: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.orm.jdbc.bind: WARN

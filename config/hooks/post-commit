@@ -1,0 +1,70 @@
+#!/bin/bash
+# ========================================
+# Post-Commit Hook
+# ========================================
+# Tracks TDD Cycle metrics to LangFuse
+# Runs after every successful commit
+# ========================================
+
+set -e  # Exit on first error
+
+# ========================================
+# Setup
+# ========================================
+
+# Resolve symlink for macOS/Linux compatibility
+if [ -L "${BASH_SOURCE[0]}" ]; then
+    HOOK_SCRIPT="$(readlink "${BASH_SOURCE[0]}")"
+    if [[ "$HOOK_SCRIPT" != /* ]]; then
+        SYMLINK_DIR=$(dirname "${BASH_SOURCE[0]}")
+        TARGET_DIR=$(dirname "$HOOK_SCRIPT")
+        REAL_TARGET_DIR=$(cd "$SYMLINK_DIR" && cd "$TARGET_DIR" && pwd)
+        HOOK_SCRIPT="$REAL_TARGET_DIR/$(basename "$HOOK_SCRIPT")"
+    fi
+else
+    HOOK_SCRIPT="${BASH_SOURCE[0]}"
+fi
+
+HOOKS_DIR="$(cd "$(dirname "$HOOK_SCRIPT")" && pwd)"
+PROJECT_ROOT="$(cd "$HOOKS_DIR/../.." && pwd)"
+
+# Colors
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m'
+
+# ========================================
+# Helper Functions
+# ========================================
+
+log_info() {
+    echo -e "${BLUE}ℹ️  $1${NC}"
+}
+
+log_success() {
+    echo -e "${GREEN}✅ $1${NC}"
+}
+
+# ========================================
+# Run TDD Cycle Tracker
+# ========================================
+
+cd "$PROJECT_ROOT"
+
+# TDD Cycle 추적 스크립트 실행
+TDD_TRACKER=".claude/hooks/track-tdd-cycle.sh"
+
+if [[ -f "$TDD_TRACKER" ]]; then
+    log_info "Tracking TDD Cycle metrics..."
+
+    if bash "$TDD_TRACKER"; then
+        log_success "TDD metrics logged successfully"
+    else
+        # 실패해도 커밋은 계속 진행 (non-blocking)
+        echo "⚠️  TDD tracking failed (non-blocking)"
+    fi
+else
+    echo "⚠️  TDD tracker not found: $TDD_TRACKER"
+fi
+
+exit 0

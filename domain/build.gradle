@@ -1,0 +1,113 @@
+// ========================================
+// Domain Module
+// ========================================
+// Pure business logic with ZERO framework dependencies
+// NO Spring, NO JPA, NO Lombok, NO infrastructure concerns
+// ========================================
+
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'
+}
+
+dependencies {
+    // ========================================
+    // STRICTLY NO EXTERNAL DEPENDENCIES
+    // ========================================
+    // Domain must remain PURE JAVA - NO external libraries
+    // Business logic ONLY - use Java Standard Library
+
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    // JUnit 5
+    testImplementation libs.junit.jupiter
+
+    // ArchUnit for architecture validation
+    testImplementation libs.archunit.junit5
+
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    // Domain TestFixtures는 순수 Java만 사용 (Domain Purity 유지)
+    // NO external dependencies
+}
+
+// ========================================
+// Domain-Specific Test Coverage
+// ========================================
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.90 // 90% coverage required
+            }
+        }
+    }
+}
+
+tasks.test {
+    finalizedBy tasks.jacocoTestCoverageVerification
+}
+
+// ========================================
+// Architecture Validation
+// ========================================
+tasks.register('verifyDomainPurity') {
+    group = 'verification'
+    description = 'Verify domain module has no framework dependencies'
+
+    doLast {
+        def forbiddenDependencies = [
+            // Framework Dependencies
+            'org.springframework',
+            'jakarta.persistence',
+            'org.hibernate',
+            'org.projectlombok',
+
+            // Validation (Domain이 직접 검증 로직 구현해야 함)
+            'jakarta.validation',
+            'javax.validation',
+
+            // External Utilities (Java Standard Library만 사용)
+            'org.apache.commons',
+            'com.google.guava',
+            'io.vavr',
+
+            // JSON Libraries (Domain은 JSON 관심 없음)
+            'com.fasterxml.jackson',
+            'com.google.gson',
+
+            // Logging (Domain은 로깅 관심 없음)
+            'org.slf4j',
+            'ch.qos.logback',
+            'org.apache.logging.log4j'
+        ]
+
+        configurations.runtimeClasspath.resolvedConfiguration.resolvedArtifacts.each { artifact ->
+            def moduleId = artifact.moduleVersion.id
+            forbiddenDependencies.each { forbidden ->
+                if (moduleId.group.startsWith(forbidden)) {
+                    throw new GradleException("""
+❌ DOMAIN PURITY VIOLATION DETECTED
+
+Forbidden dependency found in domain module:
+- Group: ${moduleId.group}
+- Name: ${moduleId.name}
+- Version: ${moduleId.version}
+
+Domain module must remain pure Java.
+NO Spring, NO JPA, NO Lombok allowed.
+
+See: domain/build.gradle
+""")
+                }
+            }
+        }
+        println '✅ Domain purity verification passed'
+    }
+}
+
+tasks.build {
+    dependsOn 'verifyDomainPurity'
+}

@@ -1,0 +1,63 @@
+# GitHub Pages Configuration for Spring Standards Documentation
+# Jekyll Theme Configuration
+
+# Theme
+theme: jekyll-theme-cayman
+title: "Spring Standards - Coding Conventions"
+description: "Spring Boot 3.5 + Java 21 Hexagonal Architecture Standards"
+
+# GitHub repository
+repository: ryu-qqq/claude-spring-standards
+url: https://ryu-qqq.github.io
+baseurl: /claude-spring-standards
+
+# Markdown settings
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    css_class: 'highlight'
+
+# Collections
+collections:
+  coding_convention:
+    output: true
+    permalink: /coding_convention/:path/
+
+# Exclude from build
+exclude:
+  - .claude/
+  - .cursor/
+  - scripts/
+  - config/
+  - "*.gradle"
+  - gradlew
+  - gradlew.bat
+
+# Include files
+include:
+  - _config.yml
+  - coding_convention/
+
+# Plugins
+plugins:
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-readme-index
+  - jekyll-titles-from-headings
+
+# Relative links configuration
+relative_links:
+  enabled: true
+  collections: true
+
+# Optional front matter
+optional_front_matter:
+  remove_originals: false
+
+# Titles from headings
+titles_from_headings:
+  enabled: true
+  strip_title: false
+  collections: true

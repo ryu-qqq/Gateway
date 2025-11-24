@@ -1,0 +1,63 @@
+HELP.md
+.gradle
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+/out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+
+### Cursor IDE ###
+.cursor/
+.cursorrules
+
+# Claude Code settings (local overrides)
+.claude/settings.local.json
+.claude/hooks/logs/
+.serena/
+
+# Claude Code documentation and specs (auto-generated)
+claudedocs/
+spec-stories/
+
+# LangFuse telemetry (contains credentials)
+.langfuse.telemetry
+langfuse/__pycache__/
+langfuse/tests/__pycache__/
+
+# Windsurf IDE settings (personal configuration)
+.windsurfrules
+
+# Pipeline metrics and reports (auto-generated)
+.pipeline-metrics/metrics.jsonl
+.pipeline-metrics/report.md
+.env

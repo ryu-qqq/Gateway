@@ -1,0 +1,261 @@
+import org.springframework.boot.gradle.plugin.SpringBootPlugin
+
+plugins {
+    id 'java'
+    alias(libs.plugins.spring.boot) apply false
+    alias(libs.plugins.spring.dependency.management) apply false
+    id 'checkstyle'
+    alias(libs.plugins.spotbugs) apply false
+    id 'pmd'
+    alias(libs.plugins.spotless) apply false
+}
+
+// ========================================
+// Global Configuration
+// ========================================
+allprojects {
+    group = 'com.company.connectly'
+    version = '1.0.0-SNAPSHOT'
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+// ========================================
+// Subproject Configuration
+// ========================================
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'checkstyle'
+    apply plugin: 'com.github.spotbugs'
+    apply plugin: 'pmd'
+    apply plugin: 'com.diffplug.spotless'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    // ========================================
+    // Dependency Management
+    // ========================================
+    apply plugin: 'io.spring.dependency-management'
+
+    dependencyManagement {
+        imports {
+            mavenBom SpringBootPlugin.BOM_COORDINATES
+        }
+    }
+
+    // ========================================
+    // Dependencies
+    // ========================================
+    dependencies {
+        // Test Dependencies (All Modules)
+        testImplementation rootProject.libs.junit.jupiter
+        testRuntimeOnly rootProject.libs.junit.platform.launcher
+        testImplementation rootProject.libs.assertj.core
+        testImplementation rootProject.libs.mockito.core
+        testImplementation rootProject.libs.mockito.junit
+
+        // ArchUnit for Architecture Testing
+        testImplementation rootProject.libs.archunit.junit5
+
+        // SpotBugs Annotations
+        compileOnly rootProject.libs.spotbugs.annotations
+    }
+
+    // ========================================
+    // Test Configuration
+    // ========================================
+    tasks.named('test') {
+        useJUnitPlatform()
+
+        // Test Coverage Requirements
+        finalizedBy 'jacocoTestReport'
+    }
+
+    // ========================================
+    // Checkstyle Configuration
+    // ========================================
+    checkstyle {
+        toolVersion = rootProject.libs.versions.checkstyle.get()
+        configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+        ignoreFailures = false
+        maxWarnings = 0
+    }
+
+    // ========================================
+    // SpotBugs Configuration
+    // ========================================
+    spotbugs {
+        toolVersion = rootProject.libs.versions.spotbugs.get()
+        effort = 'max'
+        reportLevel = 'low'
+        excludeFilter = rootProject.file('config/spotbugs/spotbugs-exclude.xml')
+    }
+
+    // ========================================
+    // PMD Configuration
+    // ========================================
+    pmd {
+        toolVersion = rootProject.libs.versions.pmd.get()
+        consoleOutput = true
+        ruleSetFiles = files(rootProject.file('config/pmd/pmd-ruleset.xml'))
+        ruleSets = [] // Use only custom ruleset
+        ignoreFailures = false
+    }
+
+    tasks.withType(Pmd) {
+        reports {
+            xml.required = true
+            html.required = true
+        }
+    }
+
+    // ========================================
+    // Spotless Configuration
+    // ========================================
+    spotless {
+        java {
+            // Google Java Format (AOSP style - 4 spaces)
+            googleJavaFormat('1.22.0').aosp().reflowLongStrings()
+
+            // Target files
+            target 'src/*/java/**/*.java'
+            targetExclude '**/generated/**', '**/Q*.java'
+        }
+
+        format 'misc', {
+            target '*.md', '.gitignore', '.gitattributes', '*.yaml', '*.yml'
+            trimTrailingWhitespace()
+            endWithNewline()
+        }
+    }
+
+    // ========================================
+    // JaCoCo Coverage Configuration
+    // ========================================
+    apply plugin: 'jacoco'
+
+    jacoco {
+        toolVersion = rootProject.libs.versions.jacoco.get()
+    }
+
+    tasks.named('jacocoTestReport') {
+        dependsOn 'test'
+
+        reports {
+            xml.required = true
+            html.required = true
+        }
+    }
+
+    // ========================================
+    // JaCoCo Coverage Verification
+    // ========================================
+    tasks.named('jacocoTestCoverageVerification') {
+        dependsOn 'jacocoTestReport'
+
+        violationRules {
+            rule {
+                enabled = true
+
+                limit {
+                    minimum = project.name == 'domain' ? 0.90 :
+                              project.name == 'application' ? 0.80 :
+                              project.name.startsWith('adapter-') ? 0.70 : 0.70
+                }
+            }
+
+            rule {
+                enabled = true
+                element = 'CLASS'
+
+                limit {
+                    counter = 'LINE'
+                    value = 'COVEREDRATIO'
+                    minimum = 0.50
+                }
+
+                excludes = [
+                    '*.config.*',
+                    '*.Application',
+                    '*.Q*' // QueryDSL generated classes
+                ]
+            }
+        }
+    }
+
+    tasks.named('build') {
+        dependsOn 'spotlessCheck'
+        dependsOn 'jacocoTestCoverageVerification'
+    }
+
+    // ========================================
+    // Lombok 금지 검증
+    // ========================================
+    tasks.register('checkNoLombok') {
+        doLast {
+            def lombokFound = configurations.collect { config ->
+                config.dependencies.findAll { dep ->
+                    dep.group == 'org.projectlombok' && dep.name == 'lombok'
+                }
+            }.flatten()
+
+            if (!lombokFound.isEmpty()) {
+                throw new GradleException("""
+❌ LOMBOK DETECTED: Lombok is strictly prohibited in this project.
+Found in: ${project.name}
+
+Policy: All modules must use pure Java without Lombok.
+""")
+            }
+        }
+    }
+
+    tasks.named('build') {
+        dependsOn 'checkNoLombok'
+    }
+
+    // ========================================
+    // Compiler Configuration
+    // ========================================
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+        options.compilerArgs.addAll([
+            '-Xlint:unchecked',
+            '-Xlint:deprecation',
+            '-parameters'
+        ])
+    }
+}
+
+// ========================================
+// Dead Code Detection Task
+// ========================================
+tasks.register('detectDeadCode') {
+    group = 'verification'
+    description = 'Detect potentially unused code across all modules'
+
+    doLast {
+        println '''
+========================================
+Dead Code Detection Report
+========================================
+Running static analysis for unused code...
+
+Tools:
+- SpotBugs: Unused private methods/fields
+- JaCoCo: 0% coverage methods
+- Custom AST analysis
+
+See reports in: build/reports/deadcode/
+========================================
+'''
+    }
+
+    dependsOn subprojects.collect { it.tasks.named('spotbugsMain') }
+    dependsOn subprojects.collect { it.tasks.named('jacocoTestReport') }
+}

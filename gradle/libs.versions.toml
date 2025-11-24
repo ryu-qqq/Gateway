@@ -1,0 +1,210 @@
+# ========================================
+# Gradle Version Catalog
+# ========================================
+# Central version management for all dependencies
+# Usage: implementation(libs.spring.boot.starter.web)
+# ========================================
+
+[versions]
+# ========================================
+# Spring & Framework
+# ========================================
+springBoot = "3.5.6"
+springDependencyManagement = "1.1.5"
+
+# ========================================
+# Database & Persistence
+# ========================================
+querydsl = "5.1.0"
+hibernate = "6.4.4.Final"
+flyway = "10.10.0"
+postgresql = "42.7.3"
+h2 = "2.2.224"
+hikaricp = "5.1.0"
+
+# ========================================
+# AWS SDK
+# ========================================
+awsSdk = "2.25.11"
+
+# ========================================
+# Testing
+# ========================================
+junit = "5.10.2"
+assertj = "3.25.3"
+mockito = "5.11.0"
+testcontainers = "1.19.7"
+restAssured = "5.4.0"
+restdocs = "3.0.1"
+
+# ========================================
+# Architecture & Quality
+# ========================================
+archunit = "1.2.1"
+checkstyle = "10.14.0"
+spotbugs = "4.8.3"
+spotbugsPlugin = "6.0.9"
+jacoco = "0.8.11"
+pmd = "7.0.0"
+pmdPlugin = "6.55.0"
+spotless = "7.0.0.BETA4"
+
+# ========================================
+# API Documentation
+# ========================================
+springdoc = "2.5.0"
+
+# ========================================
+# Logging & Monitoring
+# ========================================
+logstashLogback = "7.4"
+micrometer = "1.12.4"
+
+# ========================================
+# Utilities
+# ========================================
+commonsLang3 = "3.14.0"
+jackson = "2.17.0"
+
+[libraries]
+# ========================================
+# Spring Boot Starters
+# ========================================
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation" }
+spring-boot-starter-security = { module = "org.springframework.boot:spring-boot-starter-security" }
+spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
+
+# ========================================
+# Spring Framework
+# ========================================
+spring-context = { module = "org.springframework:spring-context" }
+spring-tx = { module = "org.springframework:spring-tx" }
+spring-messaging = { module = "org.springframework:spring-messaging" }
+spring-security-test = { module = "org.springframework.security:spring-security-test" }
+
+# ========================================
+# QueryDSL
+# ========================================
+querydsl-jpa = { module = "com.querydsl:querydsl-jpa", version.ref = "querydsl" }
+querydsl-apt = { module = "com.querydsl:querydsl-apt", version.ref = "querydsl" }
+
+# ========================================
+# Database
+# ========================================
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
+hikaricp = { module = "com.zaxxer:HikariCP", version.ref = "hikaricp" }
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+
+# ========================================
+# AWS SDK v2
+# ========================================
+aws-bom = { module = "software.amazon.awssdk:bom", version.ref = "awsSdk" }
+aws-s3 = { module = "software.amazon.awssdk:s3" }
+aws-s3-transfer = { module = "software.amazon.awssdk:s3-transfer-manager" }
+aws-sqs = { module = "software.amazon.awssdk:sqs" }
+aws-apache-client = { module = "software.amazon.awssdk:apache-client" }
+
+# ========================================
+# Testing
+# ========================================
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
+assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertj" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
+mockito-junit = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-localstack = { module = "org.testcontainers:localstack", version.ref = "testcontainers" }
+rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "restAssured" }
+spring-restdocs-mockmvc = { module = "org.springframework.restdocs:spring-restdocs-mockmvc", version.ref = "restdocs" }
+
+# ========================================
+# Architecture Testing
+# ========================================
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+# ========================================
+# Code Quality
+# ========================================
+spotbugs-annotations = { module = "com.github.spotbugs:spotbugs-annotations", version.ref = "spotbugs" }
+
+# ========================================
+# API Documentation
+# ========================================
+springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
+
+# ========================================
+# Logging & Monitoring
+# ========================================
+logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstashLogback" }
+micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+
+# ========================================
+# Utilities
+# ========================================
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commonsLang3" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind" }
+jackson-datatype-jsr310 = { module = "com.fasterxml.jackson.datatype:jackson-datatype-jsr310" }
+jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version = "3.0.2" }
+jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-api", version = "3.1.0" }
+
+[bundles]
+# ========================================
+# Common Dependency Bundles
+# ========================================
+spring-web = [
+    "spring-boot-starter-web",
+    "spring-boot-starter-validation",
+    "jackson-databind",
+    "jackson-datatype-jsr310"
+]
+
+spring-data-jpa = [
+    "spring-boot-starter-data-jpa",
+    "hikaricp"
+]
+
+testing-basic = [
+    "junit-jupiter",
+    "assertj-core",
+    "mockito-core",
+    "mockito-junit"
+]
+
+testing-spring = [
+    "spring-boot-starter-test",
+    "spring-security-test"
+]
+
+testcontainers = [
+    "testcontainers-junit",
+    "testcontainers-postgresql"
+]
+
+aws-s3 = [
+    "aws-s3",
+    "aws-s3-transfer",
+    "aws-apache-client"
+]
+
+observability = [
+    "spring-boot-starter-actuator",
+    "micrometer-prometheus",
+    "logstash-logback-encoder"
+]
+
+[plugins]
+# ========================================
+# Gradle Plugins
+# ========================================
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
+spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugsPlugin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+# Note: PMD is a core Gradle plugin, applied via `id("pmd")` in build.gradle.kts
