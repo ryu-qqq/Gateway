@@ -1,4 +1,7 @@
-package com.ryuqq.gateway.gateway.domain.jwt;
+package com.ryuqq.gateway.fixture.domain;
+
+import com.ryuqq.gateway.domain.authentication.vo.AccessToken;
+import com.ryuqq.gateway.domain.authentication.vo.JwtToken;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
