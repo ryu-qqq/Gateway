@@ -10,39 +10,45 @@
 
 ## 📝 TDD 사이클 체크리스트
 
-### 1️⃣ JwtToken Aggregate Root (Cycle 1) ⏳ IN-PROGRESS
+### 1️⃣ JwtToken Aggregate Root (Cycle 1) ✅ COMPLETED
 
 #### 🔴 Red: 테스트 작성
-- [ ] `domain/src/test/java/com/ryuqq/connectly/gateway/domain/jwt/JwtTokenTest.java` 파일 생성
-- [ ] `shouldCreateJwtTokenWithValidData()` 테스트 작성
-- [ ] `shouldValidateTokenNotExpired()` 테스트 작성
-- [ ] 테스트 실행 → 컴파일 에러 확인
-- [ ] 커밋: `test: JwtToken Aggregate 생성 및 만료 검증 테스트 추가 (Red)`
+- [x] `domain/src/test/java/com/ryuqq/connectly/gateway/domain/jwt/JwtTokenTest.java` 파일 생성
+- [x] `shouldCreateJwtTokenWithValidData()` 테스트 작성
+- [x] `shouldValidateTokenNotExpired()` 테스트 작성
+- [x] `shouldValidateTokenExpired()` 테스트 추가
+- [x] 테스트 실행 → 컴파일 에러 확인
+- [x] 커밋: `test: JwtToken Aggregate 생성 및 만료 검증 테스트 추가 (Red)` - 06e77bc
 
 #### 🟢 Green: 최소 구현
-- [ ] `domain/src/main/java/com/ryuqq/connectly/gateway/domain/jwt/JwtToken.java` 생성 (Plain Java, Lombok 금지)
-- [ ] 필드: `accessToken`, `expiresAt`, `createdAt` 추가
-- [ ] 생성자 + Getter 작성
-- [ ] `isExpired()` 메서드 구현 (expiresAt < now)
-- [ ] 테스트 실행 → 통과 확인
-- [ ] 커밋: `feat: JwtToken Aggregate 구현 (Green)`
+- [x] `domain/src/main/java/com/ryuqq/connectly/gateway/domain/jwt/JwtToken.java` 생성 (Plain Java, Lombok 금지)
+- [x] `domain/src/main/java/com/ryuqq/connectly/gateway/domain/jwt/AccessToken.java` 생성 (Record, JWT 포맷 검증)
+- [x] 필드: `accessToken`, `expiresAt`, `createdAt` 추가
+- [x] 생성자 + Getter 작성 (Plain Java)
+- [x] `isExpired()` 메서드 구현 (Instant.now().isAfter(expiresAt))
+- [x] 테스트 실행 → 통과 확인 (3/3 tests passed)
+- [x] 커밋: `feat: JwtToken Aggregate 및 AccessToken VO 구현 (Green)` - 98483d8
 
 #### ♻️ Refactor: 리팩토링
-- [ ] 불변성 보장 (`final` 필드)
-- [ ] Law of Demeter 준수 확인
-- [ ] Domain ArchUnit 테스트 추가: `JwtTokenArchUnitTest.java`
+- [x] 불변성 보장 (`final` 필드, `final` 클래스)
+- [x] Law of Demeter 준수 확인
+- [x] Domain ArchUnit 테스트 추가: `JwtTokenTest$ArchUnitTests` (Nested)
   - Lombok 사용 금지 검증
-  - 외부 의존성 없는지 검증
-- [ ] 테스트 통과 확인
-- [ ] 커밋: `struct: JwtToken Aggregate 불변성 및 ArchUnit 검증 추가 (Refactor)`
+  - 외부 의존성 없는지 검증 (production 코드만)
+  - final 클래스 검증
+  - final 필드 검증
+- [x] 테스트 통과 확인 (7/7 tests passed)
+- [x] 커밋: `struct: JwtToken Aggregate 불변성 및 ArchUnit 검증 추가 (Refactor)` - 7b2e88c
 
 #### 🧹 Tidy: TestFixture 정리
-- [ ] `domain/src/test/java/com/ryuqq/connectly/gateway/domain/fixtures/JwtTokenFixture.java` 생성
-- [ ] `aValidJwtToken()` 메서드 작성 (유효한 토큰)
-- [ ] `anExpiredJwtToken()` 메서드 작성 (만료된 토큰)
-- [ ] `JwtTokenTest` → Fixture 사용으로 리팩토링
-- [ ] 테스트 여전히 통과 확인
-- [ ] 커밋: `test: JwtTokenFixture 정리 (Tidy)`
+- [x] `domain/src/test/java/com/ryuqq/connectly/gateway/domain/jwt/JwtTokenFixture.java` 생성
+- [x] `aValidJwtToken()` 메서드 작성 (유효한 토큰)
+- [x] `anExpiredJwtToken()` 메서드 작성 (만료된 토큰)
+- [x] `aJwtTokenWithExpiry(Instant)` 메서드 추가 (커스텀 만료 시간)
+- [x] `aJwtTokenWithAccessToken(AccessToken)` 메서드 추가 (커스텀 토큰)
+- [x] `JwtTokenTest` → Fixture 사용으로 리팩토링
+- [x] 테스트 여전히 통과 확인 (7/7 tests passed)
+- [x] 커밋: `test: JwtTokenFixture 추가 및 테스트 리팩토링 (Tidy)` - 06e77bc
 
 ---
 
