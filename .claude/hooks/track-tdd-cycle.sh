@@ -26,6 +26,8 @@ LINES_CHANGED=$(git diff --stat HEAD~1 HEAD 2>/dev/null | tail -1 | grep -oE '[0
 TDD_PHASE="unknown"
 if echo "$COMMIT_MSG" | grep -qiE "^struct:"; then
     TDD_PHASE="structural"
+elif echo "$COMMIT_MSG" | grep -qiE "^test:.*\(Tidy\)"; then
+    TDD_PHASE="tidy"
 elif echo "$COMMIT_MSG" | grep -qiE "^test:"; then
     TDD_PHASE="red"
 elif echo "$COMMIT_MSG" | grep -qiE "^(impl:|feat:|fix:)"; then

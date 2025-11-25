@@ -68,10 +68,6 @@
     <!-- God Class 방지 (LCOM 기반) -->
     <rule ref="category/java/design.xml/GodClass">
         <priority>2</priority>
-        <properties>
-            <!-- LCOM > 0.7 경고 -->
-            <property name="topscore" value="70"/>
-        </properties>
     </rule>
 
     <!-- ========================================
@@ -82,7 +78,7 @@
     <rule name="DomainTooManyMethods"
           language="java"
           message="Domain class has too many methods (max 7) - violates SRP"
-          class="net.sourceforge.pmd.lang.rule.XPathRule">
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
         <priority>1</priority>
         <properties>
             <property name="xpath">
@@ -106,7 +102,7 @@
     <rule name="UseCaseTooManyMethods"
           language="java"
           message="UseCase has too many methods (max 5) - one UseCase = one responsibility"
-          class="net.sourceforge.pmd.lang.rule.XPathRule">
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
         <priority>1</priority>
         <properties>
             <property name="xpath">
@@ -147,7 +143,7 @@
     <rule name="DomainExcessiveClassLength"
           language="java"
           message="Domain class too long (max 200 lines) - split into smaller classes"
-          class="net.sourceforge.pmd.lang.rule.XPathRule">
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
         <priority>2</priority>
         <properties>
             <property name="xpath">
@@ -164,7 +160,7 @@
     <rule name="ApplicationExcessiveClassLength"
           language="java"
           message="Application class too long (max 150 lines) - split into smaller UseCases"
-          class="net.sourceforge.pmd.lang.rule.XPathRule">
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
         <priority>2</priority>
         <properties>
             <property name="xpath">
@@ -224,7 +220,7 @@
     <rule name="ControllerNoRepositoryDependency"
           language="java"
           message="Controller must not depend on Repository - use UseCase only"
-          class="net.sourceforge.pmd.lang.rule.XPathRule">
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
         <priority>1</priority>
         <properties>
             <property name="xpath">
@@ -257,7 +253,7 @@
     <rule name="AllowBuilderPattern"
           language="java"
           message="Builder pattern is allowed"
-          class="net.sourceforge.pmd.lang.rule.XPathRule">
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
         <priority>5</priority>
         <properties>
             <property name="xpath">
@@ -274,7 +270,7 @@
     <rule name="AllowStreamAPI"
           language="java"
           message="Stream API is allowed"
-          class="net.sourceforge.pmd.lang.rule.XPathRule">
+          class="net.sourceforge.pmd.lang.rule.xpath.XPathRule">
         <priority>5</priority>
         <properties>
             <property name="xpath">

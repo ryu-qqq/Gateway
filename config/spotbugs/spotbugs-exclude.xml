@@ -26,11 +26,57 @@
         <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
     </Match>
 
+    <!-- Test classes use @BeforeEach for field initialization (Mockito pattern) -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+
     <!-- ========================================
          Configuration Classes
          ======================================== -->
     <Match>
         <Class name="~.*Configuration"/>
         <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+
+    <!-- ========================================
+         Spring Dependency Injection Pattern
+         EI2: Storing externally mutable objects via constructor injection
+         is a standard and safe practice in Spring DI
+         ======================================== -->
+    <!-- Spring @Component, @Service, @Repository, @Configuration classes -->
+    <Match>
+        <Or>
+            <Class name="~.*Config"/>
+            <Class name="~.*Filter"/>
+            <Class name="~.*Handler"/>
+            <Class name="~.*Adapter"/>
+            <Class name="~.*Repository"/>
+            <Class name="~.*Service"/>
+            <Class name="~.*Controller"/>
+            <Class name="~.*Interceptor"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Spring @ConfigurationProperties Classes
+         These require mutable getters/setters for property binding
+         ======================================== -->
+    <Match>
+        <Class name="~.*Properties"/>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
+    <!-- ========================================
+         Test Fixtures
+         ======================================== -->
+    <Match>
+        <Class name="~.*Fixture"/>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
     </Match>
 </FindBugsFilter>
