@@ -8,7 +8,6 @@ import static org.mockito.Mockito.mock;
 import com.ryuqq.gateway.domain.authentication.vo.PublicKey;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -51,14 +50,9 @@ class AuthHubAdapterTest {
         @SuppressWarnings("unchecked")
         void shouldReturnPublicKeysWhenJwksResponseIsValid() {
             // given
-            Map<String, Object> keyData =
-                    Map.of(
-                            "kid", "key-id-1",
-                            "n", "modulus-value",
-                            "e", "AQAB",
-                            "kty", "RSA",
-                            "use", "sig",
-                            "alg", "RS256");
+            AuthHubAdapter.Jwk keyData =
+                    new AuthHubAdapter.Jwk(
+                            "key-id-1", "modulus-value", "AQAB", "RSA", "sig", "RS256");
 
             AuthHubAdapter.JwksResponse jwksResponse =
                     new AuthHubAdapter.JwksResponse(List.of(keyData));
@@ -94,15 +88,11 @@ class AuthHubAdapterTest {
         @SuppressWarnings("unchecked")
         void shouldReturnMultiplePublicKeys() {
             // given
-            Map<String, Object> keyData1 =
-                    Map.of(
-                            "kid", "key-1", "n", "n1", "e", "e1", "kty", "RSA", "use", "sig", "alg",
-                            "RS256");
+            AuthHubAdapter.Jwk keyData1 =
+                    new AuthHubAdapter.Jwk("key-1", "n1", "e1", "RSA", "sig", "RS256");
 
-            Map<String, Object> keyData2 =
-                    Map.of(
-                            "kid", "key-2", "n", "n2", "e", "e2", "kty", "RSA", "use", "sig", "alg",
-                            "RS256");
+            AuthHubAdapter.Jwk keyData2 =
+                    new AuthHubAdapter.Jwk("key-2", "n2", "e2", "RSA", "sig", "RS256");
 
             AuthHubAdapter.JwksResponse jwksResponse =
                     new AuthHubAdapter.JwksResponse(List.of(keyData1, keyData2));
@@ -244,20 +234,9 @@ class AuthHubAdapterTest {
         @DisplayName("정상 응답일 때 PublicKey를 변환하여 반환한다")
         void shouldReturnPublicKeysForValidResponse() {
             // given
-            Map<String, Object> keyData =
-                    Map.of(
-                            "kid",
-                            "test-kid",
-                            "n",
-                            "test-n",
-                            "e",
-                            "test-e",
-                            "kty",
-                            "RSA",
-                            "use",
-                            "sig",
-                            "alg",
-                            "RS256");
+            AuthHubAdapter.Jwk keyData =
+                    new AuthHubAdapter.Jwk(
+                            "test-kid", "test-n", "test-e", "RSA", "sig", "RS256");
 
             AuthHubAdapter.JwksResponse response =
                     new AuthHubAdapter.JwksResponse(List.of(keyData));
@@ -302,17 +281,12 @@ class AuthHubAdapterTest {
     class ToPublicKeyTest {
 
         @Test
-        @DisplayName("Map을 PublicKey로 변환한다")
-        void shouldConvertMapToPublicKey() {
+        @DisplayName("Jwk를 PublicKey로 변환한다")
+        void shouldConvertJwkToPublicKey() {
             // given
-            Map<String, Object> keyData =
-                    Map.of(
-                            "kid", "key-id",
-                            "n", "modulus",
-                            "e", "exponent",
-                            "kty", "RSA",
-                            "use", "sig",
-                            "alg", "RS256");
+            AuthHubAdapter.Jwk keyData =
+                    new AuthHubAdapter.Jwk(
+                            "key-id", "modulus", "exponent", "RSA", "sig", "RS256");
 
             // when
             PublicKey result = adapter.toPublicKey(keyData);
@@ -367,15 +341,16 @@ class AuthHubAdapterTest {
         @DisplayName("keys를 올바르게 저장하고 반환한다")
         void shouldStoreAndReturnKeys() {
             // given
-            Map<String, Object> keyData = Map.of("kid", "test-key");
-            List<Map<String, Object>> keys = List.of(keyData);
+            AuthHubAdapter.Jwk keyData =
+                    new AuthHubAdapter.Jwk("test-key", null, null, null, null, null);
 
             // when
-            AuthHubAdapter.JwksResponse response = new AuthHubAdapter.JwksResponse(keys);
+            AuthHubAdapter.JwksResponse response =
+                    new AuthHubAdapter.JwksResponse(List.of(keyData));
 
             // then
             assertThat(response.keys()).hasSize(1);
-            assertThat(response.keys().get(0).get("kid")).isEqualTo("test-key");
+            assertThat(response.keys().get(0).kid()).isEqualTo("test-key");
         }
 
         @Test
