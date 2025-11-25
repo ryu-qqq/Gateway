@@ -30,7 +30,7 @@ dependencies {
     api libs.reactor.core
 
     // JWT Library (nimbus-jose-jwt) for JWT validation
-    implementation 'com.nimbusds:nimbus-jose-jwt:9.37.3'
+    implementation libs.nimbus.jose.jwt
 
     // ========================================
     // Test Dependencies

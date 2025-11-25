@@ -7,6 +7,7 @@ import com.ryuqq.gateway.application.authentication.dto.response.ValidateJwtResp
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
 import com.ryuqq.gateway.application.authentication.service.query.GetPublicKeyService;
 import com.ryuqq.gateway.domain.authentication.vo.AccessToken;
+import com.ryuqq.gateway.domain.common.exception.DomainException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -65,7 +66,19 @@ public class ValidateJwtService implements ValidateJwtUseCase {
     public Mono<ValidateJwtResponse> execute(ValidateJwtCommand command) {
         return Mono.fromCallable(() -> jwtAssembler.toAccessToken(command))
                 .flatMap(this::validateJwt)
-                .onErrorResume(e -> Mono.just(jwtAssembler.toFailedValidateJwtResponse()));
+                .onErrorResume(
+                        this::isJwtValidationException,
+                        e -> Mono.just(jwtAssembler.toFailedValidateJwtResponse()));
+    }
+
+    /**
+     * JWT 검증 관련 예외인지 확인
+     *
+     * @param e 예외
+     * @return JWT 검증 예외 여부
+     */
+    private boolean isJwtValidationException(Throwable e) {
+        return e instanceof DomainException || e instanceof IllegalStateException;
     }
 
     private Mono<ValidateJwtResponse> validateJwt(AccessToken accessToken) {

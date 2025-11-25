@@ -18,6 +18,9 @@ spring:
 # ===============================================
 # Production Profile
 # ===============================================
+# SECURITY: REDIS_PASSWORD 환경 변수 설정 필수!
+# 빈 패스워드는 프로덕션에서 허용되지 않습니다.
+# ===============================================
 spring:
   config:
     activate:
@@ -27,7 +30,7 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD}
 
 ---
 # ===============================================

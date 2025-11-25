@@ -39,21 +39,22 @@ public class PublicKeyCommandAdapter implements PublicKeyCommandPort {
     /**
      * Public Key 목록을 Cache에 저장
      *
-     * <p><strong>Process</strong>:
+     * <p><strong>Process</strong>: 새로운 Public Key들을 Redis에 저장 (TTL 기반 덮어쓰기)
      *
-     * <ol>
-     *   <li>기존 Redis Cache 전체 삭제
-     *   <li>새로운 Public Key들을 Redis에 저장
-     * </ol>
+     * <p><strong>원자성 보장</strong>:
+     *
+     * <ul>
+     *   <li>deleteAll 없이 덮어쓰기만 수행하여 캐시 miss 구간 제거
+     *   <li>TTL 기반 자동 만료로 오래된 키는 자연 정리
+     *   <li>같은 kid의 키는 덮어쓰기로 갱신
+     * </ul>
      *
      * @param publicKeys Public Key 목록
      * @return Mono&lt;Void&gt; 완료 시그널
      */
     @Override
     public Mono<Void> saveAll(List<PublicKey> publicKeys) {
-        return publicKeyRedisRepository
-                .deleteAll()
-                .thenMany(Flux.fromIterable(publicKeys))
+        return Flux.fromIterable(publicKeys)
                 .flatMap(
                         publicKey -> {
                             var entity = publicKeyMapper.toPublicKeyEntity(publicKey);

@@ -6,6 +6,8 @@ import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.domain.authentication.exception.JwtExpiredException;
 import com.ryuqq.gateway.domain.authentication.exception.JwtInvalidException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -35,6 +37,8 @@ import reactor.core.publisher.Mono;
 @Order(-1)
 public class JwtErrorHandler implements ErrorWebExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtErrorHandler.class);
+
     private final ObjectMapper objectMapper;
 
     public JwtErrorHandler(ObjectMapper objectMapper) {
@@ -59,6 +63,7 @@ public class JwtErrorHandler implements ErrorWebExceptionHandler {
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
             return exchange.getResponse().writeWith(Mono.just(buffer));
         } catch (JsonProcessingException e) {
+            log.error("Failed to serialize error response for exception: {}", ex.getMessage(), e);
             return exchange.getResponse().setComplete();
         }
     }

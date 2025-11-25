@@ -5,7 +5,6 @@ import com.ryuqq.gateway.domain.authentication.vo.PublicKey;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.util.List;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -93,21 +92,18 @@ public class AuthHubAdapter implements AuthHubClient {
     /**
      * JWKS Key → PublicKey 변환
      *
-     * @param key JWKS Key
+     * @param jwk JWKS Key (타입 안전)
      * @return PublicKey
      */
-    PublicKey toPublicKey(Map<String, Object> key) {
-        return new PublicKey(
-                (String) key.get("kid"),
-                (String) key.get("n"),
-                (String) key.get("e"),
-                (String) key.get("kty"),
-                (String) key.get("use"),
-                (String) key.get("alg"));
+    PublicKey toPublicKey(Jwk jwk) {
+        return new PublicKey(jwk.kid(), jwk.n(), jwk.e(), jwk.kty(), jwk.use(), jwk.alg());
     }
 
     /** JWKS Response DTO */
-    record JwksResponse(List<Map<String, Object>> keys) {}
+    record JwksResponse(List<Jwk> keys) {}
+
+    /** JSON Web Key (타입 안전한 JWKS Key 표현) */
+    record Jwk(String kid, String n, String e, String kty, String use, String alg) {}
 
     /** AuthHub 예외 */
     public static class AuthHubException extends RuntimeException {

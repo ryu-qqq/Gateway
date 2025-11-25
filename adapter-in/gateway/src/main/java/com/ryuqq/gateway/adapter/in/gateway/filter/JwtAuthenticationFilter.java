@@ -7,7 +7,6 @@ import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
-import org.slf4j.MDC;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -15,6 +14,7 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -30,8 +30,11 @@ import reactor.core.publisher.Mono;
  *   <li>Authorization 헤더에서 Bearer Token 추출
  *   <li>ValidateJwtUseCase를 통한 JWT 검증
  *   <li>ServerWebExchange Attribute 설정 (userId, roles)
- *   <li>MDC 설정 및 정리
+ *   <li>Downstream 서비스로 X-User-Id 헤더 전달
+ *   <li>Reactor Context에 userId 저장 (로깅용)
  * </ul>
+ *
+ * <p><strong>주의</strong>: Reactive 환경에서는 ThreadLocal 기반 MDC 대신 Reactor Context를 사용해야 합니다.
  *
  * @author development-team
  * @since 1.0.0
@@ -42,6 +45,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String USER_ID_ATTRIBUTE = "userId";
     private static final String ROLES_ATTRIBUTE = "roles";
+    private static final String X_USER_ID_HEADER = "X-User-Id";
 
     private final ValidateJwtUseCase validateJwtUseCase;
     private final ObjectMapper objectMapper;
@@ -76,12 +80,25 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                             }
 
                             var claims = response.jwtClaims();
-                            exchange.getAttributes().put(USER_ID_ATTRIBUTE, claims.subject());
+                            String userId = claims.subject();
+
+                            // Exchange Attribute 설정 (Gateway 내부 사용)
+                            exchange.getAttributes().put(USER_ID_ATTRIBUTE, userId);
                             exchange.getAttributes().put(ROLES_ATTRIBUTE, claims.roles());
 
-                            MDC.put(USER_ID_ATTRIBUTE, claims.subject());
+                            // Downstream 서비스로 userId 전달 (Header)
+                            ServerHttpRequest mutatedRequest =
+                                    exchange.getRequest()
+                                            .mutate()
+                                            .header(X_USER_ID_HEADER, userId)
+                                            .build();
 
-                            return chain.filter(exchange).doFinally(signalType -> MDC.clear());
+                            ServerWebExchange mutatedExchange =
+                                    exchange.mutate().request(mutatedRequest).build();
+
+                            // Reactor Context에 userId 저장 (로깅 컨텍스트 전파)
+                            return chain.filter(mutatedExchange)
+                                    .contextWrite(ctx -> ctx.put(USER_ID_ATTRIBUTE, userId));
                         })
                 .onErrorResume(e -> unauthorized(exchange));
     }

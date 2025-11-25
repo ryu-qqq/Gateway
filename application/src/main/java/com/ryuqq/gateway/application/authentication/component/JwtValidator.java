@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.util.List;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 /**
  * JWT Validation Service
@@ -52,6 +53,7 @@ public class JwtValidator {
                             JWSVerifier verifier = new RSASSAVerifier(rsaPublicKey);
                             return signedJWT.verify(verifier);
                         })
+                .subscribeOn(Schedulers.boundedElastic())
                 .onErrorMap(e -> new IllegalStateException("Failed to verify JWT signature", e));
     }
 
@@ -69,7 +71,10 @@ public class JwtValidator {
 
                             String subject = claims.getSubject();
                             String issuer = claims.getIssuer();
-                            Instant expiresAt = claims.getExpirationTime().toInstant();
+                            Instant expiresAt =
+                                    claims.getExpirationTime() != null
+                                            ? claims.getExpirationTime().toInstant()
+                                            : null;
                             Instant issuedAt =
                                     claims.getIssueTime() != null
                                             ? claims.getIssueTime().toInstant()
@@ -83,6 +88,7 @@ public class JwtValidator {
                                     issuedAt,
                                     roles != null ? roles : List.of());
                         })
+                .subscribeOn(Schedulers.boundedElastic())
                 .onErrorMap(e -> new IllegalStateException("Failed to extract JWT claims", e));
     }
 }

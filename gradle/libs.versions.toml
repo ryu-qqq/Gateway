@@ -67,6 +67,12 @@ jackson = "2.17.0"
 # JWT & Security
 # ========================================
 jjwt = "0.12.6"
+nimbusJoseJwt = "10.3"
+
+# ========================================
+# Resilience
+# ========================================
+resilience4j = "2.3.0"
 
 # ========================================
 # Reactive
@@ -168,6 +174,13 @@ jakarta-persistence-api = { module = "jakarta.persistence:jakarta.persistence-ap
 jjwt-api = { module = "io.jsonwebtoken:jjwt-api", version.ref = "jjwt" }
 jjwt-impl = { module = "io.jsonwebtoken:jjwt-impl", version.ref = "jjwt" }
 jjwt-jackson = { module = "io.jsonwebtoken:jjwt-jackson", version.ref = "jjwt" }
+nimbus-jose-jwt = { module = "com.nimbusds:nimbus-jose-jwt", version.ref = "nimbusJoseJwt" }
+
+# ========================================
+# Resilience
+# ========================================
+resilience4j-spring-boot3 = { module = "io.github.resilience4j:resilience4j-spring-boot3", version.ref = "resilience4j" }
+resilience4j-reactor = { module = "io.github.resilience4j:resilience4j-reactor", version.ref = "resilience4j" }
 
 # ========================================
 # Reactive

@@ -3,6 +3,7 @@ package com.ryuqq.gateway.adapter.out.redis.repository;
 import com.ryuqq.gateway.adapter.out.redis.entity.PublicKeyEntity;
 import java.time.Duration;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
@@ -79,11 +80,18 @@ public class PublicKeyRedisRepository {
     /**
      * Public Key 전체 삭제
      *
+     * <p>KEYS 대신 SCAN을 사용하여 프로덕션 환경에서 Redis 블로킹을 방지합니다.
+     *
      * @return Void
      */
     public Mono<Void> deleteAll() {
         String pattern = PUBLIC_KEY_PREFIX + ":*";
-        return reactiveRedisTemplate.keys(pattern).flatMap(reactiveRedisTemplate::delete).then();
+        ScanOptions scanOptions =
+                ScanOptions.scanOptions().match(pattern).count(100).build();
+        return reactiveRedisTemplate
+                .scan(scanOptions)
+                .flatMap(reactiveRedisTemplate::delete)
+                .then();
     }
 
     /**
