@@ -235,8 +235,7 @@ class AuthHubAdapterTest {
         void shouldReturnPublicKeysForValidResponse() {
             // given
             AuthHubAdapter.Jwk keyData =
-                    new AuthHubAdapter.Jwk(
-                            "test-kid", "test-n", "test-e", "RSA", "sig", "RS256");
+                    new AuthHubAdapter.Jwk("test-kid", "test-n", "test-e", "RSA", "sig", "RS256");
 
             AuthHubAdapter.JwksResponse response =
                     new AuthHubAdapter.JwksResponse(List.of(keyData));
@@ -285,8 +284,7 @@ class AuthHubAdapterTest {
         void shouldConvertJwkToPublicKey() {
             // given
             AuthHubAdapter.Jwk keyData =
-                    new AuthHubAdapter.Jwk(
-                            "key-id", "modulus", "exponent", "RSA", "sig", "RS256");
+                    new AuthHubAdapter.Jwk("key-id", "modulus", "exponent", "RSA", "sig", "RS256");
 
             // when
             PublicKey result = adapter.toPublicKey(keyData);

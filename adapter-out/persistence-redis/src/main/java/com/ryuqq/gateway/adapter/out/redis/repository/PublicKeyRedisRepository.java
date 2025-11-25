@@ -86,8 +86,7 @@ public class PublicKeyRedisRepository {
      */
     public Mono<Void> deleteAll() {
         String pattern = PUBLIC_KEY_PREFIX + ":*";
-        ScanOptions scanOptions =
-                ScanOptions.scanOptions().match(pattern).count(100).build();
+        ScanOptions scanOptions = ScanOptions.scanOptions().match(pattern).count(100).build();
         return reactiveRedisTemplate
                 .scan(scanOptions)
                 .flatMap(reactiveRedisTemplate::delete)

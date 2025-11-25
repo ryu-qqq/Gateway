@@ -27,6 +27,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -216,14 +217,14 @@ class JwtAuthenticationFilterUnitTest {
                             List.of());
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
-            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+            when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
 
             // when
             StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
                     .verifyComplete();
 
             // then
-            verify(filterChain).filter(exchange);
+            verify(filterChain).filter(any(ServerWebExchange.class));
         }
 
         @Test
