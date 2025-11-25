@@ -62,8 +62,7 @@ public class AuthHubAdapter implements AuthHubClient {
                 .bodyToMono(JwksResponse.class)
                 .flatMapMany(this::processResponse)
                 .onErrorMap(
-                        e ->
-                                !(e instanceof AuthHubException),
+                        e -> !(e instanceof AuthHubException),
                         e -> new AuthHubException("Failed to fetch JWKS from AuthHub", e));
     }
 

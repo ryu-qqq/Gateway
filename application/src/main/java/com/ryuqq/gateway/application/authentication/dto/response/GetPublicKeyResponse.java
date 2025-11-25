@@ -9,4 +9,4 @@ import com.ryuqq.gateway.domain.authentication.vo.PublicKey;
  *
  * @param publicKey Public Key VO
  */
-public record GetPublicKeyResponse(PublicKey publicKey) { }
+public record GetPublicKeyResponse(PublicKey publicKey) {}

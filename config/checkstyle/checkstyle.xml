@@ -31,7 +31,13 @@
         <module name="LeftCurly"/>
         <module name="RightCurly"/>
         <module name="WhitespaceAfter"/>
-        <module name="WhitespaceAround"/>
+        <!-- allowEmptyTypes: Record, Interface 등의 빈 {} 허용 (Google Java Format 호환) -->
+        <module name="WhitespaceAround">
+            <property name="allowEmptyTypes" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyLambdas" value="true"/>
+        </module>
 
         <!-- Lombok ban to keep domain pure -->
         <module name="IllegalImport">

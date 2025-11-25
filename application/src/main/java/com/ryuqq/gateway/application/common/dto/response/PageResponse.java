@@ -76,6 +76,21 @@ public record PageResponse<T>(
         boolean last) {
 
     /**
+     * Canonical constructor - content를 불변 복사본으로 저장
+     *
+     * @param content 현재 페이지 데이터
+     * @param page 현재 페이지 번호
+     * @param size 페이지 크기
+     * @param totalElements 전체 데이터 개수
+     * @param totalPages 전체 페이지 수
+     * @param first 첫 페이지 여부
+     * @param last 마지막 페이지 여부
+     */
+    public PageResponse {
+        content = content == null ? List.of() : List.copyOf(content);
+    }
+
+    /**
      * PageResponse 생성 (정적 팩토리 메서드)
      *
      * @param content 현재 페이지 데이터

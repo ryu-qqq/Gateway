@@ -1,6 +1,7 @@
 package com.ryuqq.gateway.domain.authentication.vo;
 
 import com.ryuqq.gateway.domain.authentication.exception.JwtInvalidException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 /**
@@ -74,7 +75,9 @@ public final class AccessToken {
      */
     private static String extractKidFromHeader(String encodedHeader) {
         try {
-            String headerJson = new String(Base64.getUrlDecoder().decode(encodedHeader));
+            String headerJson =
+                    new String(
+                            Base64.getUrlDecoder().decode(encodedHeader), StandardCharsets.UTF_8);
 
             if (!headerJson.contains("\"kid\"")) {
                 throw new JwtInvalidException("JWT Header does not contain 'kid' claim");

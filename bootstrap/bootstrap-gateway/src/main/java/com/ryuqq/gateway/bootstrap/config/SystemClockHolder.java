@@ -29,8 +29,7 @@ public record SystemClockHolder(Clock clock) implements ClockHolder {
      * @author ryu-qqq
      * @since 2025-11-21
      */
-    public SystemClockHolder {
-    }
+    public SystemClockHolder {}
 
     /**
      * System Clock 반환

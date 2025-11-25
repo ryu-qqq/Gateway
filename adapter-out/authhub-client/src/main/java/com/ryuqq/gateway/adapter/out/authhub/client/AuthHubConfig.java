@@ -54,8 +54,7 @@ public class AuthHubConfig {
                         .option(
                                 ChannelOption.CONNECT_TIMEOUT_MILLIS,
                                 (int) properties.getTimeout().getConnection())
-                        .responseTimeout(
-                                Duration.ofMillis(properties.getTimeout().getResponse()));
+                        .responseTimeout(Duration.ofMillis(properties.getTimeout().getResponse()));
 
         return webClientBuilder
                 .baseUrl(properties.getBaseUrl())
@@ -80,12 +79,16 @@ public class AuthHubConfig {
     public CircuitBreakerRegistry circuitBreakerRegistry() {
         CircuitBreakerConfig circuitBreakerConfig =
                 CircuitBreakerConfig.custom()
-                        .failureRateThreshold(properties.getCircuitBreaker().getFailureRateThreshold())
+                        .failureRateThreshold(
+                                properties.getCircuitBreaker().getFailureRateThreshold())
                         .waitDurationInOpenState(
                                 Duration.ofMillis(
-                                        properties.getCircuitBreaker().getWaitDurationInOpenState()))
+                                        properties
+                                                .getCircuitBreaker()
+                                                .getWaitDurationInOpenState()))
                         .slidingWindowSize(properties.getCircuitBreaker().getSlidingWindowSize())
-                        .minimumNumberOfCalls(properties.getCircuitBreaker().getMinimumNumberOfCalls())
+                        .minimumNumberOfCalls(
+                                properties.getCircuitBreaker().getMinimumNumberOfCalls())
                         .permittedNumberOfCallsInHalfOpenState(3)
                         .build();
 

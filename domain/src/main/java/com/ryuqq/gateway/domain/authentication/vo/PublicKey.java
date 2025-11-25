@@ -2,7 +2,9 @@ package com.ryuqq.gateway.domain.authentication.vo;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Base64;
 
@@ -68,7 +70,7 @@ public record PublicKey(
             RSAPublicKeySpec keySpec = new RSAPublicKeySpec(modulusBigInt, exponentBigInt);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             return (RSAPublicKey) keyFactory.generatePublic(keySpec);
-        } catch (Exception e) {
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new IllegalStateException(
                     "Failed to create RSA Public Key from modulus and exponent", e);
         }

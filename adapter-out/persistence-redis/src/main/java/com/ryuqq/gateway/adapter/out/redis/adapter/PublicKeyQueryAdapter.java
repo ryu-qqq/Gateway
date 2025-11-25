@@ -54,6 +54,8 @@ public class PublicKeyQueryAdapter implements PublicKeyQueryPort {
                 .findByKid(kid)
                 .map(publicKeyMapper::toPublicKey)
                 .onErrorMap(
-                        e -> new RuntimeException("Failed to get public key from Redis: " + kid, e));
+                        e ->
+                                new RuntimeException(
+                                        "Failed to get public key from Redis: " + kid, e));
     }
 }

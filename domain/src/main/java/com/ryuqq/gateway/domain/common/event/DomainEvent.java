@@ -8,4 +8,4 @@ package com.ryuqq.gateway.domain.common.event;
  * @author ryu-qqq
  * @since 2025-10-31
  */
-public interface DomainEvent { }
+public interface DomainEvent {}

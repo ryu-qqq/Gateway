@@ -51,25 +51,29 @@ class AuthHubAdapterTest {
         @SuppressWarnings("unchecked")
         void shouldReturnPublicKeysWhenJwksResponseIsValid() {
             // given
-            Map<String, Object> keyData = Map.of(
-                    "kid", "key-id-1",
-                    "n", "modulus-value",
-                    "e", "AQAB",
-                    "kty", "RSA",
-                    "use", "sig",
-                    "alg", "RS256");
+            Map<String, Object> keyData =
+                    Map.of(
+                            "kid", "key-id-1",
+                            "n", "modulus-value",
+                            "e", "AQAB",
+                            "kty", "RSA",
+                            "use", "sig",
+                            "alg", "RS256");
 
             AuthHubAdapter.JwksResponse jwksResponse =
                     new AuthHubAdapter.JwksResponse(List.of(keyData));
 
-            WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
-            WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+            WebClient.RequestHeadersUriSpec requestHeadersUriSpec =
+                    mock(WebClient.RequestHeadersUriSpec.class);
+            WebClient.RequestHeadersSpec requestHeadersSpec =
+                    mock(WebClient.RequestHeadersSpec.class);
             WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
             given(webClient.get()).willReturn(requestHeadersUriSpec);
             given(requestHeadersUriSpec.uri(anyString())).willReturn(requestHeadersSpec);
             given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.bodyToMono(AuthHubAdapter.JwksResponse.class)).willReturn(Mono.just(jwksResponse));
+            given(responseSpec.bodyToMono(AuthHubAdapter.JwksResponse.class))
+                    .willReturn(Mono.just(jwksResponse));
 
             // when & then
             StepVerifier.create(adapter.fetchPublicKeys())
@@ -91,27 +95,32 @@ class AuthHubAdapterTest {
         void shouldReturnMultiplePublicKeys() {
             // given
             Map<String, Object> keyData1 =
-                    Map.of("kid", "key-1", "n", "n1", "e", "e1", "kty", "RSA", "use", "sig", "alg", "RS256");
+                    Map.of(
+                            "kid", "key-1", "n", "n1", "e", "e1", "kty", "RSA", "use", "sig", "alg",
+                            "RS256");
 
             Map<String, Object> keyData2 =
-                    Map.of("kid", "key-2", "n", "n2", "e", "e2", "kty", "RSA", "use", "sig", "alg", "RS256");
+                    Map.of(
+                            "kid", "key-2", "n", "n2", "e", "e2", "kty", "RSA", "use", "sig", "alg",
+                            "RS256");
 
             AuthHubAdapter.JwksResponse jwksResponse =
                     new AuthHubAdapter.JwksResponse(List.of(keyData1, keyData2));
 
-            WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
-            WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+            WebClient.RequestHeadersUriSpec requestHeadersUriSpec =
+                    mock(WebClient.RequestHeadersUriSpec.class);
+            WebClient.RequestHeadersSpec requestHeadersSpec =
+                    mock(WebClient.RequestHeadersSpec.class);
             WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
             given(webClient.get()).willReturn(requestHeadersUriSpec);
             given(requestHeadersUriSpec.uri(anyString())).willReturn(requestHeadersSpec);
             given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.bodyToMono(AuthHubAdapter.JwksResponse.class)).willReturn(Mono.just(jwksResponse));
+            given(responseSpec.bodyToMono(AuthHubAdapter.JwksResponse.class))
+                    .willReturn(Mono.just(jwksResponse));
 
             // when & then
-            StepVerifier.create(adapter.fetchPublicKeys())
-                    .expectNextCount(2)
-                    .verifyComplete();
+            StepVerifier.create(adapter.fetchPublicKeys()).expectNextCount(2).verifyComplete();
         }
 
         @Test
@@ -121,21 +130,26 @@ class AuthHubAdapterTest {
             // given
             RuntimeException originalException = new RuntimeException("Connection failed");
 
-            WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
-            WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+            WebClient.RequestHeadersUriSpec requestHeadersUriSpec =
+                    mock(WebClient.RequestHeadersUriSpec.class);
+            WebClient.RequestHeadersSpec requestHeadersSpec =
+                    mock(WebClient.RequestHeadersSpec.class);
             WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
             given(webClient.get()).willReturn(requestHeadersUriSpec);
             given(requestHeadersUriSpec.uri(anyString())).willReturn(requestHeadersSpec);
             given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.bodyToMono(AuthHubAdapter.JwksResponse.class)).willReturn(Mono.error(originalException));
+            given(responseSpec.bodyToMono(AuthHubAdapter.JwksResponse.class))
+                    .willReturn(Mono.error(originalException));
 
             // when & then
             StepVerifier.create(adapter.fetchPublicKeys())
                     .expectErrorSatisfies(
                             error -> {
-                                assertThat(error).isInstanceOf(AuthHubAdapter.AuthHubException.class);
-                                assertThat(error.getMessage()).contains("Failed to fetch JWKS from AuthHub");
+                                assertThat(error)
+                                        .isInstanceOf(AuthHubAdapter.AuthHubException.class);
+                                assertThat(error.getMessage())
+                                        .contains("Failed to fetch JWKS from AuthHub");
                                 assertThat(error.getCause()).isEqualTo(originalException);
                             })
                     .verify();
@@ -149,20 +163,24 @@ class AuthHubAdapterTest {
             AuthHubAdapter.AuthHubException authHubException =
                     new AuthHubAdapter.AuthHubException("Original AuthHub error");
 
-            WebClient.RequestHeadersUriSpec requestHeadersUriSpec = mock(WebClient.RequestHeadersUriSpec.class);
-            WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
+            WebClient.RequestHeadersUriSpec requestHeadersUriSpec =
+                    mock(WebClient.RequestHeadersUriSpec.class);
+            WebClient.RequestHeadersSpec requestHeadersSpec =
+                    mock(WebClient.RequestHeadersSpec.class);
             WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
             given(webClient.get()).willReturn(requestHeadersUriSpec);
             given(requestHeadersUriSpec.uri(anyString())).willReturn(requestHeadersSpec);
             given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.bodyToMono(AuthHubAdapter.JwksResponse.class)).willReturn(Mono.error(authHubException));
+            given(responseSpec.bodyToMono(AuthHubAdapter.JwksResponse.class))
+                    .willReturn(Mono.error(authHubException));
 
             // when & then
             StepVerifier.create(adapter.fetchPublicKeys())
                     .expectErrorSatisfies(
                             error -> {
-                                assertThat(error).isInstanceOf(AuthHubAdapter.AuthHubException.class);
+                                assertThat(error)
+                                        .isInstanceOf(AuthHubAdapter.AuthHubException.class);
                                 assertThat(error.getMessage()).isEqualTo("Original AuthHub error");
                             })
                     .verify();
@@ -180,7 +198,8 @@ class AuthHubAdapterTest {
             StepVerifier.create(adapter.processResponse(null))
                     .expectErrorSatisfies(
                             error -> {
-                                assertThat(error).isInstanceOf(AuthHubAdapter.AuthHubException.class);
+                                assertThat(error)
+                                        .isInstanceOf(AuthHubAdapter.AuthHubException.class);
                                 assertThat(error.getMessage()).contains("Empty JWKS response");
                             })
                     .verify();
@@ -196,7 +215,8 @@ class AuthHubAdapterTest {
             StepVerifier.create(adapter.processResponse(response))
                     .expectErrorSatisfies(
                             error -> {
-                                assertThat(error).isInstanceOf(AuthHubAdapter.AuthHubException.class);
+                                assertThat(error)
+                                        .isInstanceOf(AuthHubAdapter.AuthHubException.class);
                                 assertThat(error.getMessage()).contains("Empty JWKS response");
                             })
                     .verify();
@@ -213,7 +233,8 @@ class AuthHubAdapterTest {
             StepVerifier.create(adapter.processResponse(response))
                     .expectErrorSatisfies(
                             error -> {
-                                assertThat(error).isInstanceOf(AuthHubAdapter.AuthHubException.class);
+                                assertThat(error)
+                                        .isInstanceOf(AuthHubAdapter.AuthHubException.class);
                                 assertThat(error.getMessage()).contains("Empty JWKS response");
                             })
                     .verify();
@@ -224,9 +245,22 @@ class AuthHubAdapterTest {
         void shouldReturnPublicKeysForValidResponse() {
             // given
             Map<String, Object> keyData =
-                    Map.of("kid", "test-kid", "n", "test-n", "e", "test-e", "kty", "RSA", "use", "sig", "alg", "RS256");
+                    Map.of(
+                            "kid",
+                            "test-kid",
+                            "n",
+                            "test-n",
+                            "e",
+                            "test-e",
+                            "kty",
+                            "RSA",
+                            "use",
+                            "sig",
+                            "alg",
+                            "RS256");
 
-            AuthHubAdapter.JwksResponse response = new AuthHubAdapter.JwksResponse(List.of(keyData));
+            AuthHubAdapter.JwksResponse response =
+                    new AuthHubAdapter.JwksResponse(List.of(keyData));
 
             // when & then
             StepVerifier.create(adapter.processResponse(response))
@@ -253,8 +287,10 @@ class AuthHubAdapterTest {
             StepVerifier.create(adapter.fetchPublicKeysFallback(cause))
                     .expectErrorSatisfies(
                             error -> {
-                                assertThat(error).isInstanceOf(AuthHubAdapter.AuthHubException.class);
-                                assertThat(error.getMessage()).contains("AuthHub JWKS 호출 실패 (Fallback)");
+                                assertThat(error)
+                                        .isInstanceOf(AuthHubAdapter.AuthHubException.class);
+                                assertThat(error.getMessage())
+                                        .contains("AuthHub JWKS 호출 실패 (Fallback)");
                                 assertThat(error.getCause()).isEqualTo(cause);
                             })
                     .verify();

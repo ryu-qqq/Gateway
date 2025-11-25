@@ -41,9 +41,8 @@ public record JwtClaims(
         if (expiresAt == null) {
             throw new IllegalArgumentException("ExpiresAt (exp) cannot be null");
         }
-        if (roles == null) {
-            roles = List.of();
-        }
+        // 불변 복사본으로 저장하여 외부 변경 방지
+        roles = roles == null ? List.of() : List.copyOf(roles);
     }
 
     /**

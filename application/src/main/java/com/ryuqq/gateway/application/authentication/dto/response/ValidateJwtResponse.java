@@ -10,4 +10,4 @@ import com.ryuqq.gateway.domain.authentication.vo.JwtClaims;
  * @param jwtClaims JWT Claims (검증된 Claims 정보)
  * @param isValid 검증 성공 여부
  */
-public record ValidateJwtResponse(JwtClaims jwtClaims, boolean isValid) { }
+public record ValidateJwtResponse(JwtClaims jwtClaims, boolean isValid) {}

@@ -1,8 +1,8 @@
 package com.ryuqq.gateway.application.authentication.service.command;
 
 import com.ryuqq.gateway.application.authentication.port.in.command.RefreshPublicKeysUseCase;
-import com.ryuqq.gateway.application.authentication.port.out.command.PublicKeyCommandPort;
 import com.ryuqq.gateway.application.authentication.port.out.client.AuthHubClient;
+import com.ryuqq.gateway.application.authentication.port.out.command.PublicKeyCommandPort;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -37,7 +37,7 @@ public class RefreshPublicKeysService implements RefreshPublicKeysUseCase {
     private final PublicKeyCommandPort publicKeyCommandPort;
 
     public RefreshPublicKeysService(
-        AuthHubClient authHubClient, PublicKeyCommandPort publicKeyCommandPort) {
+            AuthHubClient authHubClient, PublicKeyCommandPort publicKeyCommandPort) {
         this.authHubClient = authHubClient;
         this.publicKeyCommandPort = publicKeyCommandPort;
     }

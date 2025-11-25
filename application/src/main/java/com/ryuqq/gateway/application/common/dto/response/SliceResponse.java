@@ -67,6 +67,18 @@ import java.util.List;
 public record SliceResponse<T>(List<T> content, int size, boolean hasNext, String nextCursor) {
 
     /**
+     * Canonical constructor - content를 불변 복사본으로 저장
+     *
+     * @param content 현재 슬라이스 데이터
+     * @param size 슬라이스 크기
+     * @param hasNext 다음 슬라이스 존재 여부
+     * @param nextCursor 다음 커서
+     */
+    public SliceResponse {
+        content = content == null ? List.of() : List.copyOf(content);
+    }
+
+    /**
      * SliceResponse 생성 (커서 있음)
      *
      * @param content 현재 슬라이스 데이터

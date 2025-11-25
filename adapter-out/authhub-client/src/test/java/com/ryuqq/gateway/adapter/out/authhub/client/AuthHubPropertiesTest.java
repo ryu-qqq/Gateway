@@ -209,7 +209,8 @@ class AuthHubPropertiesTest {
         @DisplayName("waitDurationInOpenState 기본값은 10000ms 이다")
         void shouldHaveDefaultWaitDurationInOpenState() {
             // then
-            assertThat(properties.getCircuitBreaker().getWaitDurationInOpenState()).isEqualTo(10000);
+            assertThat(properties.getCircuitBreaker().getWaitDurationInOpenState())
+                    .isEqualTo(10000);
         }
 
         @Test
@@ -243,7 +244,8 @@ class AuthHubPropertiesTest {
             properties.getCircuitBreaker().setWaitDurationInOpenState(20000);
 
             // then
-            assertThat(properties.getCircuitBreaker().getWaitDurationInOpenState()).isEqualTo(20000);
+            assertThat(properties.getCircuitBreaker().getWaitDurationInOpenState())
+                    .isEqualTo(20000);
         }
 
         @Test
@@ -281,7 +283,8 @@ class AuthHubPropertiesTest {
 
             // then
             assertThat(properties.getCircuitBreaker().getFailureRateThreshold()).isEqualTo(80);
-            assertThat(properties.getCircuitBreaker().getWaitDurationInOpenState()).isEqualTo(30000);
+            assertThat(properties.getCircuitBreaker().getWaitDurationInOpenState())
+                    .isEqualTo(30000);
             assertThat(properties.getCircuitBreaker().getSlidingWindowSize()).isEqualTo(30);
             assertThat(properties.getCircuitBreaker().getMinimumNumberOfCalls()).isEqualTo(15);
         }
