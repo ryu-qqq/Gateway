@@ -1,0 +1,91 @@
+// ========================================
+// Adapter-Out: Persistence Redis
+// ========================================
+// Outbound adapter for Redis cache operations
+// Implements cache ports from application layer
+// Technology: Spring Data Redis (Reactive) + Lettuce
+// NO Lombok allowed
+// ========================================
+
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'
+}
+
+dependencies {
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':application')
+    api project(':domain')
+
+    // Spring Data Redis (Reactive)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+    implementation 'io.lettuce:lettuce-core'
+
+    // WebFlux (Reactive WebClient)
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // JWT Library (nimbus-jose-jwt)
+    implementation 'com.nimbusds:nimbus-jose-jwt:9.37.3'
+
+    // Resilience4j (Retry, Circuit Breaker)
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
+    implementation 'io.github.resilience4j:resilience4j-reactor:2.1.0'
+
+    // JSON
+    implementation libs.jackson.databind
+    implementation libs.jackson.datatype.jsr310
+
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation libs.spring.boot.starter.test
+    testImplementation 'org.testcontainers:testcontainers:1.19.7'
+    testImplementation libs.testcontainers.junit
+
+    // WireMock for AuthHub mock
+    testImplementation 'com.github.tomakehurst:wiremock-jre8-standalone:3.0.1'
+
+    // Embedded Redis for testing
+    testImplementation 'it.ozimov:embedded-redis:0.7.3'
+
+    // ArchUnit for architecture validation
+    testImplementation libs.archunit.junit5
+
+    // Bootstrap testFixtures (ArchUnit 유틸리티 사용)
+    testImplementation testFixtures(project(':domain'))
+
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    testFixturesApi project(':domain')
+    testFixturesApi project(':application')
+    testFixturesApi testFixtures(project(':domain'))
+    testFixturesApi testFixtures(project(':application'))
+    testFixturesImplementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+}
+
+// ========================================
+// Test Coverage (70% for adapters)
+// ========================================
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.70
+            }
+        }
+        rule {
+            element = 'CLASS'
+            excludes = [
+                '*.entity.*', // Entities excluded
+                '*.config.*'  // Config classes excluded
+            ]
+        }
+    }
+}
+
+tasks.test {
+    finalizedBy tasks.jacocoTestCoverageVerification
+}

@@ -1,0 +1,152 @@
+# ===============================================
+# Connectly Gateway Application Configuration
+# ===============================================
+# Spring Cloud Gateway + Redis + JWT Authentication
+# Zero-Trust API Gateway
+#
+# @since 1.0.0
+# ===============================================
+
+# ===============================================
+# Server Configuration (Netty - Reactive)
+# ===============================================
+server:
+  port: 8080
+
+# ===============================================
+# Spring Configuration
+# ===============================================
+spring:
+  application:
+    name: connectly-gateway
+
+  # Profile
+  profiles:
+    active: local
+
+  # ===============================================
+  # Cloud Gateway
+  # ===============================================
+  cloud:
+    gateway:
+      # Global CORS Configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowed-origins: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+
+      # Routes (configured programmatically in GatewayConfig)
+      routes: []
+
+  # ===============================================
+  # Redis (Public Key Cache)
+  # ===============================================
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+
+# ===============================================
+# AuthHub Client Configuration (JWKS Endpoint)
+# ===============================================
+authhub:
+  client:
+    base-url: http://localhost:9090
+    jwks-endpoint: /api/v1/auth/jwks
+    timeout:
+      connection: 3000
+      response: 3000
+    retry:
+      max-attempts: 3
+      wait-duration: 100
+    circuit-breaker:
+      failure-rate-threshold: 50
+      wait-duration-in-open-state: 10000
+      sliding-window-size: 10
+      minimum-number-of-calls: 5
+
+# ===============================================
+# JWT Configuration
+# ===============================================
+jwt:
+  public-key-cache-ttl: 3600  # 1 hour (seconds)
+
+# ===============================================
+# Management & Actuator
+# ===============================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,refresh-public-keys
+      base-path: /actuator
+
+  endpoint:
+    health:
+      show-details: when-authorized
+
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# ===============================================
+# Logging
+# ===============================================
+logging:
+  level:
+    root: INFO
+    com.ryuqq.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# ===============================================
+# Profile-Specific Configurations
+# ===============================================
+---
+# Local Environment
+spring:
+  config:
+    activate:
+      on-profile: local
+
+logging:
+  level:
+    root: DEBUG
+    com.ryuqq.gateway: TRACE
+
+---
+# Test Environment
+spring:
+  config:
+    activate:
+      on-profile: test
+
+logging:
+  level:
+    root: INFO
+    com.ryuqq.gateway: DEBUG
+
+---
+# Production Environment
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+logging:
+  level:
+    root: WARN
+    com.ryuqq.gateway: INFO
+    org.springframework.cloud.gateway: INFO

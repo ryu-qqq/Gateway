@@ -2,34 +2,29 @@ package com.ryuqq.gateway.fixture.domain;
 
 import com.ryuqq.gateway.domain.authentication.vo.AccessToken;
 import com.ryuqq.gateway.domain.authentication.vo.JwtToken;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-/**
- * JwtToken 테스트용 Fixture (Object Mother Pattern)
- * 테스트 데이터 생성을 중앙화하고 재사용성을 높임
- */
+/** JwtToken 테스트용 Fixture (Object Mother Pattern) 테스트 데이터 생성을 중앙화하고 재사용성을 높임 */
 public class JwtTokenFixture {
 
-    private static final String VALID_JWT = "eyJhbGciOiJSUzI1NiJ9.eyJ1c2VySWQiOjEyM30.signature";
+    // Header: {"alg":"RS256","kid":"test-key-2025"}
+    // Payload: {"userId":123}
+    private static final String VALID_JWT =
+            "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5LTIwMjUifQ.eyJ1c2VySWQiOjEyM30.signature";
 
-    /**
-     * 유효한 JwtToken 생성 (1시간 후 만료)
-     */
+    /** 유효한 JwtToken 생성 (1시간 후 만료) */
     public static JwtToken aValidJwtToken() {
-        AccessToken accessToken = new AccessToken(VALID_JWT);
+        AccessToken accessToken = AccessToken.of(VALID_JWT);
         Instant now = Instant.now();
         Instant expiresAt = now.plus(1, ChronoUnit.HOURS);
 
         return new JwtToken(accessToken, expiresAt, now);
     }
 
-    /**
-     * 만료된 JwtToken 생성 (1시간 전 만료)
-     */
+    /** 만료된 JwtToken 생성 (1시간 전 만료) */
     public static JwtToken anExpiredJwtToken() {
-        AccessToken accessToken = new AccessToken(VALID_JWT);
+        AccessToken accessToken = AccessToken.of(VALID_JWT);
         Instant now = Instant.now();
         Instant expiresAt = now.minus(1, ChronoUnit.HOURS);
         Instant createdAt = now.minus(2, ChronoUnit.HOURS);
@@ -43,7 +38,7 @@ public class JwtTokenFixture {
      * @param expiresAt 만료 시간
      */
     public static JwtToken aJwtTokenWithExpiry(Instant expiresAt) {
-        AccessToken accessToken = new AccessToken(VALID_JWT);
+        AccessToken accessToken = AccessToken.of(VALID_JWT);
         Instant createdAt = Instant.now();
 
         return new JwtToken(accessToken, expiresAt, createdAt);

@@ -26,6 +26,12 @@ dependencies {
     // Validation
     implementation libs.spring.boot.starter.validation
 
+    // Reactive (Mono/Flux for Port definitions)
+    api libs.reactor.core
+
+    // JWT Library (nimbus-jose-jwt) for JWT validation
+    implementation 'com.nimbusds:nimbus-jose-jwt:9.37.3'
+
     // ========================================
     // Test Dependencies
     // ========================================
@@ -35,9 +41,6 @@ dependencies {
 
     // ArchUnit for architecture validation
     testImplementation libs.archunit.junit5
-
-    // Bootstrap testFixtures (ArchUnit 유틸리티 사용)
-    testImplementation testFixtures(project(':bootstrap:bootstrap-web-api'))
 
     // ========================================
     // Test Fixtures Dependencies

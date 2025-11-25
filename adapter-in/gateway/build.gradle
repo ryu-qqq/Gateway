@@ -1,0 +1,56 @@
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'
+}
+
+description = 'Adapter-In Gateway Module - Spring Cloud Gateway Filter Layer'
+
+// ========================================
+// Spring Cloud BOM Import
+// ========================================
+dependencyManagement {
+    imports {
+        mavenBom rootProject.libs.spring.cloud.dependencies.get().toString()
+    }
+}
+
+dependencies {
+    // ========================================
+    // Internal Module Dependencies
+    // ========================================
+    implementation project(':application')
+
+    // ========================================
+    // Spring Cloud Gateway
+    // ========================================
+    implementation rootProject.libs.spring.cloud.starter.gateway
+
+    // ========================================
+    // Spring WebFlux (Reactive)
+    // ========================================
+    implementation rootProject.libs.spring.boot.starter.webflux
+    implementation rootProject.libs.spring.boot.starter.actuator
+
+    // ========================================
+    // Reactive
+    // ========================================
+    implementation rootProject.libs.reactor.core
+
+    // ========================================
+    // JSON Processing
+    // ========================================
+    implementation rootProject.libs.jackson.databind
+    implementation rootProject.libs.jackson.datatype.jsr310
+
+    // ========================================
+    // Logging
+    // ========================================
+    implementation rootProject.libs.logstash.logback.encoder
+
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation rootProject.libs.spring.boot.starter.test
+    testImplementation rootProject.libs.reactor.test
+    testImplementation rootProject.libs.spring.restdocs.webtestclient
+}

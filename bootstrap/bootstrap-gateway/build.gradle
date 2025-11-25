@@ -1,0 +1,149 @@
+// ========================================
+// Bootstrap: Gateway Application
+// ========================================
+// Runnable Spring Cloud Gateway application
+// Zero-Trust API Gateway with JWT Authentication
+// Main application entry point
+// NO Lombok allowed
+// ========================================
+
+import java.time.Instant
+
+plugins {
+    id 'java'
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+}
+
+dependencyManagement {
+    imports {
+        mavenBom libs.spring.cloud.dependencies.get().toString()
+    }
+}
+
+dependencies {
+    // ========================================
+    // Core Modules
+    // ========================================
+    implementation project(':domain')
+    implementation project(':application')
+
+    // ========================================
+    // Adapters
+    // ========================================
+    // Inbound
+    implementation project(':adapter-in:gateway')
+
+    // Outbound
+    implementation project(':adapter-out:persistence-redis')
+    implementation project(':adapter-out:authhub-client')
+
+    // ========================================
+    // Spring Boot Starters (Reactive/Gateway)
+    // ========================================
+    implementation libs.spring.cloud.starter.gateway
+    implementation libs.spring.boot.starter.webflux
+    implementation libs.spring.boot.starter.data.redis.reactive
+    implementation libs.spring.boot.starter.validation
+    implementation libs.spring.boot.starter.actuator
+
+    // Apache Commons Pool2 (Redis connection pooling)
+    implementation 'org.apache.commons:commons-pool2:2.11.1'
+
+    // Netty DNS resolver for macOS (ARM64)
+    runtimeOnly 'io.netty:netty-resolver-dns-native-macos:4.1.100.Final:osx-aarch_64'
+
+    // Configuration Processing
+    annotationProcessor libs.spring.boot.configuration.processor
+
+    // ========================================
+    // JWT & Security
+    // ========================================
+    implementation libs.bundles.jjwt
+
+    // ========================================
+    // Observability
+    // ========================================
+    // Micrometer for metrics
+    implementation libs.micrometer.prometheus
+
+    // Logging
+    implementation libs.logstash.logback.encoder
+
+    // ========================================
+    // Reactive Support
+    // ========================================
+    implementation libs.reactor.core
+
+    // ========================================
+    // AWS SDK (from adapters)
+    // ========================================
+    implementation platform(libs.aws.bom)
+
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.reactor.test
+    testImplementation libs.testcontainers.junit
+    testImplementation libs.wiremock
+
+    // TestFixtures from modules
+    testImplementation testFixtures(project(':domain'))
+    testImplementation testFixtures(project(':application'))
+
+    // nimbus-jose-jwt for JWT test fixture
+    testImplementation 'com.nimbusds:nimbus-jose-jwt:9.37.3'
+}
+
+// ========================================
+// Spring Boot Configuration
+// ========================================
+tasks.bootJar {
+    archiveFileName = "${project.rootProject.name}.jar"
+
+    manifest {
+        attributes(
+            'Implementation-Title': project.rootProject.name,
+            'Implementation-Version': project.version,
+            'Built-By': System.getProperty('user.name'),
+            'Built-JDK': System.getProperty('java.version'),
+            'Build-Timestamp': Instant.now().toString()
+        )
+    }
+}
+
+// ========================================
+// Integration Test Coverage
+// ========================================
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.70
+            }
+        }
+        rule {
+            element = 'CLASS'
+            excludes = [
+                '*.config.*',
+                '*Application'
+            ]
+        }
+    }
+}
+
+tasks.test {
+    finalizedBy tasks.jacocoTestCoverageVerification
+}
+
+// ========================================
+// Application Run Configuration
+// ========================================
+tasks.bootRun {
+    jvmArgs = [
+        '-Xms512m',
+        '-Xmx1024m',
+        '-XX:+UseG1GC'
+    ]
+}

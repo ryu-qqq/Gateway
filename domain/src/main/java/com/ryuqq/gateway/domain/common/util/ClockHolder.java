@@ -75,5 +75,5 @@ public interface ClockHolder {
      * @author ryu-qqq
      * @since 2025-11-21
      */
-    Clock getClock();
+    Clock clock();
 }

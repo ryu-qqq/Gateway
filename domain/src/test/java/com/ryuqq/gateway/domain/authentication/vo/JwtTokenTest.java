@@ -1,19 +1,16 @@
 package com.ryuqq.gateway.domain.authentication.vo;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.ryuqq.gateway.fixture.domain.JwtTokenFixture;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static org.assertj.core.api.Assertions.assertThat;
 
 @DisplayName("JwtToken Aggregate 테스트")
 class JwtTokenTest {
@@ -66,15 +63,18 @@ class JwtTokenTest {
     @DisplayName("ArchUnit 검증 테스트")
     class ArchUnitTests {
 
-        private final JavaClasses jwtClasses = new ClassFileImporter()
-                .importPackages("com.ryuqq.gateway.domain.authentication.vo");
+        private final JavaClasses jwtClasses =
+                new ClassFileImporter()
+                        .importPackages("com.ryuqq.gateway.domain.authentication.vo");
 
         @Test
         @DisplayName("JwtToken은 final 클래스여야 함 (불변성)")
         void jwtTokenShouldBeFinal() {
             classes()
-                    .that().haveSimpleNameEndingWith("JwtToken")
-                    .should().haveModifier(com.tngtech.archunit.core.domain.JavaModifier.FINAL)
+                    .that()
+                    .haveSimpleNameEndingWith("JwtToken")
+                    .should()
+                    .haveModifier(com.tngtech.archunit.core.domain.JavaModifier.FINAL)
                     .check(jwtClasses);
         }
 
@@ -97,13 +97,15 @@ class JwtTokenTest {
         @DisplayName("Domain Layer는 외부 의존성이 없어야 함 (production 코드만)")
         void domainLayerShouldNotDependOnExternalLibraries() {
             classes()
-                    .that().resideInAPackage("..domain.authentication.vo..")
-                    .and().haveSimpleNameNotEndingWith("Test")
-                    .and().haveSimpleNameNotEndingWith("Tests")
-                    .should().onlyDependOnClassesThat().resideInAnyPackage(
-                            "java..",
-                            "..domain.."
-                    )
+                    .that()
+                    .resideInAPackage("..domain.authentication.vo..")
+                    .and()
+                    .haveSimpleNameNotEndingWith("Test")
+                    .and()
+                    .haveSimpleNameNotEndingWith("Tests")
+                    .should()
+                    .onlyDependOnClassesThat()
+                    .resideInAnyPackage("java..", "..domain..")
                     .check(jwtClasses);
         }
 
@@ -111,8 +113,10 @@ class JwtTokenTest {
         @DisplayName("JwtToken은 Lombok을 사용하지 않아야 함 (Zero-Tolerance)")
         void jwtTokenShouldNotUseLombok() {
             classes()
-                    .that().haveSimpleNameEndingWith("JwtToken")
-                    .should().notBeAnnotatedWith("lombok..")
+                    .that()
+                    .haveSimpleNameEndingWith("JwtToken")
+                    .should()
+                    .notBeAnnotatedWith("lombok..")
                     .check(jwtClasses);
         }
     }
