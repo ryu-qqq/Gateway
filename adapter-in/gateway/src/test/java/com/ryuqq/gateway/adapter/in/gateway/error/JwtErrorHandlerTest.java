@@ -2,6 +2,7 @@ package com.ryuqq.gateway.adapter.in.gateway.error;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ryuqq.gateway.domain.authentication.exception.JwtExpiredException;
@@ -84,7 +85,7 @@ class JwtErrorHandlerTest {
 
     @Test
     @DisplayName("에러 응답에 traceId가 포함되어야 한다")
-    void shouldIncludeTraceIdInErrorResponse() {
+    void shouldIncludeTraceIdInErrorResponse() throws Exception {
         // given
         MockServerHttpRequest request = MockServerHttpRequest.get("/api/test").build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
@@ -98,5 +99,9 @@ class JwtErrorHandlerTest {
 
         // then
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        String body = exchange.getResponse().getBodyAsString().block();
+        JsonNode jsonNode = objectMapper.readTree(body);
+        assertThat(jsonNode.get("traceId").asText()).isEqualTo(expectedTraceId);
     }
 }

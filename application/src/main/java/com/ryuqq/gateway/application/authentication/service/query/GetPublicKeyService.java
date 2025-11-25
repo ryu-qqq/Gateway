@@ -3,6 +3,7 @@ package com.ryuqq.gateway.application.authentication.service.query;
 import com.ryuqq.gateway.application.authentication.port.out.client.AuthHubClient;
 import com.ryuqq.gateway.application.authentication.port.out.command.PublicKeyCommandPort;
 import com.ryuqq.gateway.application.authentication.port.out.query.PublicKeyQueryPort;
+import com.ryuqq.gateway.domain.authentication.exception.PublicKeyNotFoundException;
 import com.ryuqq.gateway.domain.authentication.vo.PublicKey;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -60,6 +61,7 @@ public class GetPublicKeyService {
                 .findByKid(kid)
                 .switchIfEmpty(fetchFromAuthHubAndCache(kid))
                 .onErrorMap(
+                        e -> !(e instanceof PublicKeyNotFoundException),
                         e -> new RuntimeException("Failed to get public key for kid: " + kid, e));
     }
 
@@ -82,9 +84,7 @@ public class GetPublicKeyService {
                                             .orElse(null);
 
                             if (targetKey == null) {
-                                return Mono.error(
-                                        new RuntimeException(
-                                                "Public Key not found for kid: " + kid));
+                                return Mono.error(new PublicKeyNotFoundException(kid));
                             }
 
                             return publicKeyCommandPort.saveAll(publicKeys).thenReturn(targetKey);

@@ -2,6 +2,7 @@ package com.ryuqq.gateway.adapter.out.authhub.client;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.core.IntervalFunction;
 import io.github.resilience4j.retry.RetryConfig;
 import io.github.resilience4j.retry.RetryRegistry;
 import io.netty.channel.ChannelOption;
@@ -62,13 +63,15 @@ public class AuthHubConfig {
                 .build();
     }
 
-    /** Retry Configuration from properties */
+    /** Retry Configuration from properties (Exponential Backoff) */
     @Bean
     public RetryRegistry retryRegistry() {
         RetryConfig retryConfig =
                 RetryConfig.custom()
                         .maxAttempts(properties.getRetry().getMaxAttempts())
-                        .waitDuration(Duration.ofMillis(properties.getRetry().getWaitDuration()))
+                        .intervalFunction(
+                                IntervalFunction.ofExponentialBackoff(
+                                        properties.getRetry().getWaitDuration(), 2.0))
                         .build();
 
         return RetryRegistry.of(retryConfig);
