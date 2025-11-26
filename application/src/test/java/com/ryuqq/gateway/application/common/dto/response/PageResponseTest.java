@@ -52,8 +52,7 @@ class PageResponseTest {
         @DisplayName("null content로 생성 시 빈 리스트로 변환")
         void shouldConvertNullContentToEmptyList() {
             // when
-            PageResponse<String> response =
-                    new PageResponse<>(null, 0, 10, 0L, 0, true, true);
+            PageResponse<String> response = new PageResponse<>(null, 0, 10, 0L, 0, true, true);
 
             // then
             assertThat(response.content()).isNotNull();
@@ -103,8 +102,7 @@ class PageResponseTest {
             List<Integer> content = Arrays.asList(1, 2, 3, 4, 5);
 
             // when
-            PageResponse<Integer> response =
-                    PageResponse.of(content, 0, 5, 25L, 5, true, false);
+            PageResponse<Integer> response = PageResponse.of(content, 0, 5, 25L, 5, true, false);
 
             // then
             assertThat(response.content()).hasSize(5);
@@ -123,8 +121,7 @@ class PageResponseTest {
             List<String> content = Arrays.asList("mid1", "mid2", "mid3");
 
             // when
-            PageResponse<String> response =
-                    PageResponse.of(content, 2, 10, 50L, 5, false, false);
+            PageResponse<String> response = PageResponse.of(content, 2, 10, 50L, 5, false, false);
 
             // then
             assertThat(response.page()).isEqualTo(2);
@@ -139,8 +136,7 @@ class PageResponseTest {
             List<String> content = Arrays.asList("last1", "last2");
 
             // when
-            PageResponse<String> response =
-                    PageResponse.of(content, 4, 10, 42L, 5, false, true);
+            PageResponse<String> response = PageResponse.of(content, 4, 10, 42L, 5, false, true);
 
             // then
             assertThat(response.page()).isEqualTo(4);
@@ -156,8 +152,7 @@ class PageResponseTest {
             List<String> content = Arrays.asList("only1", "only2", "only3");
 
             // when
-            PageResponse<String> response =
-                    PageResponse.of(content, 0, 10, 3L, 1, true, true);
+            PageResponse<String> response = PageResponse.of(content, 0, 10, 3L, 1, true, true);
 
             // then
             assertThat(response.first()).isTrue();
@@ -219,10 +214,8 @@ class PageResponseTest {
         void shouldBeEqualWithSameValues() {
             // given
             List<String> content = Arrays.asList("item1", "item2");
-            PageResponse<String> response1 =
-                    PageResponse.of(content, 0, 10, 100L, 10, true, false);
-            PageResponse<String> response2 =
-                    PageResponse.of(content, 0, 10, 100L, 10, true, false);
+            PageResponse<String> response1 = PageResponse.of(content, 0, 10, 100L, 10, true, false);
+            PageResponse<String> response2 = PageResponse.of(content, 0, 10, 100L, 10, true, false);
 
             // then
             assertThat(response1).isEqualTo(response2);
@@ -234,8 +227,7 @@ class PageResponseTest {
         void shouldNotBeEqualWithDifferentValues() {
             // given
             List<String> content = Arrays.asList("item1", "item2");
-            PageResponse<String> response1 =
-                    PageResponse.of(content, 0, 10, 100L, 10, true, false);
+            PageResponse<String> response1 = PageResponse.of(content, 0, 10, 100L, 10, true, false);
             PageResponse<String> response2 =
                     PageResponse.of(content, 1, 10, 100L, 10, false, false);
 

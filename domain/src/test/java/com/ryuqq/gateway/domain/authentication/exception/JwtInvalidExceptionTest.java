@@ -79,8 +79,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException("test reason");
 
             // when & then
-            assertThat(exception.code())
-                    .isEqualTo(AuthenticationErrorCode.JWT_INVALID.getCode());
+            assertThat(exception.code()).isEqualTo(AuthenticationErrorCode.JWT_INVALID.getCode());
             assertThat(exception.code()).isEqualTo("AUTH-002");
         }
 
@@ -91,8 +90,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException();
 
             // when & then
-            assertThat(exception.code())
-                    .isEqualTo(AuthenticationErrorCode.JWT_INVALID.getCode());
+            assertThat(exception.code()).isEqualTo(AuthenticationErrorCode.JWT_INVALID.getCode());
         }
     }
 

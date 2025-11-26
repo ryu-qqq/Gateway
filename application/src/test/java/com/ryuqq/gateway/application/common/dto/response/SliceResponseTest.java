@@ -60,8 +60,7 @@ class SliceResponseTest {
             List<String> originalList = Arrays.asList("item1", "item2");
 
             // when
-            SliceResponse<String> response =
-                    new SliceResponse<>(originalList, 10, true, "cursor");
+            SliceResponse<String> response = new SliceResponse<>(originalList, 10, true, "cursor");
 
             // then
             assertThat(response.content()).isNotSameAs(originalList);
@@ -83,8 +82,7 @@ class SliceResponseTest {
             String nextCursor = "next-cursor-456";
 
             // when
-            SliceResponse<Integer> response =
-                    SliceResponse.of(content, size, hasNext, nextCursor);
+            SliceResponse<Integer> response = SliceResponse.of(content, size, hasNext, nextCursor);
 
             // then
             assertThat(response.content()).hasSize(5);
@@ -188,10 +186,8 @@ class SliceResponseTest {
         void shouldBeEqualWithSameValues() {
             // given
             List<String> content = Arrays.asList("item1", "item2");
-            SliceResponse<String> response1 =
-                    SliceResponse.of(content, 10, true, "cursor");
-            SliceResponse<String> response2 =
-                    SliceResponse.of(content, 10, true, "cursor");
+            SliceResponse<String> response1 = SliceResponse.of(content, 10, true, "cursor");
+            SliceResponse<String> response2 = SliceResponse.of(content, 10, true, "cursor");
 
             // then
             assertThat(response1).isEqualTo(response2);
@@ -203,10 +199,8 @@ class SliceResponseTest {
         void shouldNotBeEqualWithDifferentValues() {
             // given
             List<String> content = Arrays.asList("item1", "item2");
-            SliceResponse<String> response1 =
-                    SliceResponse.of(content, 10, true, "cursor1");
-            SliceResponse<String> response2 =
-                    SliceResponse.of(content, 10, true, "cursor2");
+            SliceResponse<String> response1 = SliceResponse.of(content, 10, true, "cursor1");
+            SliceResponse<String> response2 = SliceResponse.of(content, 10, true, "cursor2");
 
             // then
             assertThat(response1).isNotEqualTo(response2);
