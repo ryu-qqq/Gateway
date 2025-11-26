@@ -79,8 +79,7 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException("test-token");
 
             // when & then
-            assertThat(exception.code())
-                    .isEqualTo(AuthenticationErrorCode.JWT_EXPIRED.getCode());
+            assertThat(exception.code()).isEqualTo(AuthenticationErrorCode.JWT_EXPIRED.getCode());
             assertThat(exception.code()).isEqualTo("AUTH-001");
         }
 
@@ -91,8 +90,7 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException();
 
             // when & then
-            assertThat(exception.code())
-                    .isEqualTo(AuthenticationErrorCode.JWT_EXPIRED.getCode());
+            assertThat(exception.code()).isEqualTo(AuthenticationErrorCode.JWT_EXPIRED.getCode());
         }
     }
 

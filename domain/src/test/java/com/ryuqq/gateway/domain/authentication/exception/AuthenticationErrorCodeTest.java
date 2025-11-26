@@ -93,7 +93,8 @@ class AuthenticationErrorCodeTest {
         @Test
         @DisplayName("올바른 코드 값을 가짐")
         void shouldHaveCorrectCode() {
-            assertThat(AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getCode()).isEqualTo("AUTH-003");
+            assertThat(AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getCode())
+                    .isEqualTo("AUTH-003");
         }
 
         @Test
@@ -217,7 +218,8 @@ class AuthenticationErrorCodeTest {
         void shouldHaveSequentialErrorCodeNumbers() {
             assertThat(AuthenticationErrorCode.JWT_EXPIRED.getCode()).isEqualTo("AUTH-001");
             assertThat(AuthenticationErrorCode.JWT_INVALID.getCode()).isEqualTo("AUTH-002");
-            assertThat(AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getCode()).isEqualTo("AUTH-003");
+            assertThat(AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getCode())
+                    .isEqualTo("AUTH-003");
         }
 
         @Test

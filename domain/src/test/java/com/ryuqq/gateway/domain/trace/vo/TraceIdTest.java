@@ -18,9 +18,9 @@ import org.junit.jupiter.api.Test;
 @DisplayName("TraceId VO 테스트")
 class TraceIdTest {
 
-    private static final Pattern TRACE_ID_PATTERN = Pattern.compile(
-            "^\\d{17}-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
-    );
+    private static final Pattern TRACE_ID_PATTERN =
+            Pattern.compile(
+                    "^\\d{17}-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
     private ClockHolder createFixedClockHolder(String instant) {
         return () -> Clock.fixed(Instant.parse(instant), ZoneId.of("UTC"));
@@ -140,8 +140,7 @@ class TraceIdTest {
         @Test
         @DisplayName("빈 문자열이면 예외 발생")
         void shouldThrowExceptionWhenEmpty() {
-            assertThatThrownBy(() -> TraceId.from(""))
-                    .isInstanceOf(InvalidTraceIdException.class);
+            assertThatThrownBy(() -> TraceId.from("")).isInstanceOf(InvalidTraceIdException.class);
         }
 
         @Test
@@ -250,8 +249,10 @@ class TraceIdTest {
         @DisplayName("다른 값이면 equals false")
         void shouldNotBeEqualWhenDifferentValue() {
             // given
-            TraceId traceId1 = TraceId.from("20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789");
-            TraceId traceId2 = TraceId.from("20250124123456789-11111111-2222-3333-4444-555555555555");
+            TraceId traceId1 =
+                    TraceId.from("20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789");
+            TraceId traceId2 =
+                    TraceId.from("20250124123456789-11111111-2222-3333-4444-555555555555");
 
             // when & then
             assertThat(traceId1).isNotEqualTo(traceId2);
@@ -261,7 +262,8 @@ class TraceIdTest {
         @DisplayName("자기 자신과 equals true")
         void shouldBeEqualToItself() {
             // given
-            TraceId traceId = TraceId.from("20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789");
+            TraceId traceId =
+                    TraceId.from("20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789");
 
             // when & then
             assertThat(traceId).isEqualTo(traceId);
@@ -271,7 +273,8 @@ class TraceIdTest {
         @DisplayName("null과 equals false")
         void shouldNotBeEqualToNull() {
             // given
-            TraceId traceId = TraceId.from("20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789");
+            TraceId traceId =
+                    TraceId.from("20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789");
 
             // when & then
             assertThat(traceId).isNotEqualTo(null);
@@ -281,7 +284,8 @@ class TraceIdTest {
         @DisplayName("다른 타입과 equals false")
         void shouldNotBeEqualToDifferentType() {
             // given
-            TraceId traceId = TraceId.from("20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789");
+            TraceId traceId =
+                    TraceId.from("20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789");
 
             // when & then
             assertThat(traceId).isNotEqualTo("not a TraceId");
@@ -315,8 +319,7 @@ class TraceIdTest {
         @Test
         @DisplayName("final 클래스임")
         void shouldBeFinalClass() {
-            assertThat(java.lang.reflect.Modifier.isFinal(TraceId.class.getModifiers()))
-                    .isTrue();
+            assertThat(java.lang.reflect.Modifier.isFinal(TraceId.class.getModifiers())).isTrue();
         }
 
         @Test
@@ -324,7 +327,8 @@ class TraceIdTest {
         void shouldHaveAllFinalFields() {
             java.lang.reflect.Field[] fields = TraceId.class.getDeclaredFields();
             for (java.lang.reflect.Field field : fields) {
-                if (!field.isSynthetic() && !java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                if (!field.isSynthetic()
+                        && !java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
                     assertThat(java.lang.reflect.Modifier.isFinal(field.getModifiers()))
                             .as("Field '%s' should be final", field.getName())
                             .isTrue();
@@ -341,10 +345,8 @@ class TraceIdTest {
         @DisplayName("UTC 시간대에서 올바른 Timestamp 생성")
         void shouldGenerateCorrectTimestampInUtc() {
             // given
-            ClockHolder clockHolder = () -> Clock.fixed(
-                    Instant.parse("2025-06-15T08:30:45.123Z"),
-                    ZoneId.of("UTC")
-            );
+            ClockHolder clockHolder =
+                    () -> Clock.fixed(Instant.parse("2025-06-15T08:30:45.123Z"), ZoneId.of("UTC"));
 
             // when
             TraceId traceId = TraceId.generate(clockHolder);
@@ -357,10 +359,11 @@ class TraceIdTest {
         @DisplayName("다른 시간대에서도 올바른 Timestamp 생성")
         void shouldGenerateCorrectTimestampInOtherTimeZone() {
             // given - Asia/Seoul (+09:00)
-            ClockHolder clockHolder = () -> Clock.fixed(
-                    Instant.parse("2025-06-15T08:30:45.123Z"),
-                    ZoneId.of("Asia/Seoul")
-            );
+            ClockHolder clockHolder =
+                    () ->
+                            Clock.fixed(
+                                    Instant.parse("2025-06-15T08:30:45.123Z"),
+                                    ZoneId.of("Asia/Seoul"));
 
             // when
             TraceId traceId = TraceId.generate(clockHolder);

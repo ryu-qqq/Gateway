@@ -21,9 +21,9 @@ class TraceErrorCodeTest {
         }
 
         @Test
-        @DisplayName("HTTP 상태 코드가 500이어야 함")
+        @DisplayName("HTTP 상태 코드가 400이어야 함")
         void shouldHaveCorrectHttpStatus() {
-            assertThat(TraceErrorCode.INVALID_TRACE_ID.getHttpStatus()).isEqualTo(500);
+            assertThat(TraceErrorCode.INVALID_TRACE_ID.getHttpStatus()).isEqualTo(400);
         }
 
         @Test

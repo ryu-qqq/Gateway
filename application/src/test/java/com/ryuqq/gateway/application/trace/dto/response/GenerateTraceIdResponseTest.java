@@ -76,7 +76,8 @@ class GenerateTraceIdResponseTest {
             // given
             GenerateTraceIdResponse response1 = new GenerateTraceIdResponse(VALID_TRACE_ID);
             GenerateTraceIdResponse response2 =
-                    new GenerateTraceIdResponse("20250124000000000-11111111-2222-3333-4444-555555555555");
+                    new GenerateTraceIdResponse(
+                            "20250124000000000-11111111-2222-3333-4444-555555555555");
 
             // when & then
             assertThat(response1).isNotEqualTo(response2);

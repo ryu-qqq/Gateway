@@ -195,8 +195,7 @@ class TraceIdMdcContextTest {
         @Test
         @DisplayName("final 클래스임")
         void shouldBeFinalClass() {
-            assertThat(java.lang.reflect.Modifier.isFinal(
-                    TraceIdMdcContext.class.getModifiers()))
+            assertThat(java.lang.reflect.Modifier.isFinal(TraceIdMdcContext.class.getModifiers()))
                     .isTrue();
         }
     }

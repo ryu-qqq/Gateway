@@ -25,7 +25,7 @@ public enum TraceErrorCode implements ErrorCode {
      *
      * <p>Trace-ID가 {timestamp}-{UUID} 형식을 따르지 않는 경우 발생
      */
-    INVALID_TRACE_ID("TRACE-001", 500, "Invalid Trace-ID format");
+    INVALID_TRACE_ID("TRACE-001", 400, "Invalid Trace-ID format");
 
     private final String code;
     private final int httpStatus;

@@ -21,19 +21,17 @@ import reactor.test.StepVerifier;
 @DisplayName("GenerateTraceIdService 테스트")
 class GenerateTraceIdServiceTest {
 
-    private static final Pattern TRACE_ID_PATTERN = Pattern.compile(
-            "^\\d{17}-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
-    );
+    private static final Pattern TRACE_ID_PATTERN =
+            Pattern.compile(
+                    "^\\d{17}-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
     private GenerateTraceIdService service;
     private ClockHolder clockHolder;
 
     @BeforeEach
     void setUp() {
-        clockHolder = () -> Clock.fixed(
-                Instant.parse("2025-01-24T12:34:56.789Z"),
-                ZoneId.of("UTC")
-        );
+        clockHolder =
+                () -> Clock.fixed(Instant.parse("2025-01-24T12:34:56.789Z"), ZoneId.of("UTC"));
         service = new GenerateTraceIdService(clockHolder);
     }
 
@@ -49,11 +47,12 @@ class GenerateTraceIdServiceTest {
 
             // when & then
             StepVerifier.create(service.execute(command))
-                    .assertNext(response -> {
-                        assertThat(response).isNotNull();
-                        assertThat(response.traceId()).isNotNull();
-                        assertThat(response.traceId()).hasSize(54);
-                    })
+                    .assertNext(
+                            response -> {
+                                assertThat(response).isNotNull();
+                                assertThat(response.traceId()).isNotNull();
+                                assertThat(response.traceId()).hasSize(54);
+                            })
                     .verifyComplete();
         }
 
@@ -65,9 +64,10 @@ class GenerateTraceIdServiceTest {
 
             // when & then
             StepVerifier.create(service.execute(command))
-                    .assertNext(response -> {
-                        assertThat(response.traceId()).matches(TRACE_ID_PATTERN);
-                    })
+                    .assertNext(
+                            response -> {
+                                assertThat(response.traceId()).matches(TRACE_ID_PATTERN);
+                            })
                     .verifyComplete();
         }
 
@@ -79,10 +79,11 @@ class GenerateTraceIdServiceTest {
 
             // when & then
             StepVerifier.create(service.execute(command))
-                    .assertNext(response -> {
-                        String timestamp = response.traceId().substring(0, 17);
-                        assertThat(timestamp).isEqualTo("20250124123456789");
-                    })
+                    .assertNext(
+                            response -> {
+                                String timestamp = response.traceId().substring(0, 17);
+                                assertThat(timestamp).isEqualTo("20250124123456789");
+                            })
                     .verifyComplete();
         }
 
@@ -142,19 +143,21 @@ class GenerateTraceIdServiceTest {
         @DisplayName("다른 시간대의 ClockHolder 사용")
         void shouldWorkWithDifferentTimeZone() {
             // given - Asia/Seoul (+09:00)
-            ClockHolder seoulClockHolder = () -> Clock.fixed(
-                    Instant.parse("2025-06-15T08:30:45.123Z"),
-                    ZoneId.of("Asia/Seoul")
-            );
+            ClockHolder seoulClockHolder =
+                    () ->
+                            Clock.fixed(
+                                    Instant.parse("2025-06-15T08:30:45.123Z"),
+                                    ZoneId.of("Asia/Seoul"));
             GenerateTraceIdService seoulService = new GenerateTraceIdService(seoulClockHolder);
             GenerateTraceIdCommand command = new GenerateTraceIdCommand();
 
             // when & then - UTC 08:30 -> Seoul 17:30
             StepVerifier.create(seoulService.execute(command))
-                    .assertNext(response -> {
-                        String timestamp = response.traceId().substring(0, 17);
-                        assertThat(timestamp).isEqualTo("20250615173045123");
-                    })
+                    .assertNext(
+                            response -> {
+                                String timestamp = response.traceId().substring(0, 17);
+                                assertThat(timestamp).isEqualTo("20250615173045123");
+                            })
                     .verifyComplete();
         }
 
@@ -162,19 +165,19 @@ class GenerateTraceIdServiceTest {
         @DisplayName("밀리초가 0인 시간 처리")
         void shouldHandleZeroMilliseconds() {
             // given
-            ClockHolder zeroMillisClockHolder = () -> Clock.fixed(
-                    Instant.parse("2025-01-24T12:34:56.000Z"),
-                    ZoneId.of("UTC")
-            );
-            GenerateTraceIdService zeroMillisService = new GenerateTraceIdService(zeroMillisClockHolder);
+            ClockHolder zeroMillisClockHolder =
+                    () -> Clock.fixed(Instant.parse("2025-01-24T12:34:56.000Z"), ZoneId.of("UTC"));
+            GenerateTraceIdService zeroMillisService =
+                    new GenerateTraceIdService(zeroMillisClockHolder);
             GenerateTraceIdCommand command = new GenerateTraceIdCommand();
 
             // when & then
             StepVerifier.create(zeroMillisService.execute(command))
-                    .assertNext(response -> {
-                        String timestamp = response.traceId().substring(0, 17);
-                        assertThat(timestamp).isEqualTo("20250124123456000");
-                    })
+                    .assertNext(
+                            response -> {
+                                String timestamp = response.traceId().substring(0, 17);
+                                assertThat(timestamp).isEqualTo("20250124123456000");
+                            })
                     .verifyComplete();
         }
     }
@@ -194,9 +197,7 @@ class GenerateTraceIdServiceTest {
 
             // then
             assertThat(result).isNotNull();
-            StepVerifier.create(result)
-                    .expectNextCount(1)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNextCount(1).verifyComplete();
         }
 
         @Test

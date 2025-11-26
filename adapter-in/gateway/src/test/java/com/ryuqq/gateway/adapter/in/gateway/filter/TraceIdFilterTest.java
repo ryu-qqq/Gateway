@@ -3,6 +3,8 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
@@ -14,10 +16,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.http.HttpHeaders;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -89,11 +93,19 @@ class TraceIdFilterTest {
             when(chain.filter(any())).thenReturn(Mono.empty());
 
             // when
-            StepVerifier.create(filter.filter(exchange, chain))
-                    .verifyComplete();
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
-            // then - chain.filter에 전달된 exchange의 request에 헤더가 추가됨
-            // (Mockito로 capture하거나, 실제 통합 테스트에서 검증)
+            // then - ArgumentCaptor로 chain.filter에 전달된 exchange 검증
+            ArgumentCaptor<ServerWebExchange> exchangeCaptor =
+                    ArgumentCaptor.forClass(ServerWebExchange.class);
+            verify(chain).filter(exchangeCaptor.capture());
+            ServerWebExchange capturedExchange = exchangeCaptor.getValue();
+            assertThat(
+                            capturedExchange
+                                    .getRequest()
+                                    .getHeaders()
+                                    .getFirst(TraceIdFilter.X_TRACE_ID_HEADER))
+                    .isEqualTo(VALID_TRACE_ID);
         }
 
         @Test
@@ -127,18 +139,23 @@ class TraceIdFilterTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // Capture context
-            when(chain.filter(any())).thenAnswer(invocation -> {
-                return Mono.deferContextual(ctx -> {
-                    assertThat(ctx.hasKey(TraceIdMdcContext.TRACE_ID_KEY)).isTrue();
-                    assertThat(ctx.<String>get(TraceIdMdcContext.TRACE_ID_KEY))
-                            .isEqualTo(VALID_TRACE_ID);
-                    return Mono.empty();
-                });
-            });
+            when(chain.filter(any()))
+                    .thenAnswer(
+                            invocation -> {
+                                return Mono.deferContextual(
+                                        ctx -> {
+                                            assertThat(ctx.hasKey(TraceIdMdcContext.TRACE_ID_KEY))
+                                                    .isTrue();
+                                            assertThat(
+                                                            ctx.<String>get(
+                                                                    TraceIdMdcContext.TRACE_ID_KEY))
+                                                    .isEqualTo(VALID_TRACE_ID);
+                                            return Mono.empty();
+                                        });
+                            });
 
             // when & then
-            StepVerifier.create(filter.filter(exchange, chain))
-                    .verifyComplete();
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
         }
 
         @Test
@@ -154,10 +171,10 @@ class TraceIdFilterTest {
             when(chain.filter(any())).thenReturn(Mono.empty());
 
             // when
-            StepVerifier.create(filter.filter(exchange, chain))
-                    .verifyComplete();
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
-            // then - chain.filter가 호출됨 (Mockito verify로 검증 가능)
+            // then - chain.filter가 정확히 1회 호출됨
+            verify(chain).filter(any(ServerWebExchange.class));
         }
     }
 
@@ -196,8 +213,7 @@ class TraceIdFilterTest {
             when(chain.filter(any())).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(filter.filter(exchange, chain))
-                    .verifyComplete();
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
             assertThat((String) exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
                     .isEqualTo(VALID_TRACE_ID);
@@ -210,17 +226,16 @@ class TraceIdFilterTest {
             when(generateTraceIdUseCase.execute(any(GenerateTraceIdCommand.class)))
                     .thenReturn(Mono.just(new GenerateTraceIdResponse(VALID_TRACE_ID)));
 
-            MockServerHttpRequest request = MockServerHttpRequest
-                    .post("/api/v1/users")
-                    .header(HttpHeaders.CONTENT_TYPE, "application/json")
-                    .body("{\"name\":\"test\"}");
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.post("/api/v1/users")
+                            .header(HttpHeaders.CONTENT_TYPE, "application/json")
+                            .body("{\"name\":\"test\"}");
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             when(chain.filter(any())).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(filter.filter(exchange, chain))
-                    .verifyComplete();
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
             assertThat((String) exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
                     .isEqualTo(VALID_TRACE_ID);
@@ -233,19 +248,124 @@ class TraceIdFilterTest {
             when(generateTraceIdUseCase.execute(any(GenerateTraceIdCommand.class)))
                     .thenReturn(Mono.just(new GenerateTraceIdResponse(VALID_TRACE_ID)));
 
-            MockServerHttpRequest request = MockServerHttpRequest
-                    .get("/test")
-                    .header("Authorization", "Bearer token123")
-                    .header("Custom-Header", "custom-value")
-                    .build();
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/test")
+                            .header("Authorization", "Bearer token123")
+                            .header("Custom-Header", "custom-value")
+                            .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             when(chain.filter(any())).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(filter.filter(exchange, chain))
-                    .verifyComplete();
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
+            assertThat((String) exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
+                    .isEqualTo(VALID_TRACE_ID);
+        }
+    }
+
+    @Nested
+    @DisplayName("X-Trace-Id 헤더 재사용 테스트")
+    class TraceIdReuseTest {
+
+        @Test
+        @DisplayName("유효한 기존 X-Trace-Id 헤더가 있으면 재사용")
+        void shouldReuseValidExistingTraceId() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/test")
+                            .header(TraceIdFilter.X_TRACE_ID_HEADER, VALID_TRACE_ID)
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            // then - UseCase가 호출되지 않아야 함 (기존 헤더 재사용)
+            verify(generateTraceIdUseCase, never()).execute(any(GenerateTraceIdCommand.class));
+
+            // Exchange Attribute에 기존 traceId가 저장됨
+            assertThat((String) exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
+                    .isEqualTo(VALID_TRACE_ID);
+        }
+
+        @Test
+        @DisplayName("유효하지 않은 X-Trace-Id 헤더가 있으면 새로 생성")
+        void shouldGenerateNewTraceIdWhenExistingIsInvalid() {
+            // given
+            String invalidTraceId = "invalid-trace-id-format";
+            String newTraceId = "20250124123456789-b1c2d3e4-f5g6-7890-hijk-lm1234567890";
+
+            when(generateTraceIdUseCase.execute(any(GenerateTraceIdCommand.class)))
+                    .thenReturn(Mono.just(new GenerateTraceIdResponse(newTraceId)));
+
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/test")
+                            .header(TraceIdFilter.X_TRACE_ID_HEADER, invalidTraceId)
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            // then - UseCase가 호출되어 새 Trace-ID 생성
+            verify(generateTraceIdUseCase).execute(any(GenerateTraceIdCommand.class));
+
+            // Exchange Attribute에 새로 생성된 traceId가 저장됨
+            assertThat((String) exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
+                    .isEqualTo(newTraceId);
+        }
+
+        @Test
+        @DisplayName("빈 X-Trace-Id 헤더가 있으면 새로 생성")
+        void shouldGenerateNewTraceIdWhenExistingIsBlank() {
+            // given
+            when(generateTraceIdUseCase.execute(any(GenerateTraceIdCommand.class)))
+                    .thenReturn(Mono.just(new GenerateTraceIdResponse(VALID_TRACE_ID)));
+
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/test")
+                            .header(TraceIdFilter.X_TRACE_ID_HEADER, "   ")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            // then - UseCase가 호출되어 새 Trace-ID 생성
+            verify(generateTraceIdUseCase).execute(any(GenerateTraceIdCommand.class));
+
+            // Exchange Attribute에 새로 생성된 traceId가 저장됨
+            assertThat((String) exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
+                    .isEqualTo(VALID_TRACE_ID);
+        }
+
+        @Test
+        @DisplayName("X-Trace-Id 헤더가 없으면 새로 생성")
+        void shouldGenerateNewTraceIdWhenNoHeader() {
+            // given
+            when(generateTraceIdUseCase.execute(any(GenerateTraceIdCommand.class)))
+                    .thenReturn(Mono.just(new GenerateTraceIdResponse(VALID_TRACE_ID)));
+
+            MockServerHttpRequest request = MockServerHttpRequest.get("/test").build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            when(chain.filter(any())).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
+
+            // then - UseCase가 호출되어 새 Trace-ID 생성
+            verify(generateTraceIdUseCase).execute(any(GenerateTraceIdCommand.class));
+
+            // Exchange Attribute에 새로 생성된 traceId가 저장됨
             assertThat((String) exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
                     .isEqualTo(VALID_TRACE_ID);
         }
@@ -266,10 +386,10 @@ class TraceIdFilterTest {
                     .thenReturn(Mono.just(new GenerateTraceIdResponse(traceId1)))
                     .thenReturn(Mono.just(new GenerateTraceIdResponse(traceId2)));
 
-            MockServerWebExchange exchange1 = MockServerWebExchange.from(
-                    MockServerHttpRequest.get("/test1").build());
-            MockServerWebExchange exchange2 = MockServerWebExchange.from(
-                    MockServerHttpRequest.get("/test2").build());
+            MockServerWebExchange exchange1 =
+                    MockServerWebExchange.from(MockServerHttpRequest.get("/test1").build());
+            MockServerWebExchange exchange2 =
+                    MockServerWebExchange.from(MockServerHttpRequest.get("/test2").build());
 
             when(chain.filter(any())).thenReturn(Mono.empty());
 

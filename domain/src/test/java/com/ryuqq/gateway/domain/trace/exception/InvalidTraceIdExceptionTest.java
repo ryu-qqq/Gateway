@@ -80,8 +80,7 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException("test");
 
             // when & then
-            assertThat(exception.code())
-                    .isEqualTo(TraceErrorCode.INVALID_TRACE_ID.getCode());
+            assertThat(exception.code()).isEqualTo(TraceErrorCode.INVALID_TRACE_ID.getCode());
             assertThat(exception.code()).isEqualTo("TRACE-001");
         }
 
@@ -92,8 +91,7 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException();
 
             // when & then
-            assertThat(exception.code())
-                    .isEqualTo(TraceErrorCode.INVALID_TRACE_ID.getCode());
+            assertThat(exception.code()).isEqualTo(TraceErrorCode.INVALID_TRACE_ID.getCode());
         }
     }
 
@@ -117,8 +115,8 @@ class InvalidTraceIdExceptionTest {
         void shouldBeFinalClass() {
             // when & then
             assertThat(
-                    java.lang.reflect.Modifier.isFinal(
-                            InvalidTraceIdException.class.getModifiers()))
+                            java.lang.reflect.Modifier.isFinal(
+                                    InvalidTraceIdException.class.getModifiers()))
                     .isTrue();
         }
     }

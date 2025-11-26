@@ -66,8 +66,7 @@ class ValidateJwtServiceTest {
             // given
             ValidateJwtCommand command = new ValidateJwtCommand(VALID_JWT);
             AccessToken accessToken = AccessToken.of(VALID_JWT);
-            PublicKey publicKey =
-                    PublicKey.of(KID, "modulus", "exponent", "RSA", "sig", "RS256");
+            PublicKey publicKey = PublicKey.of(KID, "modulus", "exponent", "RSA", "sig", "RS256");
             JwtClaims claims =
                     JwtClaims.of(
                             "user-123",
@@ -114,8 +113,7 @@ class ValidateJwtServiceTest {
             // given
             ValidateJwtCommand command = new ValidateJwtCommand(VALID_JWT);
             AccessToken accessToken = AccessToken.of(VALID_JWT);
-            PublicKey publicKey =
-                    PublicKey.of(KID, "modulus", "exponent", "RSA", "sig", "RS256");
+            PublicKey publicKey = PublicKey.of(KID, "modulus", "exponent", "RSA", "sig", "RS256");
             ValidateJwtResponse failedResponse = new ValidateJwtResponse(null, false);
 
             given(jwtAssembler.toAccessToken(command)).willReturn(accessToken);
@@ -142,8 +140,7 @@ class ValidateJwtServiceTest {
             // given
             ValidateJwtCommand command = new ValidateJwtCommand(VALID_JWT);
             AccessToken accessToken = AccessToken.of(VALID_JWT);
-            PublicKey publicKey =
-                    PublicKey.of(KID, "modulus", "exponent", "RSA", "sig", "RS256");
+            PublicKey publicKey = PublicKey.of(KID, "modulus", "exponent", "RSA", "sig", "RS256");
             JwtClaims expiredClaims =
                     JwtClaims.of(
                             "user-123",

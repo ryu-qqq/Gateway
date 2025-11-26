@@ -49,10 +49,8 @@ class RefreshPublicKeysServiceTest {
         @DisplayName("AuthHub에서 Public Keys 조회 후 Redis에 저장해야 한다")
         void shouldFetchAndSavePublicKeys() {
             // given
-            PublicKey key1 =
-                    PublicKey.of("kid-1", "modulus1", "exponent1", "RSA", "sig", "RS256");
-            PublicKey key2 =
-                    PublicKey.of("kid-2", "modulus2", "exponent2", "RSA", "sig", "RS256");
+            PublicKey key1 = PublicKey.of("kid-1", "modulus1", "exponent1", "RSA", "sig", "RS256");
+            PublicKey key2 = PublicKey.of("kid-2", "modulus2", "exponent2", "RSA", "sig", "RS256");
             List<PublicKey> publicKeys = List.of(key1, key2);
 
             given(authHubClient.fetchPublicKeys()).willReturn(Flux.fromIterable(publicKeys));
@@ -119,8 +117,7 @@ class RefreshPublicKeysServiceTest {
         @DisplayName("Redis 저장 실패 시 RuntimeException으로 래핑해야 한다")
         void shouldWrapRedisSaveExceptionInRuntimeException() {
             // given
-            PublicKey key1 =
-                    PublicKey.of("kid-1", "modulus1", "exponent1", "RSA", "sig", "RS256");
+            PublicKey key1 = PublicKey.of("kid-1", "modulus1", "exponent1", "RSA", "sig", "RS256");
             List<PublicKey> publicKeys = List.of(key1);
 
             given(authHubClient.fetchPublicKeys()).willReturn(Flux.fromIterable(publicKeys));

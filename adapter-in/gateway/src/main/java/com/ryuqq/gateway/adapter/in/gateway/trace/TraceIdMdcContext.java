@@ -14,17 +14,15 @@ import org.slf4j.MDC;
  *   <li>traceId를 MDC에 저장하면 모든 로그에 자동 포함
  * </ul>
  *
- * <p><strong>주의</strong>: Reactive 환경에서는 Reactor Context와 함께 사용해야 합니다.
- * Spring Cloud Sleuth가 Reactor Context → MDC 전파를 자동 처리합니다.
+ * <p><strong>주의</strong>: Reactive 환경에서는 Reactor Context와 함께 사용해야 합니다. Spring Cloud Sleuth가 Reactor
+ * Context → MDC 전파를 자동 처리합니다.
  *
  * @author development-team
  * @since 1.0.0
  */
 public final class TraceIdMdcContext {
 
-    /**
-     * MDC에서 사용할 Trace-ID 키
-     */
+    /** MDC에서 사용할 Trace-ID 키 */
     public static final String TRACE_ID_KEY = "traceId";
 
     private TraceIdMdcContext() {
@@ -42,9 +40,7 @@ public final class TraceIdMdcContext {
         }
     }
 
-    /**
-     * MDC에서 Trace-ID 제거
-     */
+    /** MDC에서 Trace-ID 제거 */
     public static void clear() {
         MDC.remove(TRACE_ID_KEY);
     }

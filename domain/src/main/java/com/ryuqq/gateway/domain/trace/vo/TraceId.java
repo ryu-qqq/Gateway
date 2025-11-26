@@ -2,7 +2,6 @@ package com.ryuqq.gateway.domain.trace.vo;
 
 import com.ryuqq.gateway.domain.common.util.ClockHolder;
 import com.ryuqq.gateway.domain.trace.exception.InvalidTraceIdException;
-
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -40,9 +39,9 @@ public final class TraceId {
      *
      * <p>형식: 17자리 숫자 + 하이픈 + UUID v4
      */
-    private static final Pattern TRACE_ID_PATTERN = Pattern.compile(
-            "^\\d{17}-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
-    );
+    private static final Pattern TRACE_ID_PATTERN =
+            Pattern.compile(
+                    "^\\d{17}-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$");
 
     private static final int EXPECTED_LENGTH = 54;
 
@@ -68,7 +67,13 @@ public final class TraceId {
         String timestamp = now.format(TIMESTAMP_FORMATTER);
         String uuid = UUID.randomUUID().toString().toLowerCase();
 
-        return new TraceId(timestamp + "-" + uuid);
+        String traceIdValue =
+                new StringBuilder(EXPECTED_LENGTH)
+                        .append(timestamp)
+                        .append('-')
+                        .append(uuid)
+                        .toString();
+        return new TraceId(traceIdValue);
     }
 
     /**
@@ -134,8 +139,12 @@ public final class TraceId {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         TraceId traceId = (TraceId) o;
         return Objects.equals(value, traceId.value);
     }
@@ -147,8 +156,6 @@ public final class TraceId {
 
     @Override
     public String toString() {
-        return "TraceId{" +
-                "value='" + value + '\'' +
-                '}';
+        return "TraceId{" + "value='" + value + '\'' + '}';
     }
 }

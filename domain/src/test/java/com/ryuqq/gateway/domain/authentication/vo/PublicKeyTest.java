@@ -39,7 +39,8 @@ class PublicKeyTest {
     }
 
     private PublicKey createValidPublicKey() {
-        return PublicKey.of(VALID_KID, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, VALID_USE, VALID_ALG);
+        return PublicKey.of(
+                VALID_KID, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, VALID_USE, VALID_ALG);
     }
 
     @Nested
@@ -66,7 +67,8 @@ class PublicKeyTest {
         void shouldAcceptLowercaseKty() {
             // when
             PublicKey publicKey =
-                    PublicKey.of(VALID_KID, VALID_MODULUS, VALID_EXPONENT, "rsa", VALID_USE, VALID_ALG);
+                    PublicKey.of(
+                            VALID_KID, VALID_MODULUS, VALID_EXPONENT, "rsa", VALID_USE, VALID_ALG);
 
             // then
             assertThat(publicKey.kty()).isEqualTo("rsa");
@@ -77,7 +79,13 @@ class PublicKeyTest {
         void shouldAcceptLowercaseAlg() {
             // when
             PublicKey publicKey =
-                    PublicKey.of(VALID_KID, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, VALID_USE, "rs256");
+                    PublicKey.of(
+                            VALID_KID,
+                            VALID_MODULUS,
+                            VALID_EXPONENT,
+                            VALID_KTY,
+                            VALID_USE,
+                            "rs256");
 
             // then
             assertThat(publicKey.alg()).isEqualTo("rs256");
@@ -196,7 +204,12 @@ class PublicKeyTest {
             assertThatThrownBy(
                             () ->
                                     PublicKey.of(
-                                            VALID_KID, VALID_MODULUS, "", VALID_KTY, VALID_USE, VALID_ALG))
+                                            VALID_KID,
+                                            VALID_MODULUS,
+                                            "",
+                                            VALID_KTY,
+                                            VALID_USE,
+                                            VALID_ALG))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Exponent")
                     .hasMessageContaining("null or blank");
@@ -335,7 +348,12 @@ class PublicKeyTest {
             // when
             PublicKey publicKey =
                     PublicKey.of(
-                            VALID_KID, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, VALID_USE, VALID_ALG);
+                            VALID_KID,
+                            VALID_MODULUS,
+                            VALID_EXPONENT,
+                            VALID_KTY,
+                            VALID_USE,
+                            VALID_ALG);
 
             // then
             assertThat(publicKey).isNotNull();
@@ -404,7 +422,12 @@ class PublicKeyTest {
             // when
             PublicKey publicKey =
                     PublicKey.of(
-                            uuidKid, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, VALID_USE, VALID_ALG);
+                            uuidKid,
+                            VALID_MODULUS,
+                            VALID_EXPONENT,
+                            VALID_KTY,
+                            VALID_USE,
+                            VALID_ALG);
 
             // then
             assertThat(publicKey.kid()).isEqualTo(uuidKid);
@@ -419,7 +442,12 @@ class PublicKeyTest {
             // when
             PublicKey publicKey =
                     PublicKey.of(
-                            specialKid, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, VALID_USE, VALID_ALG);
+                            specialKid,
+                            VALID_MODULUS,
+                            VALID_EXPONENT,
+                            VALID_KTY,
+                            VALID_USE,
+                            VALID_ALG);
 
             // then
             assertThat(publicKey.kid()).isEqualTo(specialKid);
@@ -436,7 +464,12 @@ class PublicKeyTest {
             // when
             PublicKey publicKey =
                     PublicKey.of(
-                            longKid, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, VALID_USE, VALID_ALG);
+                            longKid,
+                            VALID_MODULUS,
+                            VALID_EXPONENT,
+                            VALID_KTY,
+                            VALID_USE,
+                            VALID_ALG);
 
             // then
             assertThat(publicKey.kid()).isEqualTo(longKid);
@@ -476,7 +509,8 @@ class PublicKeyTest {
         void shouldAcceptNullUse() {
             // when
             PublicKey publicKey =
-                    PublicKey.of(VALID_KID, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, null, VALID_ALG);
+                    PublicKey.of(
+                            VALID_KID, VALID_MODULUS, VALID_EXPONENT, VALID_KTY, null, VALID_ALG);
 
             // then
             assertThat(publicKey.use()).isNull();

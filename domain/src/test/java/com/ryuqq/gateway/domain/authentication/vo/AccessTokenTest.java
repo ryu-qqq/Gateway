@@ -16,14 +16,21 @@ class AccessTokenTest {
     private static final String VALID_KID = "test-key-id-123";
 
     private String createValidJwtHeader(String kid) {
-        String headerJson = String.format("{\"alg\":\"RS256\",\"typ\":\"JWT\",\"kid\":\"%s\"}", kid);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(headerJson.getBytes(StandardCharsets.UTF_8));
+        String headerJson =
+                String.format("{\"alg\":\"RS256\",\"typ\":\"JWT\",\"kid\":\"%s\"}", kid);
+        return Base64.getUrlEncoder()
+                .withoutPadding()
+                .encodeToString(headerJson.getBytes(StandardCharsets.UTF_8));
     }
 
     private String createValidJwt(String kid) {
         String header = createValidJwtHeader(kid);
-        String payload = Base64.getUrlEncoder().withoutPadding()
-                .encodeToString("{\"sub\":\"user123\",\"exp\":1700000000}".getBytes(StandardCharsets.UTF_8));
+        String payload =
+                Base64.getUrlEncoder()
+                        .withoutPadding()
+                        .encodeToString(
+                                "{\"sub\":\"user123\",\"exp\":1700000000}"
+                                        .getBytes(StandardCharsets.UTF_8));
         String signature = "dummy-signature";
         return header + "." + payload + "." + signature;
     }
@@ -147,7 +154,8 @@ class AccessTokenTest {
             String payload =
                     Base64.getUrlEncoder()
                             .withoutPadding()
-                            .encodeToString("{\"sub\":\"user123\"}".getBytes(StandardCharsets.UTF_8));
+                            .encodeToString(
+                                    "{\"sub\":\"user123\"}".getBytes(StandardCharsets.UTF_8));
             String invalidJwt = headerWithoutKid + "." + payload + ".signature";
 
             // when & then
@@ -312,7 +320,8 @@ class AccessTokenTest {
         void shouldHaveAllFinalFields() throws Exception {
             java.lang.reflect.Field[] fields = AccessToken.class.getDeclaredFields();
             for (java.lang.reflect.Field field : fields) {
-                if (!field.isSynthetic() && !java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                if (!field.isSynthetic()
+                        && !java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
                     assertThat(java.lang.reflect.Modifier.isFinal(field.getModifiers()))
                             .as("Field '%s' should be final", field.getName())
                             .isTrue();
@@ -393,7 +402,8 @@ class AccessTokenTest {
             String payload =
                     Base64.getUrlEncoder()
                             .withoutPadding()
-                            .encodeToString("{\"sub\":\"user123\"}".getBytes(StandardCharsets.UTF_8));
+                            .encodeToString(
+                                    "{\"sub\":\"user123\"}".getBytes(StandardCharsets.UTF_8));
             String jwt = headerWithEmptyKid + "." + payload + ".signature";
 
             // when & then
