@@ -12,6 +12,7 @@ import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtU
 import com.ryuqq.gateway.domain.authentication.vo.JwtClaims;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
+import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -69,17 +71,21 @@ class JwtAuthenticationFilterTest {
                         .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
+        // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
         JwtClaims claims =
                 JwtClaims.of(
                         "user-123",
                         "auth-hub",
                         Instant.now().plusSeconds(3600),
                         Instant.now(),
-                        List.of("ROLE_USER"));
+                        List.of("ROLE_USER"),
+                        "tenant-123",
+                        "hash-456");
         ValidateJwtResponse response = new ValidateJwtResponse(claims, true);
         when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                 .thenReturn(Mono.just(response));
-        when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+        // Filter가 mutatedExchange로 chain을 호출하므로 any()로 매칭
+        when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
 
         // when & then
         StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain)).verifyComplete();
@@ -115,22 +121,31 @@ class JwtAuthenticationFilterTest {
         String subject = "user-123";
         List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
 
+        // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
         JwtClaims claims =
                 JwtClaims.of(
-                        subject, "auth-hub", Instant.now().plusSeconds(3600), Instant.now(), roles);
+                        subject,
+                        "auth-hub",
+                        Instant.now().plusSeconds(3600),
+                        Instant.now(),
+                        roles,
+                        "tenant-123",
+                        "hash-456");
         ValidateJwtResponse response = new ValidateJwtResponse(claims, true);
         when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                 .thenReturn(Mono.just(response));
-        when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+        // Filter가 mutatedExchange로 chain을 호출하므로 any()로 매칭
+        when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
 
         // when
         StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain)).verifyComplete();
 
         // then
         assertThat((String) exchange.getAttribute("userId")).isEqualTo(subject);
+        // Filter는 roles를 Set<String>으로 저장함
         @SuppressWarnings("unchecked")
-        List<String> actualRoles = (List<String>) exchange.getAttribute("roles");
-        assertThat(actualRoles).isEqualTo(roles);
+        Set<String> actualRoles = (Set<String>) exchange.getAttribute("roles");
+        assertThat(actualRoles).containsExactlyInAnyOrderElementsOf(roles);
     }
 
     @Test

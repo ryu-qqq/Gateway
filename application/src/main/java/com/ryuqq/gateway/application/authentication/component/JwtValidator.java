@@ -80,13 +80,17 @@ public class JwtValidator {
                                             ? claims.getIssueTime().toInstant()
                                             : null;
                             List<String> roles = claims.getStringListClaim("roles");
+                            String tenantId = claims.getStringClaim("tenantId");
+                            String permissionHash = claims.getStringClaim("permissionHash");
 
                             return JwtClaims.of(
                                     subject,
                                     issuer,
                                     expiresAt,
                                     issuedAt,
-                                    roles != null ? roles : List.of());
+                                    roles != null ? roles : List.of(),
+                                    tenantId,
+                                    permissionHash);
                         })
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorMap(e -> new IllegalStateException("Failed to extract JWT claims", e));

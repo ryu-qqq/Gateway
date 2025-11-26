@@ -1,7 +1,10 @@
 package com.ryuqq.gateway.adapter.in.gateway.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.Ordered;
@@ -53,5 +56,21 @@ class GatewayFilterOrderTest {
 
         // then
         assertThat(highestPrecedence).isEqualTo(Ordered.HIGHEST_PRECEDENCE);
+    }
+
+    @Test
+    @DisplayName("private 생성자는 인스턴스화를 방지해야 한다")
+    void shouldPreventInstantiation() throws NoSuchMethodException {
+        // given
+        Constructor<GatewayFilterOrder> constructor =
+                GatewayFilterOrder.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+
+        // when & then
+        assertThatThrownBy(constructor::newInstance)
+                .isInstanceOf(InvocationTargetException.class)
+                .hasCauseInstanceOf(UnsupportedOperationException.class)
+                .getCause()
+                .hasMessage("Utility class cannot be instantiated");
     }
 }

@@ -2,6 +2,7 @@ package com.ryuqq.gateway.adapter.out.redis.repository;
 
 import com.ryuqq.gateway.adapter.out.redis.entity.PublicKeyEntity;
 import java.time.Duration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Repository;
@@ -38,7 +39,8 @@ public class PublicKeyRedisRepository {
     private final ReactiveRedisTemplate<String, PublicKeyEntity> reactiveRedisTemplate;
 
     public PublicKeyRedisRepository(
-            ReactiveRedisTemplate<String, PublicKeyEntity> reactiveRedisTemplate) {
+            @Qualifier("reactiveRedisTemplate")
+                    ReactiveRedisTemplate<String, PublicKeyEntity> reactiveRedisTemplate) {
         this.reactiveRedisTemplate = reactiveRedisTemplate;
     }
 

@@ -17,6 +17,8 @@ import java.util.List;
  *   <li>expiresAt (만료 시간)은 필수이다
  *   <li>issuedAt (발급 시간)은 선택적이다
  *   <li>roles는 빈 리스트일 수 있으나 null일 수 없다
+ *   <li>tenantId (테넌트 ID)는 선택적이다 (null일 수 있음)
+ *   <li>permissionHash (권한 해시)는 선택적이다 (null일 수 있음)
  * </ul>
  *
  * @param subject 사용자 ID (JWT sub claim)
@@ -24,11 +26,19 @@ import java.util.List;
  * @param expiresAt 만료 시간 (JWT exp claim)
  * @param issuedAt 발급 시간 (JWT iat claim, nullable)
  * @param roles 사용자 권한 목록 (JWT roles claim)
+ * @param tenantId 테넌트 ID (JWT tenantId claim, nullable)
+ * @param permissionHash 권한 해시 (JWT permissionHash claim, nullable)
  * @author development-team
  * @since 1.0.0
  */
 public record JwtClaims(
-        String subject, String issuer, Instant expiresAt, Instant issuedAt, List<String> roles) {
+        String subject,
+        String issuer,
+        Instant expiresAt,
+        Instant issuedAt,
+        List<String> roles,
+        String tenantId,
+        String permissionHash) {
 
     /** Compact Constructor (검증 로직) */
     public JwtClaims {
@@ -43,6 +53,7 @@ public record JwtClaims(
         }
         // 불변 복사본으로 저장하여 외부 변경 방지
         roles = roles == null ? List.of() : List.copyOf(roles);
+        // tenantId와 permissionHash는 null 허용 (선택적)
     }
 
     /**
@@ -55,11 +66,11 @@ public record JwtClaims(
      * @return JwtClaims
      */
     public static JwtClaims of(String subject, String issuer, Instant expiresAt, Instant issuedAt) {
-        return new JwtClaims(subject, issuer, expiresAt, issuedAt, List.of());
+        return new JwtClaims(subject, issuer, expiresAt, issuedAt, List.of(), null, null);
     }
 
     /**
-     * JWT Claims 생성 (전체 정보)
+     * JWT Claims 생성 (roles 포함)
      *
      * @param subject 사용자 ID
      * @param issuer 발급자
@@ -74,7 +85,30 @@ public record JwtClaims(
             Instant expiresAt,
             Instant issuedAt,
             List<String> roles) {
-        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles);
+        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles, null, null);
+    }
+
+    /**
+     * JWT Claims 생성 (전체 정보)
+     *
+     * @param subject 사용자 ID
+     * @param issuer 발급자
+     * @param expiresAt 만료 시간
+     * @param issuedAt 발급 시간
+     * @param roles 권한 목록
+     * @param tenantId 테넌트 ID
+     * @param permissionHash 권한 해시
+     * @return JwtClaims
+     */
+    public static JwtClaims of(
+            String subject,
+            String issuer,
+            Instant expiresAt,
+            Instant issuedAt,
+            List<String> roles,
+            String tenantId,
+            String permissionHash) {
+        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles, tenantId, permissionHash);
     }
 
     /**

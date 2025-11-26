@@ -3,6 +3,8 @@ package com.ryuqq.gateway.adapter.out.redis.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ryuqq.gateway.adapter.out.redis.entity.PermissionHashEntity;
+import com.ryuqq.gateway.adapter.out.redis.entity.PermissionSpecEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.PublicKeyEntity;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.resource.ClientResources;
@@ -88,6 +90,52 @@ public class RedisConfig {
         // Serialization Context 설정
         RedisSerializationContext<String, PublicKeyEntity> context =
                 RedisSerializationContext.<String, PublicKeyEntity>newSerializationContext(
+                                new StringRedisSerializer())
+                        .key(new StringRedisSerializer())
+                        .value(serializer)
+                        .hashKey(new StringRedisSerializer())
+                        .hashValue(serializer)
+                        .build();
+
+        return new ReactiveRedisTemplate<>(reactiveRedisConnectionFactory, context);
+    }
+
+    /** ReactiveRedisTemplate for PermissionSpecEntity */
+    @Bean
+    public ReactiveRedisTemplate<String, PermissionSpecEntity> permissionSpecRedisTemplate(
+            ReactiveRedisConnectionFactory reactiveRedisConnectionFactory) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        Jackson2JsonRedisSerializer<PermissionSpecEntity> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, PermissionSpecEntity.class);
+
+        RedisSerializationContext<String, PermissionSpecEntity> context =
+                RedisSerializationContext.<String, PermissionSpecEntity>newSerializationContext(
+                                new StringRedisSerializer())
+                        .key(new StringRedisSerializer())
+                        .value(serializer)
+                        .hashKey(new StringRedisSerializer())
+                        .hashValue(serializer)
+                        .build();
+
+        return new ReactiveRedisTemplate<>(reactiveRedisConnectionFactory, context);
+    }
+
+    /** ReactiveRedisTemplate for PermissionHashEntity */
+    @Bean
+    public ReactiveRedisTemplate<String, PermissionHashEntity> permissionHashRedisTemplate(
+            ReactiveRedisConnectionFactory reactiveRedisConnectionFactory) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        Jackson2JsonRedisSerializer<PermissionHashEntity> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, PermissionHashEntity.class);
+
+        RedisSerializationContext<String, PermissionHashEntity> context =
+                RedisSerializationContext.<String, PermissionHashEntity>newSerializationContext(
                                 new StringRedisSerializer())
                         .key(new StringRedisSerializer())
                         .value(serializer)
