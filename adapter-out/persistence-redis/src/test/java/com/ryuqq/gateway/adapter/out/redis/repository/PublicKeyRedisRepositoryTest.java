@@ -71,8 +71,7 @@ class PublicKeyRedisRepositoryTest {
             // when & then
             StepVerifier.create(repository.save(kid, entity, ttl)).verifyComplete();
 
-            verify(valueOperations)
-                    .set(eq("authhub:jwt:publickey:" + kid), eq(entity), eq(ttl));
+            verify(valueOperations).set(eq("authhub:jwt:publickey:" + kid), eq(entity), eq(ttl));
         }
 
         @Test
@@ -89,10 +88,7 @@ class PublicKeyRedisRepositoryTest {
             StepVerifier.create(repository.save(kid, entity)).verifyComplete();
 
             verify(valueOperations)
-                    .set(
-                            eq("authhub:jwt:publickey:" + kid),
-                            eq(entity),
-                            eq(Duration.ofHours(1)));
+                    .set(eq("authhub:jwt:publickey:" + kid), eq(entity), eq(Duration.ofHours(1)));
         }
     }
 
@@ -107,8 +103,7 @@ class PublicKeyRedisRepositoryTest {
             String kid = "existing-kid";
             PublicKeyEntity entity = createTestEntity(kid);
 
-            when(valueOperations.get("authhub:jwt:publickey:" + kid))
-                    .thenReturn(Mono.just(entity));
+            when(valueOperations.get("authhub:jwt:publickey:" + kid)).thenReturn(Mono.just(entity));
 
             // when & then
             StepVerifier.create(repository.findByKid(kid))

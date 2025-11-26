@@ -105,21 +105,21 @@ class JwtAuthenticationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
                                                 """
-                        {
-                            "version": 1,
-                            "updatedAt": "2025-01-01T00:00:00Z",
-                            "permissions": [
-                                {
-                                    "serviceName": "test-service",
-                                    "path": "/test/.*",
-                                    "method": "GET",
-                                    "isPublic": true,
-                                    "requiredRoles": [],
-                                    "requiredPermissions": []
-                                }
-                            ]
-                        }
-                        """)));
+                                                {
+                                                    "version": 1,
+                                                    "updatedAt": "2025-01-01T00:00:00Z",
+                                                    "permissions": [
+                                                        {
+                                                            "serviceName": "test-service",
+                                                            "path": "/test/.*",
+                                                            "method": "GET",
+                                                            "isPublic": true,
+                                                            "requiredRoles": [],
+                                                            "requiredPermissions": []
+                                                        }
+                                                    ]
+                                                }
+                                                """)));
 
         // Mock downstream service
         wireMockServer.stubFor(

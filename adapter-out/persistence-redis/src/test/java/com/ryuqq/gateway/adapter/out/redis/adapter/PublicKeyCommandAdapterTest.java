@@ -59,10 +59,8 @@ class PublicKeyCommandAdapterTest {
 
             given(publicKeyMapper.toPublicKeyEntity(key1)).willReturn(entity1);
             given(publicKeyMapper.toPublicKeyEntity(key2)).willReturn(entity2);
-            given(publicKeyRedisRepository.save(eq("kid-1"), eq(entity1)))
-                    .willReturn(Mono.empty());
-            given(publicKeyRedisRepository.save(eq("kid-2"), eq(entity2)))
-                    .willReturn(Mono.empty());
+            given(publicKeyRedisRepository.save(eq("kid-1"), eq(entity1))).willReturn(Mono.empty());
+            given(publicKeyRedisRepository.save(eq("kid-2"), eq(entity2))).willReturn(Mono.empty());
 
             // when
             Mono<Void> result = publicKeyCommandAdapter.saveAll(publicKeys);
@@ -116,7 +114,8 @@ class PublicKeyCommandAdapterTest {
                                     throwable instanceof RuntimeException
                                             && throwable
                                                     .getMessage()
-                                                    .contains("Failed to save public keys to Redis"))
+                                                    .contains(
+                                                            "Failed to save public keys to Redis"))
                     .verify();
         }
     }

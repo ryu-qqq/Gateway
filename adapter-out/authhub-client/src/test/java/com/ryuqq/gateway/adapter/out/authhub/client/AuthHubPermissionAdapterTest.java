@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.adapter.out.authhub.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -308,12 +307,7 @@ class AuthHubPermissionAdapterTest {
             // given
             AuthHubPermissionAdapter.EndpointPermissionResponse epResponse =
                     new AuthHubPermissionAdapter.EndpointPermissionResponse(
-                            "public-service",
-                            "/api/v1/health",
-                            "get",
-                            List.of(),
-                            List.of(),
-                            true);
+                            "public-service", "/api/v1/health", "get", List.of(), List.of(), true);
 
             // when
             var result = adapter.toEndpointPermission(epResponse);
@@ -392,8 +386,7 @@ class AuthHubPermissionAdapterTest {
             RuntimeException cause = new RuntimeException("Original error");
 
             // when & then
-            StepVerifier.create(
-                            adapter.fetchUserPermissionsFallback("tenant-1", "user-123", cause))
+            StepVerifier.create(adapter.fetchUserPermissionsFallback("tenant-1", "user-123", cause))
                     .expectErrorSatisfies(
                             error -> {
                                 assertThat(error)
@@ -455,8 +448,7 @@ class AuthHubPermissionAdapterTest {
 
             // when
             AuthHubPermissionAdapter.PermissionSpecResponse response =
-                    new AuthHubPermissionAdapter.PermissionSpecResponse(
-                            5L, timestamp, List.of(ep));
+                    new AuthHubPermissionAdapter.PermissionSpecResponse(5L, timestamp, List.of(ep));
 
             // then
             assertThat(response.version()).isEqualTo(5L);

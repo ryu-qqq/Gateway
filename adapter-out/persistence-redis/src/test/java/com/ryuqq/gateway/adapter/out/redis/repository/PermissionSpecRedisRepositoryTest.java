@@ -63,10 +63,7 @@ class PermissionSpecRedisRepositoryTest {
                         Set.of("ROLE_ADMIN"),
                         false);
 
-        return new PermissionSpecEntity(
-                1L,
-                Instant.now(),
-                List.of(endpoint1, endpoint2));
+        return new PermissionSpecEntity(1L, Instant.now(), List.of(endpoint1, endpoint2));
     }
 
     @Nested
@@ -80,14 +77,14 @@ class PermissionSpecRedisRepositoryTest {
             PermissionSpecEntity entity = createTestEntity();
             Duration ttl = Duration.ofMinutes(1);
 
-            when(valueOperations.set(anyString(), any(PermissionSpecEntity.class), any(Duration.class)))
+            when(valueOperations.set(
+                            anyString(), any(PermissionSpecEntity.class), any(Duration.class)))
                     .thenReturn(Mono.just(true));
 
             // when & then
             StepVerifier.create(repository.save(entity, ttl)).verifyComplete();
 
-            verify(valueOperations)
-                    .set(eq("authhub:permission:spec"), eq(entity), eq(ttl));
+            verify(valueOperations).set(eq("authhub:permission:spec"), eq(entity), eq(ttl));
         }
 
         @Test
@@ -96,17 +93,15 @@ class PermissionSpecRedisRepositoryTest {
             // given
             PermissionSpecEntity entity = createTestEntity();
 
-            when(valueOperations.set(anyString(), any(PermissionSpecEntity.class), any(Duration.class)))
+            when(valueOperations.set(
+                            anyString(), any(PermissionSpecEntity.class), any(Duration.class)))
                     .thenReturn(Mono.just(true));
 
             // when & then
             StepVerifier.create(repository.save(entity)).verifyComplete();
 
             verify(valueOperations)
-                    .set(
-                            eq("authhub:permission:spec"),
-                            eq(entity),
-                            eq(Duration.ofSeconds(30)));
+                    .set(eq("authhub:permission:spec"), eq(entity), eq(Duration.ofSeconds(30)));
         }
     }
 
@@ -151,8 +146,7 @@ class PermissionSpecRedisRepositoryTest {
         @DisplayName("삭제 성공")
         void shouldDeleteSuccessfully() {
             // given
-            when(reactiveRedisTemplate.delete("authhub:permission:spec"))
-                    .thenReturn(Mono.just(1L));
+            when(reactiveRedisTemplate.delete("authhub:permission:spec")).thenReturn(Mono.just(1L));
 
             // when & then
             StepVerifier.create(repository.delete()).verifyComplete();
@@ -164,8 +158,7 @@ class PermissionSpecRedisRepositoryTest {
         @DisplayName("존재하지 않는 키 삭제 시에도 정상 완료")
         void shouldCompleteWhenKeyNotExists() {
             // given
-            when(reactiveRedisTemplate.delete("authhub:permission:spec"))
-                    .thenReturn(Mono.just(0L));
+            when(reactiveRedisTemplate.delete("authhub:permission:spec")).thenReturn(Mono.just(0L));
 
             // when & then
             StepVerifier.create(repository.delete()).verifyComplete();
