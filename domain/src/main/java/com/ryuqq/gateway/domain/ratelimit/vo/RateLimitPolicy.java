@@ -29,8 +29,12 @@ public final class RateLimitPolicy {
     private final RateLimitAction action;
     private final boolean auditLogRequired;
 
-    private RateLimitPolicy(LimitType limitType, int maxRequests, Duration window,
-                            RateLimitAction action, boolean auditLogRequired) {
+    private RateLimitPolicy(
+            LimitType limitType,
+            int maxRequests,
+            Duration window,
+            RateLimitAction action,
+            boolean auditLogRequired) {
         this.limitType = limitType;
         this.maxRequests = maxRequests;
         this.window = window;
@@ -50,8 +54,12 @@ public final class RateLimitPolicy {
      * @throws NullPointerException limitType, window, action이 null인 경우
      * @throws IllegalArgumentException maxRequests <= 0 또는 window <= 0인 경우
      */
-    public static RateLimitPolicy of(LimitType limitType, int maxRequests, Duration window,
-                                     RateLimitAction action, boolean auditLogRequired) {
+    public static RateLimitPolicy of(
+            LimitType limitType,
+            int maxRequests,
+            Duration window,
+            RateLimitAction action,
+            boolean auditLogRequired) {
         Objects.requireNonNull(limitType, "limitType cannot be null");
         Objects.requireNonNull(window, "window cannot be null");
         Objects.requireNonNull(action, "action cannot be null");
@@ -84,8 +92,7 @@ public final class RateLimitPolicy {
                 limitType.getDefaultMaxRequests(),
                 limitType.getDefaultWindow(),
                 defaultAction,
-                limitType.isAuditLogRequired()
-        );
+                limitType.isAuditLogRequired());
     }
 
     private static RateLimitAction determineDefaultAction(LimitType limitType) {
@@ -161,11 +168,16 @@ public final class RateLimitPolicy {
     @Override
     public String toString() {
         return "RateLimitPolicy{"
-                + "limitType=" + limitType
-                + ", maxRequests=" + maxRequests
-                + ", window=" + window
-                + ", action=" + action
-                + ", auditLogRequired=" + auditLogRequired
+                + "limitType="
+                + limitType
+                + ", maxRequests="
+                + maxRequests
+                + ", window="
+                + window
+                + ", action="
+                + action
+                + ", auditLogRequired="
+                + auditLogRequired
                 + '}';
     }
 }

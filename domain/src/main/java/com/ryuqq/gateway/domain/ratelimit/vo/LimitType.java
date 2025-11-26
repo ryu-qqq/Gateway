@@ -6,8 +6,7 @@ import java.util.Objects;
 /**
  * LimitType - Rate Limit 타입 열거형
  *
- * <p>Rate Limiting 정책의 타입을 정의합니다. 각 타입은 고유한 Redis Key 패턴,
- * 기본 제한 설정, 그리고 Audit Log 필수 여부를 가집니다.
+ * <p>Rate Limiting 정책의 타입을 정의합니다. 각 타입은 고유한 Redis Key 패턴, 기본 제한 설정, 그리고 Audit Log 필수 여부를 가집니다.
  *
  * <p><strong>타입별 정책:</strong>
  *
@@ -80,8 +79,11 @@ public enum LimitType {
     private final Duration defaultWindow;
     private final boolean auditLogRequired;
 
-    LimitType(String keyPrefix, int defaultMaxRequests, Duration defaultWindow,
-              boolean auditLogRequired) {
+    LimitType(
+            String keyPrefix,
+            int defaultMaxRequests,
+            Duration defaultWindow,
+            boolean auditLogRequired) {
         this.keyPrefix = keyPrefix;
         this.defaultMaxRequests = defaultMaxRequests;
         this.defaultWindow = defaultWindow;

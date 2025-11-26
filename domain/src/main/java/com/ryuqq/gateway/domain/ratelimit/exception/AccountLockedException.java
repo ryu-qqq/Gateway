@@ -29,14 +29,11 @@ public final class AccountLockedException extends DomainException {
     private final String userId;
     private final int retryAfterSeconds;
 
-    /**
-     * 기본 생성자
-     */
+    /** 기본 생성자 */
     public AccountLockedException() {
         super(
                 RateLimitErrorCode.ACCOUNT_LOCKED.getCode(),
-                RateLimitErrorCode.ACCOUNT_LOCKED.getMessage()
-        );
+                RateLimitErrorCode.ACCOUNT_LOCKED.getMessage());
         this.userId = null;
         this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
@@ -52,9 +49,7 @@ public final class AccountLockedException extends DomainException {
                 RateLimitErrorCode.ACCOUNT_LOCKED.getMessage(),
                 Map.of(
                         "userId", userId,
-                        "retryAfterSeconds", DEFAULT_RETRY_AFTER_SECONDS
-                )
-        );
+                        "retryAfterSeconds", DEFAULT_RETRY_AFTER_SECONDS));
         this.userId = userId;
         this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
@@ -71,9 +66,7 @@ public final class AccountLockedException extends DomainException {
                 RateLimitErrorCode.ACCOUNT_LOCKED.getMessage(),
                 Map.of(
                         "userId", userId,
-                        "retryAfterSeconds", retryAfterSeconds
-                )
-        );
+                        "retryAfterSeconds", retryAfterSeconds));
         this.userId = userId;
         this.retryAfterSeconds = retryAfterSeconds;
     }

@@ -42,11 +42,7 @@ class RateLimitPolicyTest {
             // when
             RateLimitPolicy policy =
                     RateLimitPolicy.of(
-                            LimitType.OTP,
-                            3,
-                            Duration.ofHours(1),
-                            RateLimitAction.REJECT,
-                            true);
+                            LimitType.OTP, 3, Duration.ofHours(1), RateLimitAction.REJECT, true);
 
             // then
             assertThat(policy.isAuditLogRequired()).isTrue();

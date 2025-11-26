@@ -31,8 +31,7 @@ class RateLimitExceededExceptionTest {
         @DisplayName("limit, remaining, retryAfterSeconds로 생성")
         void shouldCreateWithDetails() {
             // when
-            RateLimitExceededException exception =
-                    new RateLimitExceededException(100, 0, 60);
+            RateLimitExceededException exception = new RateLimitExceededException(100, 0, 60);
 
             // then
             assertThat(exception).isNotNull();
@@ -46,8 +45,7 @@ class RateLimitExceededExceptionTest {
         @DisplayName("args에 limit, remaining, retryAfterSeconds 포함")
         void shouldIncludeArgsInException() {
             // when
-            RateLimitExceededException exception =
-                    new RateLimitExceededException(100, 0, 60);
+            RateLimitExceededException exception = new RateLimitExceededException(100, 0, 60);
 
             // then
             assertThat(exception.args()).containsEntry("limit", 100);
@@ -92,7 +90,8 @@ class RateLimitExceededExceptionTest {
             RateLimitExceededException exception = new RateLimitExceededException();
 
             // when & then
-            assertThat(exception.code()).isEqualTo(RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getCode());
+            assertThat(exception.code())
+                    .isEqualTo(RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getCode());
             assertThat(exception.getMessage())
                     .isEqualTo(RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getMessage());
         }

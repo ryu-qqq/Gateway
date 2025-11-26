@@ -27,14 +27,11 @@ public final class RateLimitExceededException extends DomainException {
     private final int remaining;
     private final int retryAfterSeconds;
 
-    /**
-     * 기본 생성자
-     */
+    /** 기본 생성자 */
     public RateLimitExceededException() {
         super(
                 RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getCode(),
-                RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getMessage()
-        );
+                RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getMessage());
         this.limit = 0;
         this.remaining = 0;
         this.retryAfterSeconds = 60;
@@ -54,9 +51,7 @@ public final class RateLimitExceededException extends DomainException {
                 Map.of(
                         "limit", limit,
                         "remaining", remaining,
-                        "retryAfterSeconds", retryAfterSeconds
-                )
-        );
+                        "retryAfterSeconds", retryAfterSeconds));
         this.limit = limit;
         this.remaining = remaining;
         this.retryAfterSeconds = retryAfterSeconds;

@@ -29,14 +29,9 @@ public final class IpBlockedException extends DomainException {
     private final String ipAddress;
     private final int retryAfterSeconds;
 
-    /**
-     * 기본 생성자
-     */
+    /** 기본 생성자 */
     public IpBlockedException() {
-        super(
-                RateLimitErrorCode.IP_BLOCKED.getCode(),
-                RateLimitErrorCode.IP_BLOCKED.getMessage()
-        );
+        super(RateLimitErrorCode.IP_BLOCKED.getCode(), RateLimitErrorCode.IP_BLOCKED.getMessage());
         this.ipAddress = null;
         this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
@@ -52,9 +47,7 @@ public final class IpBlockedException extends DomainException {
                 RateLimitErrorCode.IP_BLOCKED.getMessage(),
                 Map.of(
                         "ipAddress", ipAddress,
-                        "retryAfterSeconds", DEFAULT_RETRY_AFTER_SECONDS
-                )
-        );
+                        "retryAfterSeconds", DEFAULT_RETRY_AFTER_SECONDS));
         this.ipAddress = ipAddress;
         this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
@@ -71,9 +64,7 @@ public final class IpBlockedException extends DomainException {
                 RateLimitErrorCode.IP_BLOCKED.getMessage(),
                 Map.of(
                         "ipAddress", ipAddress,
-                        "retryAfterSeconds", retryAfterSeconds
-                )
-        );
+                        "retryAfterSeconds", retryAfterSeconds));
         this.ipAddress = ipAddress;
         this.retryAfterSeconds = retryAfterSeconds;
     }
