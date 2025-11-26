@@ -41,6 +41,7 @@ dependencies {
     // Test Dependencies
     // ========================================
     testImplementation libs.spring.boot.starter.test
+    testImplementation libs.reactor.test
     testImplementation 'org.testcontainers:testcontainers:1.19.7'
     testImplementation libs.testcontainers.junit
 

@@ -30,6 +30,8 @@ public final class JwtTestFixture {
     private static final KeyPair WRONG_KEY_PAIR = generateRSAKeyPair();
     private static final String DEFAULT_KID = "test-key-2025";
     private static final String DEFAULT_ISSUER = "auth-hub";
+    private static final String DEFAULT_TENANT_ID = "tenant-001";
+    private static final String DEFAULT_PERMISSION_HASH = "abc123hash";
 
     private JwtTestFixture() {
         throw new UnsupportedOperationException("Utility class");
@@ -41,7 +43,12 @@ public final class JwtTestFixture {
      * @return 유효한 JWT 문자열
      */
     public static String aValidJwt() {
-        return createJwt("user-123", List.of("ROLE_USER"), Instant.now().plus(1, ChronoUnit.HOURS));
+        return createJwt(
+                "user-123",
+                List.of("USER"),
+                Instant.now().plus(1, ChronoUnit.HOURS),
+                DEFAULT_TENANT_ID,
+                DEFAULT_PERMISSION_HASH);
     }
 
     /**
@@ -51,7 +58,12 @@ public final class JwtTestFixture {
      * @return JWT 문자열
      */
     public static String aValidJwt(String subject) {
-        return createJwt(subject, List.of("ROLE_USER"), Instant.now().plus(1, ChronoUnit.HOURS));
+        return createJwt(
+                subject,
+                List.of("USER"),
+                Instant.now().plus(1, ChronoUnit.HOURS),
+                DEFAULT_TENANT_ID,
+                DEFAULT_PERMISSION_HASH);
     }
 
     /**
@@ -62,7 +74,12 @@ public final class JwtTestFixture {
      * @return JWT 문자열
      */
     public static String aValidJwt(String subject, List<String> roles) {
-        return createJwt(subject, roles, Instant.now().plus(1, ChronoUnit.HOURS));
+        return createJwt(
+                subject,
+                roles,
+                Instant.now().plus(1, ChronoUnit.HOURS),
+                DEFAULT_TENANT_ID,
+                DEFAULT_PERMISSION_HASH);
     }
 
     /**
@@ -72,7 +89,11 @@ public final class JwtTestFixture {
      */
     public static String anExpiredJwt() {
         return createJwt(
-                "user-123", List.of("ROLE_USER"), Instant.now().minus(1, ChronoUnit.HOURS));
+                "user-123",
+                List.of("USER"),
+                Instant.now().minus(1, ChronoUnit.HOURS),
+                DEFAULT_TENANT_ID,
+                DEFAULT_PERMISSION_HASH);
     }
 
     /**
@@ -88,7 +109,9 @@ public final class JwtTestFixture {
                     new JWTClaimsSet.Builder()
                             .subject("user-123")
                             .issuer(DEFAULT_ISSUER)
-                            .claim("roles", List.of("ROLE_USER"))
+                            .claim("roles", List.of("USER"))
+                            .claim("tenantId", DEFAULT_TENANT_ID)
+                            .claim("permissionHash", DEFAULT_PERMISSION_HASH)
                             .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                             .issueTime(Date.from(Instant.now()))
                             .build();
@@ -155,7 +178,12 @@ public final class JwtTestFixture {
         return (RSAPublicKey) KEY_PAIR.getPublic();
     }
 
-    private static String createJwt(String subject, List<String> roles, Instant expiresAt) {
+    private static String createJwt(
+            String subject,
+            List<String> roles,
+            Instant expiresAt,
+            String tenantId,
+            String permissionHash) {
         try {
             JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(DEFAULT_KID).build();
 
@@ -164,6 +192,8 @@ public final class JwtTestFixture {
                             .subject(subject)
                             .issuer(DEFAULT_ISSUER)
                             .claim("roles", roles)
+                            .claim("tenantId", tenantId)
+                            .claim("permissionHash", permissionHash)
                             .expirationTime(Date.from(expiresAt))
                             .issueTime(Date.from(Instant.now()))
                             .build();

@@ -7,6 +7,8 @@ import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
+import java.util.HashSet;
+import java.util.Set;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -44,6 +46,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String USER_ID_ATTRIBUTE = "userId";
+    private static final String TENANT_ID_ATTRIBUTE = "tenantId";
+    private static final String PERMISSION_HASH_ATTRIBUTE = "permissionHash";
     private static final String ROLES_ATTRIBUTE = "roles";
     private static final String X_USER_ID_HEADER = "X-User-Id";
 
@@ -84,7 +88,11 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
                             // Exchange Attribute 설정 (Gateway 내부 사용)
                             exchange.getAttributes().put(USER_ID_ATTRIBUTE, userId);
-                            exchange.getAttributes().put(ROLES_ATTRIBUTE, claims.roles());
+                            exchange.getAttributes().put(TENANT_ID_ATTRIBUTE, claims.tenantId());
+                            exchange.getAttributes()
+                                    .put(PERMISSION_HASH_ATTRIBUTE, claims.permissionHash());
+                            Set<String> rolesSet = new HashSet<>(claims.roles());
+                            exchange.getAttributes().put(ROLES_ATTRIBUTE, rolesSet);
 
                             // Downstream 서비스로 userId 전달 (Header)
                             ServerHttpRequest mutatedRequest =

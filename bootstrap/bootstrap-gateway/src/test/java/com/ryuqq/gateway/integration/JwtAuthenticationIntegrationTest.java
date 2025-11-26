@@ -94,6 +94,33 @@ class JwtAuthenticationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
+        // Mock Permission Spec endpoint - /test/resource 경로를 public endpoint로 설정
+        // PermissionSpecResponse(version, updatedAt, permissions) 형식으로 응답
+        // path는 정규식 패턴으로 작성 (Ant-style '**' 대신 정규식 '.*' 사용)
+        wireMockServer.stubFor(
+                get(urlEqualTo("/api/v1/permissions/spec"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                """
+                        {
+                            "version": 1,
+                            "updatedAt": "2025-01-01T00:00:00Z",
+                            "permissions": [
+                                {
+                                    "serviceName": "test-service",
+                                    "path": "/test/.*",
+                                    "method": "GET",
+                                    "isPublic": true,
+                                    "requiredRoles": [],
+                                    "requiredPermissions": []
+                                }
+                            ]
+                        }
+                        """)));
+
         // Mock downstream service
         wireMockServer.stubFor(
                 get(urlEqualTo("/test/resource"))

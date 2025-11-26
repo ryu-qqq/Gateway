@@ -15,6 +15,7 @@ import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtU
 import com.ryuqq.gateway.domain.authentication.vo.JwtClaims;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -84,16 +85,20 @@ class JwtAuthenticationFilterUnitTest {
                             .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
+            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
             JwtClaims claims =
                     JwtClaims.of(
                             "user-123",
                             "auth-hub",
                             Instant.now().plusSeconds(3600),
                             Instant.now(),
-                            List.of("ROLE_USER"));
+                            List.of("ROLE_USER"),
+                            "tenant-123",
+                            "hash-456");
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
-            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+            // Filter가 mutatedExchange로 chain을 호출하므로 any()로 매칭
+            when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
 
             // when
             StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
@@ -142,16 +147,20 @@ class JwtAuthenticationFilterUnitTest {
                             .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
+            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
             JwtClaims claims =
                     JwtClaims.of(
                             expectedUserId,
                             "auth-hub",
                             Instant.now().plusSeconds(3600),
                             Instant.now(),
-                            List.of());
+                            List.of(),
+                            "tenant-123",
+                            "hash-456");
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
-            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+            // Filter가 mutatedExchange로 chain을 호출하므로 any()로 매칭
+            when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
 
             // when
             StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
@@ -173,25 +182,29 @@ class JwtAuthenticationFilterUnitTest {
                             .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
+            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
             JwtClaims claims =
                     JwtClaims.of(
                             "user-123",
                             "auth-hub",
                             Instant.now().plusSeconds(3600),
                             Instant.now(),
-                            expectedRoles);
+                            expectedRoles,
+                            "tenant-123",
+                            "hash-456");
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
-            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+            // Filter가 mutatedExchange로 chain을 호출하므로 any()로 매칭
+            when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
 
             // when
             StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
                     .verifyComplete();
 
-            // then
+            // then - Filter는 roles를 Set<String>으로 저장함
             @SuppressWarnings("unchecked")
-            List<String> actualRoles = (List<String>) exchange.getAttribute("roles");
-            assertThat(actualRoles).isEqualTo(expectedRoles);
+            Set<String> actualRoles = (Set<String>) exchange.getAttribute("roles");
+            assertThat(actualRoles).containsExactlyInAnyOrderElementsOf(expectedRoles);
         }
     }
 
@@ -210,13 +223,16 @@ class JwtAuthenticationFilterUnitTest {
                             .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
+            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
             JwtClaims claims =
                     JwtClaims.of(
                             "user-123",
                             "auth-hub",
                             Instant.now().plusSeconds(3600),
                             Instant.now(),
-                            List.of());
+                            List.of(),
+                            "tenant-123",
+                            "hash-456");
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
             when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());

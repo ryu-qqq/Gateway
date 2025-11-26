@@ -1,7 +1,11 @@
 package com.ryuqq.gateway.adapter.in.gateway.error;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -103,5 +107,48 @@ class JwtErrorHandlerTest {
         String body = exchange.getResponse().getBodyAsString().block();
         JsonNode jsonNode = objectMapper.readTree(body);
         assertThat(jsonNode.get("traceId").asText()).isEqualTo(expectedTraceId);
+    }
+
+    @Test
+    @DisplayName("traceId가 없을 때 unknown으로 표시되어야 한다")
+    void shouldShowUnknownTraceIdWhenNotPresent() throws Exception {
+        // given
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/test").build();
+        MockServerWebExchange exchange = MockServerWebExchange.from(request);
+        // traceId attribute 설정하지 않음
+
+        JwtExpiredException exception = new JwtExpiredException("JWT has expired");
+
+        // when
+        StepVerifier.create(jwtErrorHandler.handle(exchange, exception)).verifyComplete();
+
+        // then
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+        String body = exchange.getResponse().getBodyAsString().block();
+        JsonNode jsonNode = objectMapper.readTree(body);
+        assertThat(jsonNode.get("traceId").asText()).isEqualTo("unknown");
+    }
+
+    @Test
+    @DisplayName("JSON 직렬화 실패 시 setComplete가 호출되어야 한다")
+    void shouldCallSetCompleteWhenJsonSerializationFails() throws Exception {
+        // given
+        ObjectMapper mockObjectMapper = mock(ObjectMapper.class);
+        when(mockObjectMapper.writeValueAsBytes(any()))
+                .thenThrow(new JsonProcessingException("Mocked error") {});
+        JwtErrorHandler handlerWithMockedMapper = new JwtErrorHandler(mockObjectMapper);
+
+        MockServerHttpRequest request = MockServerHttpRequest.get("/api/test").build();
+        MockServerWebExchange exchange = MockServerWebExchange.from(request);
+        exchange.getAttributes().put("traceId", "trace-123");
+
+        JwtExpiredException exception = new JwtExpiredException("JWT has expired");
+
+        // when & then
+        StepVerifier.create(handlerWithMockedMapper.handle(exchange, exception)).verifyComplete();
+
+        // 상태 코드는 설정됨
+        assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 }
