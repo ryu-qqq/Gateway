@@ -51,8 +51,7 @@ class PublicKeyQueryAdapterTest {
             // given
             PublicKeyEntity entity =
                     new PublicKeyEntity(KID, "modulus", "exponent", "RSA", "sig", "RS256");
-            PublicKey publicKey =
-                    PublicKey.of(KID, "modulus", "exponent", "RSA", "sig", "RS256");
+            PublicKey publicKey = PublicKey.of(KID, "modulus", "exponent", "RSA", "sig", "RS256");
 
             given(publicKeyRedisRepository.findByKid(KID)).willReturn(Mono.just(entity));
             given(publicKeyMapper.toPublicKey(entity)).willReturn(publicKey);
@@ -106,7 +105,8 @@ class PublicKeyQueryAdapterTest {
                                     throwable instanceof RuntimeException
                                             && throwable
                                                     .getMessage()
-                                                    .contains("Failed to get public key from Redis"))
+                                                    .contains(
+                                                            "Failed to get public key from Redis"))
                     .verify();
         }
     }

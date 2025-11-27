@@ -38,8 +38,10 @@ class GatewayFilterOrderTest {
                 .isEqualTo(GatewayFilterOrder.TRACE_ID_FILTER + 1);
         assertThat(GatewayFilterOrder.JWT_AUTH_FILTER)
                 .isEqualTo(GatewayFilterOrder.RATE_LIMIT_FILTER + 1);
-        assertThat(GatewayFilterOrder.TOKEN_REFRESH_FILTER)
+        assertThat(GatewayFilterOrder.USER_RATE_LIMIT_FILTER)
                 .isEqualTo(GatewayFilterOrder.JWT_AUTH_FILTER + 1);
+        assertThat(GatewayFilterOrder.TOKEN_REFRESH_FILTER)
+                .isEqualTo(GatewayFilterOrder.USER_RATE_LIMIT_FILTER + 1);
         assertThat(GatewayFilterOrder.TENANT_ISOLATION_FILTER)
                 .isEqualTo(GatewayFilterOrder.TOKEN_REFRESH_FILTER + 1);
         assertThat(GatewayFilterOrder.PERMISSION_FILTER)

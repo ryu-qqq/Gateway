@@ -66,7 +66,8 @@ class PermissionHashRedisRepositoryTest {
             PermissionHashEntity entity = createTestEntity();
             Duration ttl = Duration.ofMinutes(5);
 
-            when(valueOperations.set(anyString(), any(PermissionHashEntity.class), any(Duration.class)))
+            when(valueOperations.set(
+                            anyString(), any(PermissionHashEntity.class), any(Duration.class)))
                     .thenReturn(Mono.just(true));
 
             // when & then
@@ -87,7 +88,8 @@ class PermissionHashRedisRepositoryTest {
             String userId = "user-002";
             PermissionHashEntity entity = createTestEntity();
 
-            when(valueOperations.set(anyString(), any(PermissionHashEntity.class), any(Duration.class)))
+            when(valueOperations.set(
+                            anyString(), any(PermissionHashEntity.class), any(Duration.class)))
                     .thenReturn(Mono.just(true));
 
             // when & then
@@ -121,7 +123,8 @@ class PermissionHashRedisRepositoryTest {
                     .assertNext(
                             result -> {
                                 assertThat(result.getHash()).isEqualTo("hash-value-123");
-                                assertThat(result.getPermissions()).containsExactlyInAnyOrder("read", "write");
+                                assertThat(result.getPermissions())
+                                        .containsExactlyInAnyOrder("read", "write");
                             })
                     .verifyComplete();
         }
@@ -152,8 +155,7 @@ class PermissionHashRedisRepositoryTest {
             String tenantId = "tenant-001";
             String userId = "user-001";
 
-            when(reactiveRedisTemplate.delete(
-                            "authhub:permission:hash:" + tenantId + ":" + userId))
+            when(reactiveRedisTemplate.delete("authhub:permission:hash:" + tenantId + ":" + userId))
                     .thenReturn(Mono.just(1L));
 
             // when & then
@@ -170,8 +172,7 @@ class PermissionHashRedisRepositoryTest {
             String tenantId = "non-existing";
             String userId = "non-existing";
 
-            when(reactiveRedisTemplate.delete(
-                            "authhub:permission:hash:" + tenantId + ":" + userId))
+            when(reactiveRedisTemplate.delete("authhub:permission:hash:" + tenantId + ":" + userId))
                     .thenReturn(Mono.just(0L));
 
             // when & then

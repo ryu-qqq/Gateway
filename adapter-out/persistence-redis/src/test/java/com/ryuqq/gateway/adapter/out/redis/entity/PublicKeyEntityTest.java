@@ -52,8 +52,7 @@ class PublicKeyEntityTest {
         void shouldIncludeKeyFieldsInToString() {
             // given
             PublicKeyEntity entity =
-                    new PublicKeyEntity(
-                            "kid-123", "modulus-value", "AQAB", "RSA", "sig", "RS256");
+                    new PublicKeyEntity("kid-123", "modulus-value", "AQAB", "RSA", "sig", "RS256");
 
             // when
             String result = entity.toString();

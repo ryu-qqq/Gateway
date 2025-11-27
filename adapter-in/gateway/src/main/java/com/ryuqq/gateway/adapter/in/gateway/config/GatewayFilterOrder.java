@@ -14,12 +14,13 @@ import org.springframework.core.Ordered;
  *
  * <ol>
  *   <li>TRACE_ID_FILTER (HIGHEST_PRECEDENCE + 0) - 요청 추적 ID 생성
- *   <li>RATE_LIMIT_FILTER (HIGHEST_PRECEDENCE + 1) - Rate Limiting
+ *   <li>RATE_LIMIT_FILTER (HIGHEST_PRECEDENCE + 1) - IP/Endpoint Rate Limiting
  *   <li>JWT_AUTH_FILTER (HIGHEST_PRECEDENCE + 2) - JWT 인증
- *   <li>TOKEN_REFRESH_FILTER (HIGHEST_PRECEDENCE + 3) - Token 갱신
- *   <li>TENANT_ISOLATION_FILTER (HIGHEST_PRECEDENCE + 4) - 테넌트 격리
- *   <li>PERMISSION_FILTER (HIGHEST_PRECEDENCE + 5) - 권한 검사
- *   <li>MFA_VERIFICATION_FILTER (HIGHEST_PRECEDENCE + 6) - MFA 검증
+ *   <li>USER_RATE_LIMIT_FILTER (HIGHEST_PRECEDENCE + 3) - User Rate Limiting (JWT 파싱 후)
+ *   <li>TOKEN_REFRESH_FILTER (HIGHEST_PRECEDENCE + 4) - Token 갱신
+ *   <li>TENANT_ISOLATION_FILTER (HIGHEST_PRECEDENCE + 5) - 테넌트 격리
+ *   <li>PERMISSION_FILTER (HIGHEST_PRECEDENCE + 6) - 권한 검사
+ *   <li>MFA_VERIFICATION_FILTER (HIGHEST_PRECEDENCE + 7) - MFA 검증
  * </ol>
  *
  * @author development-team
@@ -39,17 +40,20 @@ public final class GatewayFilterOrder {
     /** JWT Authentication Filter Order (HIGHEST_PRECEDENCE + 2) */
     public static final int JWT_AUTH_FILTER = HIGHEST_PRECEDENCE + 2;
 
-    /** Token Refresh Filter Order (HIGHEST_PRECEDENCE + 3) */
-    public static final int TOKEN_REFRESH_FILTER = HIGHEST_PRECEDENCE + 3;
+    /** User Rate Limit Filter Order (HIGHEST_PRECEDENCE + 3) - JWT 파싱 후 User Rate Limit 체크 */
+    public static final int USER_RATE_LIMIT_FILTER = HIGHEST_PRECEDENCE + 3;
 
-    /** Tenant Isolation Filter Order (HIGHEST_PRECEDENCE + 4) */
-    public static final int TENANT_ISOLATION_FILTER = HIGHEST_PRECEDENCE + 4;
+    /** Token Refresh Filter Order (HIGHEST_PRECEDENCE + 4) */
+    public static final int TOKEN_REFRESH_FILTER = HIGHEST_PRECEDENCE + 4;
 
-    /** Permission Filter Order (HIGHEST_PRECEDENCE + 5) */
-    public static final int PERMISSION_FILTER = HIGHEST_PRECEDENCE + 5;
+    /** Tenant Isolation Filter Order (HIGHEST_PRECEDENCE + 5) */
+    public static final int TENANT_ISOLATION_FILTER = HIGHEST_PRECEDENCE + 5;
 
-    /** MFA Verification Filter Order (HIGHEST_PRECEDENCE + 6) */
-    public static final int MFA_VERIFICATION_FILTER = HIGHEST_PRECEDENCE + 6;
+    /** Permission Filter Order (HIGHEST_PRECEDENCE + 6) */
+    public static final int PERMISSION_FILTER = HIGHEST_PRECEDENCE + 6;
+
+    /** MFA Verification Filter Order (HIGHEST_PRECEDENCE + 7) */
+    public static final int MFA_VERIFICATION_FILTER = HIGHEST_PRECEDENCE + 7;
 
     private GatewayFilterOrder() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");

@@ -7,4 +7,9 @@
   <suppress files=".*/adapter-in-.*" checks="RegexpSinglelineJava"/>
   <suppress files=".*/adapter-out-.*" checks="RegexpSinglelineJava"/>
   <suppress files=".*Mapper\.java" checks="RegexpSinglelineJava"/>
+
+  <!-- Test code allows star imports for readability (Mockito, AssertJ patterns) -->
+  <suppress files=".*Test\.java" checks="AvoidStarImport"/>
+  <suppress files=".*Tests\.java" checks="AvoidStarImport"/>
+  <suppress files=".*/test/.*" checks="AvoidStarImport"/>
 </suppressions>

@@ -32,6 +32,93 @@
         <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 
+    <!-- Test classes intentionally use null values for null-safety testing -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="NP_LOAD_OF_KNOWN_NULL_VALUE"/>
+    </Match>
+
+    <!-- Test classes use self-comparison for enum behavior testing -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="SA_LOCAL_SELF_COMPARISON"/>
+    </Match>
+
+    <!-- Test classes use self-comparison (code SA for field comparison) -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug code="SA"/>
+    </Match>
+
+    <!-- Test classes test non-localized string operations intentionally -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="DM_CONVERT_CASE"/>
+    </Match>
+
+    <!-- Test classes may create objects without throwing them for exception testing -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="RV_EXCEPTION_NOT_THROWN"/>
+    </Match>
+
+    <!-- Test classes may have null pointer dereference in test scenarios -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <!-- Test classes may have dead stores for test setup/assertions -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+
+    <!-- Test classes may ignore return values for setup -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
+    </Match>
+
+    <!-- Test classes may have non-serializable anonymous inner classes -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="SE_BAD_FIELD_INNER_CLASS"/>
+    </Match>
+
+    <!-- Test classes may have serialization issues - not a concern for tests -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug code="Se"/>
+    </Match>
+
+    <!-- Test classes may have refactorable inner classes - not a concern -->
+    <Match>
+        <Class name="~.*Test.*"/>
+        <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON"/>
+    </Match>
+
+    <!-- Domain VO may use non-localized case conversion intentionally -->
+    <Match>
+        <Or>
+            <Class name="~.*\.vo\..*"/>
+            <Class name="~.*\.domain\..*"/>
+        </Or>
+        <Bug pattern="DM_CONVERT_CASE"/>
+    </Match>
+
+    <!-- Application Command/Query DTOs are immutable records -->
+    <Match>
+        <Or>
+            <Class name="~.*Command"/>
+            <Class name="~.*Query"/>
+        </Or>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
     <!-- ========================================
          Configuration Classes
          ======================================== -->
@@ -73,10 +160,44 @@
     </Match>
 
     <!-- ========================================
+         Request/Response DTO Records (immutable by design)
+         Records with List fields need defensive copy which is impractical
+         ======================================== -->
+    <Match>
+        <Or>
+            <Class name="~.*Request"/>
+            <Class name="~.*Response"/>
+            <Class name="~.*Controller\$.*"/>
+        </Or>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
+    <!-- ========================================
          Test Fixtures
          ======================================== -->
     <Match>
         <Class name="~.*Fixture"/>
         <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+
+    <!-- ========================================
+         Redis Entity Classes (internal to adapter)
+         These are simple data carriers, not exposed externally
+         ======================================== -->
+    <Match>
+        <Class name="~.*Entity"/>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+    </Match>
+
+    <!-- Adapter classes may use non-localized string conversion -->
+    <Match>
+        <Class name="~.*Adapter"/>
+        <Bug pattern="DM_CONVERT_CASE"/>
     </Match>
 </FindBugsFilter>

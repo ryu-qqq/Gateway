@@ -2,6 +2,8 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,6 +11,8 @@ import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.dto.response.ValidateJwtResponse;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
+import com.ryuqq.gateway.application.ratelimit.dto.command.RecordFailureCommand;
+import com.ryuqq.gateway.application.ratelimit.port.in.command.RecordFailureUseCase;
 import com.ryuqq.gateway.domain.authentication.vo.JwtClaims;
 import java.time.Instant;
 import java.util.List;
@@ -39,6 +43,8 @@ class JwtAuthenticationFilterTest {
 
     @Mock private ValidateJwtUseCase validateJwtUseCase;
 
+    @Mock private RecordFailureUseCase recordFailureUseCase;
+
     @Mock private GatewayFilterChain filterChain;
 
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -47,7 +53,14 @@ class JwtAuthenticationFilterTest {
 
     @BeforeEach
     void setUp() {
-        jwtAuthenticationFilter = new JwtAuthenticationFilter(validateJwtUseCase, objectMapper);
+        jwtAuthenticationFilter =
+                new JwtAuthenticationFilter(validateJwtUseCase, recordFailureUseCase, objectMapper);
+    }
+
+    /** recordFailureUseCase 기본 동작 설정 - 실패 기록이 필요한 테스트에서만 호출 */
+    private void setupRecordFailureStub() {
+        when(recordFailureUseCase.execute(any(RecordFailureCommand.class)))
+                .thenReturn(Mono.empty());
     }
 
     @Test
@@ -92,9 +105,10 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("Authorization 헤더가 없으면 401을 반환해야 한다")
+    @DisplayName("Authorization 헤더가 없으면 401을 반환해야 한다 (실패 기록 없이)")
     void shouldReturn401WhenAuthorizationHeaderMissing() {
         // given
+        // Authorization 헤더가 없는 경우는 Invalid JWT 공격이 아니므로 recordFailure 호출되지 않음
         MockServerHttpRequest request = MockServerHttpRequest.get("/api/test").build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
@@ -105,6 +119,7 @@ class JwtAuthenticationFilterTest {
         StepVerifier.create(result).verifyComplete();
 
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        verify(recordFailureUseCase, never()).execute(any());
     }
 
     @Test
@@ -152,6 +167,7 @@ class JwtAuthenticationFilterTest {
     @DisplayName("JWT 검증 실패 시 401을 반환해야 한다")
     void shouldReturn401WhenJwtValidationFails() {
         // given
+        setupRecordFailureStub();
         String token = "invalid-token";
         MockServerHttpRequest request =
                 MockServerHttpRequest.get("/api/test")
