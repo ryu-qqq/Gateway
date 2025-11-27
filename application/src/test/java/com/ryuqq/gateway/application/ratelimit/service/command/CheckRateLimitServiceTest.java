@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import com.ryuqq.gateway.application.ratelimit.config.RateLimitProperties;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.port.out.command.RateLimitCounterCommandPort;
 import com.ryuqq.gateway.application.ratelimit.port.out.query.IpBlockQueryPort;
@@ -26,12 +27,16 @@ class CheckRateLimitServiceTest {
 
     @Mock private IpBlockQueryPort ipBlockQueryPort;
 
+    private RateLimitProperties rateLimitProperties;
+
     private CheckRateLimitService checkRateLimitService;
 
     @BeforeEach
     void setUp() {
+        rateLimitProperties = new RateLimitProperties();
         checkRateLimitService =
-                new CheckRateLimitService(rateLimitCounterCommandPort, ipBlockQueryPort);
+                new CheckRateLimitService(
+                        rateLimitCounterCommandPort, ipBlockQueryPort, rateLimitProperties);
     }
 
     @Nested

@@ -12,6 +12,8 @@ import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.dto.response.ValidateJwtResponse;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
+import com.ryuqq.gateway.application.ratelimit.dto.command.RecordFailureCommand;
+import com.ryuqq.gateway.application.ratelimit.port.in.command.RecordFailureUseCase;
 import com.ryuqq.gateway.domain.authentication.vo.JwtClaims;
 import java.time.Instant;
 import java.util.List;
@@ -46,6 +48,8 @@ class JwtAuthenticationFilterUnitTest {
 
     @Mock private ValidateJwtUseCase validateJwtUseCase;
 
+    @Mock private RecordFailureUseCase recordFailureUseCase;
+
     @Mock private GatewayFilterChain filterChain;
 
     private JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -55,7 +59,14 @@ class JwtAuthenticationFilterUnitTest {
 
     @BeforeEach
     void setUp() {
-        jwtAuthenticationFilter = new JwtAuthenticationFilter(validateJwtUseCase, objectMapper);
+        jwtAuthenticationFilter =
+                new JwtAuthenticationFilter(validateJwtUseCase, recordFailureUseCase, objectMapper);
+    }
+
+    /** recordFailureUseCase 기본 동작 설정 - 실패 기록이 필요한 테스트에서만 호출 */
+    private void setupRecordFailureStub() {
+        when(recordFailureUseCase.execute(any(RecordFailureCommand.class)))
+                .thenReturn(Mono.empty());
     }
 
     @Nested
@@ -115,6 +126,7 @@ class JwtAuthenticationFilterUnitTest {
         @DisplayName("Bearer prefix가 없으면 401을 반환해야 한다")
         void shouldReturn401WhenBearerPrefixMissing() {
             // given
+            setupRecordFailureStub();
             MockServerHttpRequest request =
                     MockServerHttpRequest.get("/api/test")
                             .header(HttpHeaders.AUTHORIZATION, "Basic abc123")
@@ -249,6 +261,7 @@ class JwtAuthenticationFilterUnitTest {
         @DisplayName("검증 실패 시 다음 Filter로 전달하지 않아야 한다")
         void shouldNotPassToNextFilterOnFailure() {
             // given
+            setupRecordFailureStub();
             String token = "invalid-token";
             MockServerHttpRequest request =
                     MockServerHttpRequest.get("/api/test")
@@ -277,6 +290,7 @@ class JwtAuthenticationFilterUnitTest {
         @DisplayName("UseCase 에러 발생 시 401을 반환해야 한다")
         void shouldReturn401OnUseCaseError() {
             // given
+            setupRecordFailureStub();
             String token = "error-token";
             MockServerHttpRequest request =
                     MockServerHttpRequest.get("/api/test")

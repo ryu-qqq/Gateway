@@ -1,5 +1,6 @@
 package com.ryuqq.gateway.application.ratelimit.service.command;
 
+import com.ryuqq.gateway.application.ratelimit.config.RateLimitProperties;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.dto.response.CheckRateLimitResponse;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.CheckRateLimitUseCase;
@@ -11,6 +12,7 @@ import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitAction;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitKey;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitPolicy;
+import java.time.Duration;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -47,13 +49,16 @@ public class CheckRateLimitService implements CheckRateLimitUseCase {
 
     private final RateLimitCounterCommandPort rateLimitCounterCommandPort;
     private final IpBlockQueryPort ipBlockQueryPort;
+    private final RateLimitProperties rateLimitProperties;
 
     /** 생성자 (Lombok 금지) */
     public CheckRateLimitService(
             RateLimitCounterCommandPort rateLimitCounterCommandPort,
-            IpBlockQueryPort ipBlockQueryPort) {
+            IpBlockQueryPort ipBlockQueryPort,
+            RateLimitProperties rateLimitProperties) {
         this.rateLimitCounterCommandPort = rateLimitCounterCommandPort;
         this.ipBlockQueryPort = ipBlockQueryPort;
+        this.rateLimitProperties = rateLimitProperties;
     }
 
     /**
@@ -103,12 +108,57 @@ public class CheckRateLimitService implements CheckRateLimitUseCase {
 
     /** Rate Limit 체크 처리 */
     private Mono<CheckRateLimitResponse> processRateLimitCheck(CheckRateLimitCommand command) {
-        RateLimitPolicy policy = RateLimitPolicy.defaultPolicy(command.limitType());
+        RateLimitPolicy policy = buildPolicy(command.limitType());
         RateLimitKey key = buildKey(command);
 
         return rateLimitCounterCommandPort
                 .incrementAndGet(key, policy.getWindow())
                 .map(currentCount -> buildResponse(currentCount, policy));
+    }
+
+    /** 설정 기반 Rate Limit Policy 생성 */
+    private RateLimitPolicy buildPolicy(LimitType limitType) {
+        Integer configuredLimit = getConfiguredLimit(limitType);
+        Integer configuredWindow = rateLimitProperties.getWindowSeconds();
+
+        // 설정이 없으면 기본 정책 사용
+        if (configuredLimit == null && configuredWindow == null) {
+            return RateLimitPolicy.defaultPolicy(limitType);
+        }
+
+        // 설정값으로 정책 오버라이드
+        int maxRequests =
+                configuredLimit != null ? configuredLimit : limitType.getDefaultMaxRequests();
+        Duration window =
+                configuredWindow != null
+                        ? Duration.ofSeconds(configuredWindow)
+                        : limitType.getDefaultWindow();
+        RateLimitAction action = determineAction(limitType);
+
+        return RateLimitPolicy.of(
+                limitType, maxRequests, window, action, limitType.isAuditLogRequired());
+    }
+
+    /** LimitType에 해당하는 설정값 조회 */
+    private Integer getConfiguredLimit(LimitType limitType) {
+        return switch (limitType) {
+            case ENDPOINT -> rateLimitProperties.getEndpointLimit();
+            case IP -> rateLimitProperties.getIpLimit();
+            case USER -> rateLimitProperties.getUserLimit();
+            case LOGIN -> rateLimitProperties.getLoginLimit();
+            case OTP -> rateLimitProperties.getOtpLimit();
+            case TOKEN_REFRESH -> rateLimitProperties.getTokenRefreshLimit();
+            case INVALID_JWT -> rateLimitProperties.getInvalidJwtLimit();
+        };
+    }
+
+    /** LimitType에 따른 기본 Action 결정 */
+    private RateLimitAction determineAction(LimitType limitType) {
+        return switch (limitType) {
+            case LOGIN, INVALID_JWT -> RateLimitAction.BLOCK_IP;
+            case TOKEN_REFRESH -> RateLimitAction.REVOKE_TOKEN;
+            default -> RateLimitAction.REJECT;
+        };
     }
 
     /** Rate Limit Key 생성 */

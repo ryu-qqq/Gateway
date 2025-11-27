@@ -7,6 +7,9 @@ import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
+import com.ryuqq.gateway.application.ratelimit.dto.command.RecordFailureCommand;
+import com.ryuqq.gateway.application.ratelimit.port.in.command.RecordFailureUseCase;
+import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -34,6 +37,7 @@ import reactor.core.publisher.Mono;
  *   <li>ServerWebExchange Attribute 설정 (userId, roles)
  *   <li>Downstream 서비스로 X-User-Id 헤더 전달
  *   <li>Reactor Context에 userId 저장 (로깅용)
+ *   <li>JWT 검증 실패 시 RecordFailureUseCase 호출 (IP 차단용)
  * </ul>
  *
  * <p><strong>주의</strong>: Reactive 환경에서는 ThreadLocal 기반 MDC 대신 Reactor Context를 사용해야 합니다.
@@ -50,13 +54,18 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String PERMISSION_HASH_ATTRIBUTE = "permissionHash";
     private static final String ROLES_ATTRIBUTE = "roles";
     private static final String X_USER_ID_HEADER = "X-User-Id";
+    private static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
 
     private final ValidateJwtUseCase validateJwtUseCase;
+    private final RecordFailureUseCase recordFailureUseCase;
     private final ObjectMapper objectMapper;
 
     public JwtAuthenticationFilter(
-            ValidateJwtUseCase validateJwtUseCase, ObjectMapper objectMapper) {
+            ValidateJwtUseCase validateJwtUseCase,
+            RecordFailureUseCase recordFailureUseCase,
+            ObjectMapper objectMapper) {
         this.validateJwtUseCase = validateJwtUseCase;
+        this.recordFailureUseCase = recordFailureUseCase;
         this.objectMapper = objectMapper;
     }
 
@@ -70,7 +79,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            return unauthorized(exchange);
+            return recordFailureAndUnauthorized(exchange);
         }
 
         String token = authHeader.substring(BEARER_PREFIX.length());
@@ -80,7 +89,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 .flatMap(
                         response -> {
                             if (!response.isValid()) {
-                                return unauthorized(exchange);
+                                return recordFailureAndUnauthorized(exchange);
                             }
 
                             var claims = response.jwtClaims();
@@ -108,7 +117,38 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                             return chain.filter(mutatedExchange)
                                     .contextWrite(ctx -> ctx.put(USER_ID_ATTRIBUTE, userId));
                         })
-                .onErrorResume(e -> unauthorized(exchange));
+                .onErrorResume(e -> recordFailureAndUnauthorized(exchange));
+    }
+
+    /**
+     * Invalid JWT 실패 기록 후 401 응답 반환
+     *
+     * <p>RecordFailureUseCase를 호출하여 IP별 실패 횟수를 증가시킵니다. 임계값 초과 시 IP가 차단됩니다.
+     */
+    private Mono<Void> recordFailureAndUnauthorized(ServerWebExchange exchange) {
+        String clientIp = extractClientIp(exchange);
+        RecordFailureCommand command = RecordFailureCommand.forInvalidJwt(clientIp);
+
+        return recordFailureUseCase.execute(command).then(unauthorized(exchange));
+    }
+
+    /**
+     * 클라이언트 IP 추출
+     *
+     * <p>X-Forwarded-For 헤더 우선, 없으면 RemoteAddress 사용
+     */
+    private String extractClientIp(ServerWebExchange exchange) {
+        String xForwardedFor = exchange.getRequest().getHeaders().getFirst(X_FORWARDED_FOR_HEADER);
+        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
+            return xForwardedFor.split(",")[0].trim();
+        }
+
+        InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
+        if (remoteAddress != null && remoteAddress.getAddress() != null) {
+            return remoteAddress.getAddress().getHostAddress();
+        }
+
+        return "unknown";
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {
