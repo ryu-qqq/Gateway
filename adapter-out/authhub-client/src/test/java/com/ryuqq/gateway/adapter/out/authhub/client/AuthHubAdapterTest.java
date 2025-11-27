@@ -36,7 +36,7 @@ class AuthHubAdapterTest {
         webClient = mock(WebClient.class);
         properties = new AuthHubProperties();
         properties.setBaseUrl("http://localhost:9090");
-        properties.setJwksEndpoint("/api/v1/auth/jwks");
+        properties.getEndpoints().setJwks("/api/v1/auth/jwks");
 
         adapter = new AuthHubAdapter(webClient, properties);
     }

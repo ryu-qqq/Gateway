@@ -29,12 +29,17 @@ import reactor.test.StepVerifier;
 class AuthHubPermissionAdapterTest {
 
     private WebClient webClient;
+    private AuthHubProperties properties;
     private AuthHubPermissionAdapter adapter;
 
     @BeforeEach
     void setUp() {
         webClient = mock(WebClient.class);
-        adapter = new AuthHubPermissionAdapter(webClient);
+        properties = new AuthHubProperties();
+        properties.setBaseUrl("http://localhost:9090");
+        properties.getEndpoints().setPermissionSpec("/api/v1/permissions/spec");
+        properties.getEndpoints().setUserPermissions("/api/v1/permissions/users/{userId}");
+        adapter = new AuthHubPermissionAdapter(webClient, properties);
     }
 
     @Nested

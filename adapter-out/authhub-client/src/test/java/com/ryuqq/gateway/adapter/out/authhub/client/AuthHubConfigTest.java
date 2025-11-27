@@ -30,15 +30,16 @@ class AuthHubConfigTest {
     void setUp() {
         properties = new AuthHubProperties();
         properties.setBaseUrl("http://localhost:9090");
-        properties.setJwksEndpoint("/api/v1/auth/jwks");
-        properties.getTimeout().setConnection(3000);
-        properties.getTimeout().setResponse(3000);
+        properties.getEndpoints().setJwks("/api/v1/auth/jwks");
+        properties.getWebclient().setConnectionTimeout(3000);
+        properties.getWebclient().setResponseTimeout(3000);
         properties.getRetry().setMaxAttempts(3);
         properties.getRetry().setWaitDuration(100);
         properties.getCircuitBreaker().setFailureRateThreshold(50);
         properties.getCircuitBreaker().setWaitDurationInOpenState(10000);
         properties.getCircuitBreaker().setSlidingWindowSize(10);
         properties.getCircuitBreaker().setMinimumNumberOfCalls(5);
+        properties.getCircuitBreaker().setPermittedCallsInHalfOpen(3);
 
         config = new AuthHubConfig(properties);
     }
