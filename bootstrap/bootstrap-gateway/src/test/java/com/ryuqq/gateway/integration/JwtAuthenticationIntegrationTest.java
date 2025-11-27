@@ -6,8 +6,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
+import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,6 +72,10 @@ class JwtAuthenticationIntegrationTest {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
         registry.add("authhub.client.base-url", () -> "http://localhost:8888");
+        // Redisson 설정 (Testcontainers Redis 사용)
+        registry.add("spring.redis.redisson.config", () ->
+                String.format("singleServerConfig:\n  address: redis://%s:%d",
+                        redis.getHost(), redis.getFirstMappedPort()));
     }
 
     @TestConfiguration
@@ -129,6 +135,18 @@ class JwtAuthenticationIntegrationTest {
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody("{\"message\":\"success\"}")));
+
+        // Mock Tenant Config API (GATEWAY-004 Tenant 격리 기능)
+        // JWT에 기본 tenantId="tenant-001"이 포함되어 있으므로 해당 tenant config mock 필요
+        wireMockServer.stubFor(
+                get(WireMock.urlPathMatching("/api/v1/tenants/.+/config"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                TenantConfigTestFixture.tenantConfigResponse(
+                                                        "tenant-001"))));
     }
 
     @Nested

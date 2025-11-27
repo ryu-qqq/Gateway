@@ -20,12 +20,17 @@ class AuthenticationErrorCodeTest {
             AuthenticationErrorCode[] errorCodes = AuthenticationErrorCode.values();
 
             // then
-            assertThat(errorCodes).hasSize(3);
+            assertThat(errorCodes).hasSize(8);
             assertThat(errorCodes)
                     .containsExactly(
                             AuthenticationErrorCode.JWT_EXPIRED,
                             AuthenticationErrorCode.JWT_INVALID,
-                            AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND);
+                            AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND,
+                            AuthenticationErrorCode.REFRESH_TOKEN_INVALID,
+                            AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED,
+                            AuthenticationErrorCode.REFRESH_TOKEN_REUSED,
+                            AuthenticationErrorCode.REFRESH_TOKEN_MISSING,
+                            AuthenticationErrorCode.TOKEN_REFRESH_FAILED);
         }
 
         @Test

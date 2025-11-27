@@ -10,6 +10,7 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
 import com.ryuqq.gateway.integration.fixtures.PermissionTestFixture;
+import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -84,6 +85,10 @@ class PermissionAuthorizationIntegrationTest {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
         registry.add("authhub.client.base-url", () -> "http://localhost:8889");
+        // Redisson 설정 (Testcontainers Redis 사용)
+        registry.add("spring.redis.redisson.config", () ->
+                String.format("singleServerConfig:\n  address: redis://%s:%d",
+                        redis.getHost(), redis.getFirstMappedPort()));
     }
 
     @TestConfiguration
@@ -139,6 +144,17 @@ class PermissionAuthorizationIntegrationTest {
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody("{\"message\":\"success\"}")));
+
+        // Mock Tenant Config API (GATEWAY-004 Tenant 격리 기능)
+        wireMockServer.stubFor(
+                get(urlPathMatching("/api/v1/tenants/.+/config"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                TenantConfigTestFixture.tenantConfigResponse(
+                                                        "tenant-001"))));
     }
 
     @Nested

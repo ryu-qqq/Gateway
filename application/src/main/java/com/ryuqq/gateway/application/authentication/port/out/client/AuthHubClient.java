@@ -1,7 +1,9 @@
 package com.ryuqq.gateway.application.authentication.port.out.client;
 
 import com.ryuqq.gateway.domain.authentication.vo.PublicKey;
+import com.ryuqq.gateway.domain.authentication.vo.TokenPair;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * AuthHub Query Port
@@ -37,4 +39,29 @@ public interface AuthHubClient {
      * @return Flux&lt;PublicKey&gt; Public Key 스트림
      */
     Flux<PublicKey> fetchPublicKeys();
+
+    /**
+     * Access Token Refresh 호출
+     *
+     * <p>AuthHub의 Token Refresh 엔드포인트를 호출하여 새 Token Pair를 발급받습니다.
+     *
+     * <p>엔드포인트: {@code POST /api/v1/auth/refresh}
+     *
+     * <p><strong>요청</strong>:
+     * <ul>
+     *   <li>Header: X-Tenant-ID (필수)
+     *   <li>Body: refreshToken (필수)
+     * </ul>
+     *
+     * <p><strong>응답</strong>:
+     * <ul>
+     *   <li>accessToken: 새 Access Token
+     *   <li>refreshToken: 새 Refresh Token (Rotation)
+     * </ul>
+     *
+     * @param tenantId Tenant 식별자
+     * @param refreshToken 현재 유효한 Refresh Token
+     * @return Mono&lt;TokenPair&gt; 새 Access Token + Refresh Token
+     */
+    Mono<TokenPair> refreshAccessToken(String tenantId, String refreshToken);
 }
