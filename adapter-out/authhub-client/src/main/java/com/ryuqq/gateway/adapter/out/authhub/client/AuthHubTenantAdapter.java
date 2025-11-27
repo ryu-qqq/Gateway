@@ -69,8 +69,9 @@ public class AuthHubTenantAdapter implements AuthHubTenantClient {
                 .map(this::toTenantConfig)
                 .onErrorMap(
                         e -> !(e instanceof AuthHubTenantException),
-                        e -> new AuthHubTenantException(
-                                "Failed to fetch Tenant Config: " + tenantId, e));
+                        e ->
+                                new AuthHubTenantException(
+                                        "Failed to fetch Tenant Config: " + tenantId, e));
     }
 
     /**
@@ -84,9 +85,10 @@ public class AuthHubTenantAdapter implements AuthHubTenantClient {
             throw new AuthHubTenantException("Empty Tenant Config response");
         }
 
-        Set<SocialProvider> allowedSocialLogins = response.allowedSocialLogins().stream()
-                .map(SocialProvider::fromName)
-                .collect(Collectors.toSet());
+        Set<SocialProvider> allowedSocialLogins =
+                response.allowedSocialLogins().stream()
+                        .map(SocialProvider::fromName)
+                        .collect(Collectors.toSet());
 
         SessionConfig sessionConfig = toSessionConfig(response.sessionConfig());
         TenantRateLimitConfig rateLimitConfig = toRateLimitConfig(response.rateLimitConfig());
@@ -158,14 +160,10 @@ public class AuthHubTenantAdapter implements AuthHubTenantClient {
 
     /** Session Config Response DTO */
     record SessionConfigResponse(
-            int maxActiveSessions,
-            long accessTokenTTLSeconds,
-            long refreshTokenTTLSeconds) {}
+            int maxActiveSessions, long accessTokenTTLSeconds, long refreshTokenTTLSeconds) {}
 
     /** Rate Limit Config Response DTO */
-    record RateLimitConfigResponse(
-            int loginAttemptsPerHour,
-            int otpRequestsPerHour) {}
+    record RateLimitConfigResponse(int loginAttemptsPerHour, int otpRequestsPerHour) {}
 
     /** AuthHub Tenant 예외 */
     public static class AuthHubTenantException extends RuntimeException {

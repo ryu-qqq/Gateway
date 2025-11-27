@@ -105,7 +105,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                                     .put(PERMISSION_HASH_ATTRIBUTE, claims.permissionHash());
                             Set<String> rolesSet = new HashSet<>(claims.roles());
                             exchange.getAttributes().put(ROLES_ATTRIBUTE, rolesSet);
-                            exchange.getAttributes().put(MFA_VERIFIED_ATTRIBUTE, claims.mfaVerified());
+                            exchange.getAttributes()
+                                    .put(MFA_VERIFIED_ATTRIBUTE, claims.mfaVerified());
 
                             // Downstream 서비스로 userId 전달 (Header)
                             ServerHttpRequest mutatedRequest =

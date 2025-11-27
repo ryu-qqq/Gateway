@@ -2,7 +2,6 @@ package com.ryuqq.gateway.adapter.out.redis.entity;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +39,8 @@ public final class TenantConfigEntity {
             @JsonProperty("rateLimitConfig") TenantRateLimitConfigEntity rateLimitConfig) {
         this.tenantId = tenantId;
         this.mfaRequired = mfaRequired;
-        this.allowedSocialLogins = allowedSocialLogins != null ? Set.copyOf(allowedSocialLogins) : Set.of();
+        this.allowedSocialLogins =
+                allowedSocialLogins != null ? Set.copyOf(allowedSocialLogins) : Set.of();
         this.roleHierarchy = roleHierarchy != null ? Map.copyOf(roleHierarchy) : Map.of();
         this.sessionConfig = sessionConfig;
         this.rateLimitConfig = rateLimitConfig;
@@ -74,12 +74,19 @@ public final class TenantConfigEntity {
     @Override
     public String toString() {
         return "TenantConfigEntity{"
-                + "tenantId='" + tenantId + '\''
-                + ", mfaRequired=" + mfaRequired
-                + ", allowedSocialLogins=" + allowedSocialLogins
-                + ", roleHierarchy=" + roleHierarchy
-                + ", sessionConfig=" + sessionConfig
-                + ", rateLimitConfig=" + rateLimitConfig
+                + "tenantId='"
+                + tenantId
+                + '\''
+                + ", mfaRequired="
+                + mfaRequired
+                + ", allowedSocialLogins="
+                + allowedSocialLogins
+                + ", roleHierarchy="
+                + roleHierarchy
+                + ", sessionConfig="
+                + sessionConfig
+                + ", rateLimitConfig="
+                + rateLimitConfig
                 + '}';
     }
 }

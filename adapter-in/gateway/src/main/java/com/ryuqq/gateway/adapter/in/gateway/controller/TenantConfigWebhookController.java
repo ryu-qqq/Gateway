@@ -67,25 +67,28 @@ public class TenantConfigWebhookController {
 
         return syncTenantConfigUseCase
                 .execute(command)
-                .map(response -> {
-                    if (response.success()) {
-                        log.info(
-                                "Tenant config cache invalidated successfully: tenantId={}",
-                                event.tenantId());
-                        return ResponseEntity.ok().<Void>build();
-                    }
-                    log.warn(
-                            "Tenant config cache invalidation returned false: tenantId={}",
-                            event.tenantId());
-                    return ResponseEntity.ok().<Void>build();
-                })
-                .onErrorResume(e -> {
-                    log.error(
-                            "Failed to invalidate tenant config cache: tenantId={}, error={}",
-                            event.tenantId(),
-                            e.getMessage());
-                    return Mono.just(ResponseEntity.internalServerError().<Void>build());
-                });
+                .map(
+                        response -> {
+                            if (response.success()) {
+                                log.info(
+                                        "Tenant config cache invalidated successfully: tenantId={}",
+                                        event.tenantId());
+                                return ResponseEntity.ok().<Void>build();
+                            }
+                            log.warn(
+                                    "Tenant config cache invalidation returned false: tenantId={}",
+                                    event.tenantId());
+                            return ResponseEntity.internalServerError().<Void>build();
+                        })
+                .onErrorResume(
+                        e -> {
+                            log.error(
+                                    "Failed to invalidate tenant config cache: tenantId={},"
+                                            + " error={}",
+                                    event.tenantId(),
+                                    e.getMessage());
+                            return Mono.just(ResponseEntity.internalServerError().<Void>build());
+                        });
     }
 
     /**

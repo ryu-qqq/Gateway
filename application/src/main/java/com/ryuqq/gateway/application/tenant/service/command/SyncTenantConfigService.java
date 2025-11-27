@@ -4,6 +4,8 @@ import com.ryuqq.gateway.application.tenant.dto.command.SyncTenantConfigCommand;
 import com.ryuqq.gateway.application.tenant.dto.response.SyncTenantConfigResponse;
 import com.ryuqq.gateway.application.tenant.port.in.command.SyncTenantConfigUseCase;
 import com.ryuqq.gateway.application.tenant.port.out.command.TenantConfigCommandPort;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -38,6 +40,8 @@ import reactor.core.publisher.Mono;
 @Service
 public class SyncTenantConfigService implements SyncTenantConfigUseCase {
 
+    private static final Logger log = LoggerFactory.getLogger(SyncTenantConfigService.class);
+
     private final TenantConfigCommandPort tenantConfigCommandPort;
 
     public SyncTenantConfigService(TenantConfigCommandPort tenantConfigCommandPort) {
@@ -56,7 +60,15 @@ public class SyncTenantConfigService implements SyncTenantConfigUseCase {
     public Mono<SyncTenantConfigResponse> execute(SyncTenantConfigCommand command) {
         return invalidateTenantConfigCache(command.tenantId())
                 .thenReturn(SyncTenantConfigResponse.success(command.tenantId()))
-                .onErrorResume(e -> Mono.just(SyncTenantConfigResponse.failure(command.tenantId())));
+                .onErrorResume(
+                        e -> {
+                            log.error(
+                                    "Failed to invalidate tenant config cache: tenantId={},"
+                                            + " error={}",
+                                    command.tenantId(),
+                                    e.getMessage());
+                            return Mono.just(SyncTenantConfigResponse.failure(command.tenantId()));
+                        });
     }
 
     /**

@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.tenant.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-
 import java.util.Map;
 
 /**
@@ -41,9 +40,7 @@ public final class MfaRequiredException extends DomainException {
     public MfaRequiredException(String tenantId) {
         super(
                 TenantErrorCode.MFA_REQUIRED.getCode(),
-                String.format(
-                        "MFA verification required for tenant: %s",
-                        tenantId),
+                String.format("MFA verification required for tenant: %s", tenantId),
                 Map.of("tenantId", tenantId));
         this.tenantId = tenantId;
     }
@@ -55,9 +52,7 @@ public final class MfaRequiredException extends DomainException {
      * @since 1.0.0
      */
     public MfaRequiredException() {
-        super(
-                TenantErrorCode.MFA_REQUIRED.getCode(),
-                TenantErrorCode.MFA_REQUIRED.getMessage());
+        super(TenantErrorCode.MFA_REQUIRED.getCode(), TenantErrorCode.MFA_REQUIRED.getMessage());
         this.tenantId = null;
     }
 

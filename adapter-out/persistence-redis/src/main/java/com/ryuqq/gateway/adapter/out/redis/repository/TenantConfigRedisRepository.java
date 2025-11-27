@@ -1,12 +1,11 @@
 package com.ryuqq.gateway.adapter.out.redis.repository;
 
 import com.ryuqq.gateway.adapter.out.redis.entity.TenantConfigEntity;
+import java.time.Duration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
-
-import java.time.Duration;
 
 /**
  * Tenant Config Redis Repository
@@ -40,7 +39,7 @@ public class TenantConfigRedisRepository {
 
     public TenantConfigRedisRepository(
             @Qualifier("tenantConfigRedisTemplate")
-            ReactiveRedisTemplate<String, TenantConfigEntity> reactiveRedisTemplate) {
+                    ReactiveRedisTemplate<String, TenantConfigEntity> reactiveRedisTemplate) {
         this.reactiveRedisTemplate = reactiveRedisTemplate;
     }
 

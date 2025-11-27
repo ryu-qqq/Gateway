@@ -46,9 +46,12 @@ public final class SessionConfigEntity {
     @Override
     public String toString() {
         return "SessionConfigEntity{"
-                + "maxActiveSessions=" + maxActiveSessions
-                + ", accessTokenTTLSeconds=" + accessTokenTTLSeconds
-                + ", refreshTokenTTLSeconds=" + refreshTokenTTLSeconds
+                + "maxActiveSessions="
+                + maxActiveSessions
+                + ", accessTokenTTLSeconds="
+                + accessTokenTTLSeconds
+                + ", refreshTokenTTLSeconds="
+                + refreshTokenTTLSeconds
                 + '}';
     }
 }

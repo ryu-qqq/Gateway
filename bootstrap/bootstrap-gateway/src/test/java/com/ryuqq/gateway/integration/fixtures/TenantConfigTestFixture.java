@@ -1,8 +1,6 @@
 package com.ryuqq.gateway.integration.fixtures;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Tenant Config Test Fixture
@@ -48,9 +46,7 @@ public final class TenantConfigTestFixture {
      * @return Tenant Config JSON 문자열
      */
     public static String tenantConfigResponse(
-            String tenantId,
-            boolean mfaRequired,
-            List<String> allowedSocialLogins) {
+            String tenantId, boolean mfaRequired, List<String> allowedSocialLogins) {
         StringBuilder socialLoginsJson = new StringBuilder("[");
         for (int i = 0; i < allowedSocialLogins.size(); i++) {
             socialLoginsJson.append("\"").append(allowedSocialLogins.get(i)).append("\"");
@@ -81,23 +77,15 @@ public final class TenantConfigTestFixture {
                     }
                 }
                 """,
-                tenantId,
-                mfaRequired,
-                socialLoginsJson);
+                tenantId, mfaRequired, socialLoginsJson);
     }
 
-    /**
-     * MFA 필수 Tenant ID
-     */
+    /** MFA 필수 Tenant ID */
     public static final String MFA_REQUIRED_TENANT = "tenant-mfa-001";
 
-    /**
-     * MFA 불필요 Tenant ID
-     */
+    /** MFA 불필요 Tenant ID */
     public static final String MFA_NOT_REQUIRED_TENANT = "tenant-001";
 
-    /**
-     * 소셜 로그인 제한 Tenant ID
-     */
+    /** 소셜 로그인 제한 Tenant ID */
     public static final String SOCIAL_RESTRICTED_TENANT = "tenant-social-001";
 }

@@ -6,7 +6,6 @@ import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.domain.tenant.TenantConfig;
-import com.ryuqq.gateway.domain.tenant.exception.MfaRequiredException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -78,9 +77,7 @@ public class MfaVerificationFilter implements GlobalFilter, Ordered {
 
         // MFA 필수 여부 확인
         if (!tenantConfig.isMfaRequired()) {
-            log.debug(
-                    "MFA not required for tenant: tenantId={}",
-                    tenantConfig.getTenantIdValue());
+            log.debug("MFA not required for tenant: tenantId={}", tenantConfig.getTenantIdValue());
             return chain.filter(exchange);
         }
 
@@ -107,10 +104,7 @@ public class MfaVerificationFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> forbidden(
-            ServerWebExchange exchange,
-            String errorCode,
-            String message,
-            String tenantId) {
+            ServerWebExchange exchange, String errorCode, String message, String tenantId) {
         exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
@@ -122,6 +116,11 @@ public class MfaVerificationFilter implements GlobalFilter, Ordered {
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
             return exchange.getResponse().writeWith(Mono.just(buffer));
         } catch (JsonProcessingException e) {
+            log.error(
+                    "Failed to serialize error response: errorCode={}, tenantId={}, exception={}",
+                    errorCode,
+                    tenantId,
+                    e.getMessage());
             return exchange.getResponse().setComplete();
         }
     }

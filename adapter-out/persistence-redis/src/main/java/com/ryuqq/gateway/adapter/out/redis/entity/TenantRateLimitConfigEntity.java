@@ -39,8 +39,10 @@ public final class TenantRateLimitConfigEntity {
     @Override
     public String toString() {
         return "TenantRateLimitConfigEntity{"
-                + "loginAttemptsPerHour=" + loginAttemptsPerHour
-                + ", otpRequestsPerHour=" + otpRequestsPerHour
+                + "loginAttemptsPerHour="
+                + loginAttemptsPerHour
+                + ", otpRequestsPerHour="
+                + otpRequestsPerHour
                 + '}';
     }
 }

@@ -7,6 +7,7 @@ import com.ryuqq.gateway.application.tenant.port.out.client.AuthHubTenantClient;
 import com.ryuqq.gateway.application.tenant.port.out.command.TenantConfigCommandPort;
 import com.ryuqq.gateway.application.tenant.port.out.query.TenantConfigQueryPort;
 import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.exception.TenantConfigPersistenceException;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -62,8 +63,7 @@ public class GetTenantConfigService implements GetTenantConfigUseCase {
      */
     @Override
     public Mono<GetTenantConfigResponse> execute(GetTenantConfigQuery query) {
-        return getTenantConfig(query.tenantId())
-                .map(GetTenantConfigResponse::from);
+        return getTenantConfig(query.tenantId()).map(GetTenantConfigResponse::from);
     }
 
     /**
@@ -77,9 +77,10 @@ public class GetTenantConfigService implements GetTenantConfigUseCase {
                 .findByTenantId(tenantId)
                 .switchIfEmpty(fetchFromAuthHubAndCache(tenantId))
                 .onErrorResume(
-                        e -> Mono.error(
-                                new RuntimeException(
-                                        "Failed to get tenant config for tenantId: " + tenantId, e)));
+                        e ->
+                                Mono.error(
+                                        new TenantConfigPersistenceException(
+                                                tenantId, "fetch", e)));
     }
 
     /**
@@ -91,9 +92,10 @@ public class GetTenantConfigService implements GetTenantConfigUseCase {
     private Mono<TenantConfig> fetchFromAuthHubAndCache(String tenantId) {
         return authHubTenantClient
                 .fetchTenantConfig(tenantId)
-                .flatMap(tenantConfig ->
-                        tenantConfigCommandPort
-                                .save(tenantConfig)
-                                .thenReturn(tenantConfig));
+                .flatMap(
+                        tenantConfig ->
+                                tenantConfigCommandPort
+                                        .save(tenantConfig)
+                                        .thenReturn(tenantConfig));
     }
 }

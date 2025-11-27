@@ -8,10 +8,9 @@ import com.ryuqq.gateway.domain.tenant.vo.SessionConfig;
 import com.ryuqq.gateway.domain.tenant.vo.SocialProvider;
 import com.ryuqq.gateway.domain.tenant.vo.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.TenantRateLimitConfig;
-import org.springframework.stereotype.Component;
-
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
 /**
  * Tenant Config Mapper
@@ -43,9 +42,10 @@ public class TenantConfigMapper {
             return null;
         }
 
-        Set<SocialProvider> allowedSocialLogins = entity.getAllowedSocialLogins().stream()
-                .map(SocialProvider::fromName)
-                .collect(Collectors.toSet());
+        Set<SocialProvider> allowedSocialLogins =
+                entity.getAllowedSocialLogins().stream()
+                        .map(SocialProvider::fromName)
+                        .collect(Collectors.toSet());
 
         SessionConfig sessionConfig = toSessionConfig(entity.getSessionConfig());
         TenantRateLimitConfig rateLimitConfig = toRateLimitConfig(entity.getRateLimitConfig());
@@ -70,12 +70,15 @@ public class TenantConfigMapper {
             return null;
         }
 
-        Set<String> allowedSocialLogins = tenantConfig.getAllowedSocialLogins().stream()
-                .map(SocialProvider::name)
-                .collect(Collectors.toSet());
+        Set<String> allowedSocialLogins =
+                tenantConfig.getAllowedSocialLogins().stream()
+                        .map(SocialProvider::name)
+                        .collect(Collectors.toSet());
 
-        SessionConfigEntity sessionConfigEntity = toSessionConfigEntity(tenantConfig.getSessionConfig());
-        TenantRateLimitConfigEntity rateLimitConfigEntity = toRateLimitConfigEntity(tenantConfig.getRateLimitConfig());
+        SessionConfigEntity sessionConfigEntity =
+                toSessionConfigEntity(tenantConfig.getSessionConfig());
+        TenantRateLimitConfigEntity rateLimitConfigEntity =
+                toRateLimitConfigEntity(tenantConfig.getRateLimitConfig());
 
         return new TenantConfigEntity(
                 tenantConfig.getTenantIdValue(),
@@ -86,9 +89,7 @@ public class TenantConfigMapper {
                 rateLimitConfigEntity);
     }
 
-    /**
-     * SessionConfigEntity → SessionConfig
-     */
+    /** SessionConfigEntity → SessionConfig */
     private SessionConfig toSessionConfig(SessionConfigEntity entity) {
         if (entity == null) {
             return SessionConfig.defaultConfig();
@@ -100,9 +101,7 @@ public class TenantConfigMapper {
                 entity.getRefreshTokenTTLSeconds());
     }
 
-    /**
-     * SessionConfig → SessionConfigEntity
-     */
+    /** SessionConfig → SessionConfigEntity */
     private SessionConfigEntity toSessionConfigEntity(SessionConfig sessionConfig) {
         if (sessionConfig == null) {
             return null;
@@ -114,29 +113,24 @@ public class TenantConfigMapper {
                 sessionConfig.getRefreshTokenTTLSeconds());
     }
 
-    /**
-     * TenantRateLimitConfigEntity → TenantRateLimitConfig
-     */
+    /** TenantRateLimitConfigEntity → TenantRateLimitConfig */
     private TenantRateLimitConfig toRateLimitConfig(TenantRateLimitConfigEntity entity) {
         if (entity == null) {
             return TenantRateLimitConfig.defaultConfig();
         }
 
         return TenantRateLimitConfig.of(
-                entity.getLoginAttemptsPerHour(),
-                entity.getOtpRequestsPerHour());
+                entity.getLoginAttemptsPerHour(), entity.getOtpRequestsPerHour());
     }
 
-    /**
-     * TenantRateLimitConfig → TenantRateLimitConfigEntity
-     */
-    private TenantRateLimitConfigEntity toRateLimitConfigEntity(TenantRateLimitConfig rateLimitConfig) {
+    /** TenantRateLimitConfig → TenantRateLimitConfigEntity */
+    private TenantRateLimitConfigEntity toRateLimitConfigEntity(
+            TenantRateLimitConfig rateLimitConfig) {
         if (rateLimitConfig == null) {
             return null;
         }
 
         return new TenantRateLimitConfigEntity(
-                rateLimitConfig.getLoginAttemptsPerHour(),
-                rateLimitConfig.getOtpRequestsPerHour());
+                rateLimitConfig.getLoginAttemptsPerHour(), rateLimitConfig.getOtpRequestsPerHour());
     }
 }

@@ -110,7 +110,8 @@ public record JwtClaims(
             List<String> roles,
             String tenantId,
             String permissionHash) {
-        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles, tenantId, permissionHash, false);
+        return new JwtClaims(
+                subject, issuer, expiresAt, issuedAt, roles, tenantId, permissionHash, false);
     }
 
     /**
@@ -135,7 +136,8 @@ public record JwtClaims(
             String tenantId,
             String permissionHash,
             boolean mfaVerified) {
-        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles, tenantId, permissionHash, mfaVerified);
+        return new JwtClaims(
+                subject, issuer, expiresAt, issuedAt, roles, tenantId, permissionHash, mfaVerified);
     }
 
     /**

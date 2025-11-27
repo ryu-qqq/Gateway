@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.tenant.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-
 import java.util.Map;
 
 /**
@@ -45,8 +44,7 @@ public final class TenantMismatchException extends DomainException {
                 TenantErrorCode.TENANT_MISMATCH.getCode(),
                 String.format(
                         "Tenant ID mismatch. Expected: %s, Actual: %s",
-                        expectedTenantId,
-                        actualTenantId),
+                        expectedTenantId, actualTenantId),
                 Map.of(
                         "expectedTenantId", expectedTenantId,
                         "actualTenantId", actualTenantId));

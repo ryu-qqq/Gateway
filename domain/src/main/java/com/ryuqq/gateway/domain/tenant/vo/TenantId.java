@@ -28,16 +28,13 @@ import java.util.regex.Pattern;
  */
 public final class TenantId {
 
-    /**
-     * "tenant-{숫자}" 형식 검증 정규식
-     */
+    /** "tenant-{숫자}" 형식 검증 정규식 */
     private static final Pattern TENANT_PATTERN = Pattern.compile("^tenant-\\d+$");
 
-    /**
-     * UUID 형식 검증 정규식
-     */
+    /** UUID 형식 검증 정규식 */
     private static final Pattern UUID_PATTERN =
-            Pattern.compile("^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$",
+            Pattern.compile(
+                    "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$",
                     Pattern.CASE_INSENSITIVE);
 
     private final String value;
@@ -92,7 +89,10 @@ public final class TenantId {
 
         if (!isValidFormat(value)) {
             throw new IllegalArgumentException(
-                    String.format("Invalid TenantId format: %s. Expected 'tenant-{number}' or UUID format", value));
+                    String.format(
+                            "Invalid TenantId format: %s. Expected 'tenant-{number}' or UUID"
+                                    + " format",
+                            value));
         }
     }
 
@@ -103,8 +103,7 @@ public final class TenantId {
      * @return 유효하면 true
      */
     private static boolean isValidFormat(String value) {
-        return TENANT_PATTERN.matcher(value).matches()
-                || UUID_PATTERN.matcher(value).matches();
+        return TENANT_PATTERN.matcher(value).matches() || UUID_PATTERN.matcher(value).matches();
     }
 
     /**

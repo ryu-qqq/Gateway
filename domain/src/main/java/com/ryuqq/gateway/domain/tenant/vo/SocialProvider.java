@@ -27,19 +27,13 @@ package com.ryuqq.gateway.domain.tenant.vo;
  */
 public enum SocialProvider {
 
-    /**
-     * 카카오 로그인
-     */
+    /** 카카오 로그인 */
     KAKAO("kakao", "Kakao"),
 
-    /**
-     * 네이버 로그인
-     */
+    /** 네이버 로그인 */
     NAVER("naver", "Naver"),
 
-    /**
-     * 구글 로그인
-     */
+    /** 구글 로그인 */
     GOOGLE("google", "Google");
 
     private final String code;
@@ -103,8 +97,7 @@ public enum SocialProvider {
             }
         }
 
-        throw new IllegalArgumentException(
-                String.format("Unknown social provider code: %s", code));
+        throw new IllegalArgumentException(String.format("Unknown social provider code: %s", code));
     }
 
     /**
@@ -130,7 +123,6 @@ public enum SocialProvider {
             }
         }
 
-        throw new IllegalArgumentException(
-                String.format("Unknown social provider name: %s", name));
+        throw new IllegalArgumentException(String.format("Unknown social provider name: %s", name));
     }
 }

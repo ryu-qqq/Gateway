@@ -46,7 +46,16 @@ public enum TenantErrorCode implements ErrorCode {
      *
      * <p>Tenant Config에서 허용되지 않은 소셜 로그인 제공자로 로그인 시도한 경우 발생
      */
-    SOCIAL_LOGIN_NOT_ALLOWED("TENANT-003", 403, "Social login provider is not allowed for this tenant.");
+    SOCIAL_LOGIN_NOT_ALLOWED(
+            "TENANT-003", 403, "Social login provider is not allowed for this tenant."),
+
+    /**
+     * Tenant Config 저장/조회 실패
+     *
+     * <p>Redis Cache 또는 AuthHub API에서 Tenant Config 저장/조회/삭제 중 오류 발생
+     */
+    TENANT_CONFIG_PERSISTENCE_ERROR(
+            "TENANT-004", 500, "Failed to persist or retrieve tenant configuration.");
 
     private final String code;
     private final int httpStatus;

@@ -55,7 +55,8 @@ public class TenantConfigQueryAdapter implements TenantConfigQueryPort {
                 .findByTenantId(tenantId)
                 .map(tenantConfigMapper::toTenantConfig)
                 .onErrorMap(
-                        e -> new RuntimeException(
-                                "Failed to get tenant config from Redis: " + tenantId, e));
+                        e ->
+                                new RuntimeException(
+                                        "Failed to get tenant config from Redis: " + tenantId, e));
     }
 }

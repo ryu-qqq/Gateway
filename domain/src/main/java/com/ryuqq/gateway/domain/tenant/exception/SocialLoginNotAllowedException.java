@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.tenant.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-
 import java.util.Map;
 
 /**
@@ -45,8 +44,7 @@ public final class SocialLoginNotAllowedException extends DomainException {
                 TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED.getCode(),
                 String.format(
                         "Social login provider '%s' is not allowed for tenant: %s",
-                        provider,
-                        tenantId),
+                        provider, tenantId),
                 Map.of(
                         "tenantId", tenantId,
                         "provider", provider));
@@ -65,8 +63,7 @@ public final class SocialLoginNotAllowedException extends DomainException {
         super(
                 TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED.getCode(),
                 String.format(
-                        "Social login provider '%s' is not allowed for this tenant.",
-                        provider),
+                        "Social login provider '%s' is not allowed for this tenant.", provider),
                 Map.of("provider", provider));
         this.tenantId = null;
         this.provider = provider;

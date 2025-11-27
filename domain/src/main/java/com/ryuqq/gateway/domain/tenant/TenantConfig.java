@@ -6,8 +6,6 @@ import com.ryuqq.gateway.domain.tenant.vo.SessionConfig;
 import com.ryuqq.gateway.domain.tenant.vo.SocialProvider;
 import com.ryuqq.gateway.domain.tenant.vo.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.TenantRateLimitConfig;
-
-import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -57,18 +55,12 @@ public final class TenantConfig {
             TenantRateLimitConfig rateLimitConfig) {
         this.tenantId = tenantId;
         this.mfaRequired = mfaRequired;
-        this.allowedSocialLogins = allowedSocialLogins != null
-                ? Set.copyOf(allowedSocialLogins)
-                : Set.of();
-        this.roleHierarchy = roleHierarchy != null
-                ? Map.copyOf(roleHierarchy)
-                : Map.of();
-        this.sessionConfig = sessionConfig != null
-                ? sessionConfig
-                : SessionConfig.defaultConfig();
-        this.rateLimitConfig = rateLimitConfig != null
-                ? rateLimitConfig
-                : TenantRateLimitConfig.defaultConfig();
+        this.allowedSocialLogins =
+                allowedSocialLogins != null ? Set.copyOf(allowedSocialLogins) : Set.of();
+        this.roleHierarchy = roleHierarchy != null ? Map.copyOf(roleHierarchy) : Map.of();
+        this.sessionConfig = sessionConfig != null ? sessionConfig : SessionConfig.defaultConfig();
+        this.rateLimitConfig =
+                rateLimitConfig != null ? rateLimitConfig : TenantRateLimitConfig.defaultConfig();
     }
 
     /**
@@ -315,11 +307,16 @@ public final class TenantConfig {
     @Override
     public String toString() {
         return "TenantConfig{"
-                + "tenantId=" + tenantId
-                + ", mfaRequired=" + mfaRequired
-                + ", allowedSocialLogins=" + allowedSocialLogins
-                + ", sessionConfig=" + sessionConfig
-                + ", rateLimitConfig=" + rateLimitConfig
+                + "tenantId="
+                + tenantId
+                + ", mfaRequired="
+                + mfaRequired
+                + ", allowedSocialLogins="
+                + allowedSocialLogins
+                + ", sessionConfig="
+                + sessionConfig
+                + ", rateLimitConfig="
+                + rateLimitConfig
                 + '}';
     }
 }

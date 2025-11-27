@@ -26,14 +26,10 @@ import java.util.Objects;
  */
 public final class TenantRateLimitConfig {
 
-    /**
-     * 기본 시간당 로그인 시도 횟수
-     */
+    /** 기본 시간당 로그인 시도 횟수 */
     private static final int DEFAULT_LOGIN_ATTEMPTS_PER_HOUR = 10;
 
-    /**
-     * 기본 시간당 OTP 요청 횟수
-     */
+    /** 기본 시간당 OTP 요청 횟수 */
     private static final int DEFAULT_OTP_REQUESTS_PER_HOUR = 5;
 
     private final int loginAttemptsPerHour;
@@ -72,8 +68,7 @@ public final class TenantRateLimitConfig {
      */
     public static TenantRateLimitConfig defaultConfig() {
         return new TenantRateLimitConfig(
-                DEFAULT_LOGIN_ATTEMPTS_PER_HOUR,
-                DEFAULT_OTP_REQUESTS_PER_HOUR);
+                DEFAULT_LOGIN_ATTEMPTS_PER_HOUR, DEFAULT_OTP_REQUESTS_PER_HOUR);
     }
 
     private static void validatePositive(int value, String fieldName) {
@@ -175,8 +170,10 @@ public final class TenantRateLimitConfig {
     @Override
     public String toString() {
         return "TenantRateLimitConfig{"
-                + "loginAttemptsPerHour=" + loginAttemptsPerHour
-                + ", otpRequestsPerHour=" + otpRequestsPerHour
+                + "loginAttemptsPerHour="
+                + loginAttemptsPerHour
+                + ", otpRequestsPerHour="
+                + otpRequestsPerHour
                 + '}';
     }
 }

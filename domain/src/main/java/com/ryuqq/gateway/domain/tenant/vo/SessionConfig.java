@@ -28,26 +28,21 @@ import java.util.Objects;
  */
 public final class SessionConfig {
 
-    /**
-     * 기본 최대 동시 세션 수
-     */
+    /** 기본 최대 동시 세션 수 */
     private static final int DEFAULT_MAX_ACTIVE_SESSIONS = 5;
 
-    /**
-     * 기본 Access Token TTL (15분)
-     */
+    /** 기본 Access Token TTL (15분) */
     private static final Duration DEFAULT_ACCESS_TOKEN_TTL = Duration.ofMinutes(15);
 
-    /**
-     * 기본 Refresh Token TTL (7일)
-     */
+    /** 기본 Refresh Token TTL (7일) */
     private static final Duration DEFAULT_REFRESH_TOKEN_TTL = Duration.ofDays(7);
 
     private final int maxActiveSessions;
     private final Duration accessTokenTTL;
     private final Duration refreshTokenTTL;
 
-    private SessionConfig(int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
+    private SessionConfig(
+            int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
         this.maxActiveSessions = maxActiveSessions;
         this.accessTokenTTL = accessTokenTTL;
         this.refreshTokenTTL = refreshTokenTTL;
@@ -64,7 +59,8 @@ public final class SessionConfig {
      * @author development-team
      * @since 1.0.0
      */
-    public static SessionConfig of(int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
+    public static SessionConfig of(
+            int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
         validateMaxActiveSessions(maxActiveSessions);
         validateTTL(accessTokenTTL, "accessTokenTTL");
         validateTTL(refreshTokenTTL, "refreshTokenTTL");
@@ -83,9 +79,7 @@ public final class SessionConfig {
      */
     public static SessionConfig defaultConfig() {
         return new SessionConfig(
-                DEFAULT_MAX_ACTIVE_SESSIONS,
-                DEFAULT_ACCESS_TOKEN_TTL,
-                DEFAULT_REFRESH_TOKEN_TTL);
+                DEFAULT_MAX_ACTIVE_SESSIONS, DEFAULT_ACCESS_TOKEN_TTL, DEFAULT_REFRESH_TOKEN_TTL);
     }
 
     /**
@@ -100,7 +94,8 @@ public final class SessionConfig {
      * @author development-team
      * @since 1.0.0
      */
-    public static SessionConfig ofSeconds(int maxActiveSessions, long accessTokenTTLSeconds, long refreshTokenTTLSeconds) {
+    public static SessionConfig ofSeconds(
+            int maxActiveSessions, long accessTokenTTLSeconds, long refreshTokenTTLSeconds) {
         return of(
                 maxActiveSessions,
                 Duration.ofSeconds(accessTokenTTLSeconds),
@@ -209,9 +204,12 @@ public final class SessionConfig {
     @Override
     public String toString() {
         return "SessionConfig{"
-                + "maxActiveSessions=" + maxActiveSessions
-                + ", accessTokenTTL=" + accessTokenTTL
-                + ", refreshTokenTTL=" + refreshTokenTTL
+                + "maxActiveSessions="
+                + maxActiveSessions
+                + ", accessTokenTTL="
+                + accessTokenTTL
+                + ", refreshTokenTTL="
+                + refreshTokenTTL
                 + '}';
     }
 }

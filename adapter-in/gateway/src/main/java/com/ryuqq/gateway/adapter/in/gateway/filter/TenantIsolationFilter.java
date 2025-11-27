@@ -60,8 +60,7 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
     private final ObjectMapper objectMapper;
 
     public TenantIsolationFilter(
-            GetTenantConfigUseCase getTenantConfigUseCase,
-            ObjectMapper objectMapper) {
+            GetTenantConfigUseCase getTenantConfigUseCase, ObjectMapper objectMapper) {
         this.getTenantConfigUseCase = getTenantConfigUseCase;
         this.objectMapper = objectMapper;
     }
@@ -85,43 +84,47 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
 
         return getTenantConfigUseCase
                 .execute(new GetTenantConfigQuery(tenantId))
-                .flatMap(response -> {
-                    TenantConfig tenantConfig = response.tenantConfig();
+                .flatMap(
+                        response -> {
+                            TenantConfig tenantConfig = response.tenantConfig();
 
-                    // Exchange Attribute 설정 (Downstream Filter가 사용)
-                    exchange.getAttributes().put(TENANT_CONTEXT_ATTRIBUTE, tenantConfig);
-                    exchange.getAttributes().put(MFA_REQUIRED_ATTRIBUTE, tenantConfig.isMfaRequired());
+                            // Exchange Attribute 설정 (Downstream Filter가 사용)
+                            exchange.getAttributes().put(TENANT_CONTEXT_ATTRIBUTE, tenantConfig);
+                            exchange.getAttributes()
+                                    .put(MFA_REQUIRED_ATTRIBUTE, tenantConfig.isMfaRequired());
 
-                    log.debug(
-                            "Tenant context loaded: tenantId={}, mfaRequired={}, userId={}",
-                            tenantId,
-                            tenantConfig.isMfaRequired(),
-                            userId);
+                            log.debug(
+                                    "Tenant context loaded: tenantId={}, mfaRequired={}, userId={}",
+                                    tenantId,
+                                    tenantConfig.isMfaRequired(),
+                                    userId);
 
-                    // Request Header에 추가 (Backend Service로 전달)
-                    ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                            .header(X_TENANT_ID_HEADER, tenantId)
-                            .header(X_ROLES_HEADER, serializeToJson(roles))
-                            .build();
+                            // Request Header에 추가 (Backend Service로 전달)
+                            ServerHttpRequest mutatedRequest =
+                                    exchange.getRequest()
+                                            .mutate()
+                                            .header(X_TENANT_ID_HEADER, tenantId)
+                                            .header(X_ROLES_HEADER, serializeToJson(roles))
+                                            .build();
 
-                    // Response Header에도 X-Tenant-Id 추가 (클라이언트에게 반환)
-                    exchange.getResponse().getHeaders().add(X_TENANT_ID_HEADER, tenantId);
+                            // Response Header에도 X-Tenant-Id 추가 (클라이언트에게 반환)
+                            exchange.getResponse().getHeaders().add(X_TENANT_ID_HEADER, tenantId);
 
-                    ServerWebExchange mutatedExchange = exchange.mutate()
-                            .request(mutatedRequest)
-                            .build();
+                            ServerWebExchange mutatedExchange =
+                                    exchange.mutate().request(mutatedRequest).build();
 
-                    // Reactor Context에 tenantId 저장 (로깅 컨텍스트 전파)
-                    return chain.filter(mutatedExchange)
-                            .contextWrite(ctx -> ctx.put(TENANT_ID_ATTRIBUTE, tenantId));
-                })
-                .onErrorResume(e -> {
-                    log.error(
-                            "Failed to load tenant config: tenantId={}, error={}",
-                            tenantId,
-                            e.getMessage());
-                    return internalError(exchange, "테넌트 설정을 불러오는 중 오류가 발생했습니다");
-                });
+                            // Reactor Context에 tenantId 저장 (로깅 컨텍스트 전파)
+                            return chain.filter(mutatedExchange)
+                                    .contextWrite(ctx -> ctx.put(TENANT_ID_ATTRIBUTE, tenantId));
+                        })
+                .onErrorResume(
+                        e -> {
+                            log.error(
+                                    "Failed to load tenant config: tenantId={}, error={}",
+                                    tenantId,
+                                    e.getMessage());
+                            return internalError(exchange, "테넌트 설정을 불러오는 중 오류가 발생했습니다");
+                        });
     }
 
     private String serializeToJson(Object obj) {
@@ -148,6 +151,10 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
             return exchange.getResponse().writeWith(Mono.just(buffer));
         } catch (JsonProcessingException e) {
+            log.error(
+                    "Failed to serialize error response: message={}, exception={}",
+                    message,
+                    e.getMessage());
             return exchange.getResponse().setComplete();
         }
     }

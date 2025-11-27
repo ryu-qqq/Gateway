@@ -4,6 +4,7 @@ import com.ryuqq.gateway.adapter.out.redis.mapper.TenantConfigMapper;
 import com.ryuqq.gateway.adapter.out.redis.repository.TenantConfigRedisRepository;
 import com.ryuqq.gateway.application.tenant.port.out.command.TenantConfigCommandPort;
 import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.exception.TenantConfigPersistenceException;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -51,11 +52,14 @@ public class TenantConfigCommandAdapter implements TenantConfigCommandPort {
     @Override
     public Mono<Void> save(TenantConfig tenantConfig) {
         return Mono.fromCallable(() -> tenantConfigMapper.toTenantConfigEntity(tenantConfig))
-                .flatMap(entity ->
-                        tenantConfigRedisRepository.save(tenantConfig.getTenantIdValue(), entity))
+                .flatMap(
+                        entity ->
+                                tenantConfigRedisRepository.save(
+                                        tenantConfig.getTenantIdValue(), entity))
                 .onErrorMap(
-                        e -> new RuntimeException(
-                                "Failed to save tenant config to Redis: " + tenantConfig.getTenantIdValue(), e));
+                        e ->
+                                new TenantConfigPersistenceException(
+                                        tenantConfig.getTenantIdValue(), "save", e));
     }
 
     /**
@@ -69,8 +73,6 @@ public class TenantConfigCommandAdapter implements TenantConfigCommandPort {
         return tenantConfigRedisRepository
                 .deleteByTenantId(tenantId)
                 .then()
-                .onErrorMap(
-                        e -> new RuntimeException(
-                                "Failed to delete tenant config from Redis: " + tenantId, e));
+                .onErrorMap(e -> new TenantConfigPersistenceException(tenantId, "delete", e));
     }
 }
