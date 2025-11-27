@@ -23,6 +23,8 @@ public class AuthHubProperties {
 
     private String baseUrl;
     private String jwksEndpoint = "/api/v1/auth/jwks";
+    private String refreshEndpoint = "/api/v1/auth/refresh";
+    private String extractExpiredInfoEndpoint = "/api/v1/auth/extract-expired-info";
     private Timeout timeout = new Timeout();
     private Retry retry = new Retry();
     private CircuitBreaker circuitBreaker = new CircuitBreaker();
@@ -41,6 +43,22 @@ public class AuthHubProperties {
 
     public void setJwksEndpoint(String jwksEndpoint) {
         this.jwksEndpoint = jwksEndpoint;
+    }
+
+    public String getRefreshEndpoint() {
+        return refreshEndpoint;
+    }
+
+    public void setRefreshEndpoint(String refreshEndpoint) {
+        this.refreshEndpoint = refreshEndpoint;
+    }
+
+    public String getExtractExpiredInfoEndpoint() {
+        return extractExpiredInfoEndpoint;
+    }
+
+    public void setExtractExpiredInfoEndpoint(String extractExpiredInfoEndpoint) {
+        this.extractExpiredInfoEndpoint = extractExpiredInfoEndpoint;
     }
 
     public Timeout getTimeout() {

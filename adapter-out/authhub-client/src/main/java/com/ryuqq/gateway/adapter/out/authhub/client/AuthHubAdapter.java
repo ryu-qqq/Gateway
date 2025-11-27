@@ -1,14 +1,18 @@
 package com.ryuqq.gateway.adapter.out.authhub.client;
 
 import com.ryuqq.gateway.application.authentication.port.out.client.AuthHubClient;
+import com.ryuqq.gateway.domain.authentication.vo.ExpiredTokenInfo;
 import com.ryuqq.gateway.domain.authentication.vo.PublicKey;
+import com.ryuqq.gateway.domain.authentication.vo.TokenPair;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * AuthHub Adapter
@@ -99,11 +103,131 @@ public class AuthHubAdapter implements AuthHubClient {
         return new PublicKey(jwk.kid(), jwk.n(), jwk.e(), jwk.kty(), jwk.use(), jwk.alg());
     }
 
+    /**
+     * Access Token Refresh 호출
+     *
+     * @param tenantId Tenant 식별자
+     * @param refreshToken 현재 유효한 Refresh Token
+     * @return Mono&lt;TokenPair&gt; 새 Access Token + Refresh Token
+     */
+    @Override
+    @Retry(name = "authHub", fallbackMethod = "refreshAccessTokenFallback")
+    @CircuitBreaker(name = "authHub", fallbackMethod = "refreshAccessTokenFallback")
+    public Mono<TokenPair> refreshAccessToken(String tenantId, String refreshToken) {
+        RefreshTokenRequest request = new RefreshTokenRequest(refreshToken);
+
+        return webClient
+                .post()
+                .uri(properties.getRefreshEndpoint())
+                .header("X-Tenant-ID", tenantId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(RefreshTokenResponse.class)
+                .map(this::toTokenPair)
+                .onErrorMap(
+                        e -> !(e instanceof AuthHubException),
+                        e -> new AuthHubException("Failed to refresh token from AuthHub", e));
+    }
+
+    /**
+     * Refresh Token 응답 → TokenPair 변환
+     *
+     * @param response Refresh Token Response
+     * @return TokenPair
+     */
+    TokenPair toTokenPair(RefreshTokenResponse response) {
+        if (response == null || response.accessToken() == null || response.refreshToken() == null) {
+            throw new AuthHubException("Invalid refresh token response from AuthHub");
+        }
+        return TokenPair.of(response.accessToken(), response.refreshToken());
+    }
+
+    /**
+     * Fallback 메서드 (Retry/Circuit Breaker 실패 시)
+     *
+     * @param tenantId Tenant 식별자
+     * @param refreshToken Refresh Token
+     * @param throwable 예외
+     * @return Mono.error
+     */
+    @SuppressWarnings("unused")
+    Mono<TokenPair> refreshAccessTokenFallback(
+            String tenantId, String refreshToken, Throwable throwable) {
+        return Mono.error(
+                new AuthHubException("AuthHub Token Refresh 호출 실패 (Fallback)", throwable));
+    }
+
+    /**
+     * 만료된 JWT에서 정보 추출
+     *
+     * @param token JWT Access Token
+     * @return Mono&lt;ExpiredTokenInfo&gt; 만료 토큰 정보
+     */
+    @Override
+    @Retry(name = "authHub", fallbackMethod = "extractExpiredTokenInfoFallback")
+    @CircuitBreaker(name = "authHub", fallbackMethod = "extractExpiredTokenInfoFallback")
+    public Mono<ExpiredTokenInfo> extractExpiredTokenInfo(String token) {
+        ExtractExpiredInfoRequest request = new ExtractExpiredInfoRequest(token);
+
+        return webClient
+                .post()
+                .uri(properties.getExtractExpiredInfoEndpoint())
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(ExtractExpiredInfoResponse.class)
+                .map(this::toExpiredTokenInfo)
+                .onErrorMap(
+                        e -> !(e instanceof AuthHubException),
+                        e ->
+                                new AuthHubException(
+                                        "Failed to extract expired token info from AuthHub", e));
+    }
+
+    /**
+     * ExtractExpiredInfoResponse → ExpiredTokenInfo 변환
+     *
+     * @param response Extract Expired Info Response
+     * @return ExpiredTokenInfo
+     */
+    ExpiredTokenInfo toExpiredTokenInfo(ExtractExpiredInfoResponse response) {
+        if (response == null) {
+            throw new AuthHubException("Invalid extract expired info response from AuthHub");
+        }
+        return ExpiredTokenInfo.of(response.expired(), response.userId(), response.tenantId());
+    }
+
+    /**
+     * Fallback 메서드 (Retry/Circuit Breaker 실패 시)
+     *
+     * @param token JWT Token
+     * @param throwable 예외
+     * @return Mono.error
+     */
+    @SuppressWarnings("unused")
+    Mono<ExpiredTokenInfo> extractExpiredTokenInfoFallback(String token, Throwable throwable) {
+        return Mono.error(
+                new AuthHubException("AuthHub Extract Expired Info 호출 실패 (Fallback)", throwable));
+    }
+
     /** JWKS Response DTO */
     record JwksResponse(List<Jwk> keys) {}
 
     /** JSON Web Key (타입 안전한 JWKS Key 표현) */
     record Jwk(String kid, String n, String e, String kty, String use, String alg) {}
+
+    /** Refresh Token Request DTO */
+    record RefreshTokenRequest(String refreshToken) {}
+
+    /** Refresh Token Response DTO */
+    record RefreshTokenResponse(String accessToken, String refreshToken) {}
+
+    /** Extract Expired Info Request DTO */
+    record ExtractExpiredInfoRequest(String token) {}
+
+    /** Extract Expired Info Response DTO */
+    record ExtractExpiredInfoResponse(boolean expired, Long userId, String tenantId) {}
 
     /** AuthHub 예외 */
     public static class AuthHubException extends RuntimeException {

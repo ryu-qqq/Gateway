@@ -46,7 +46,42 @@ public enum AuthenticationErrorCode implements ErrorCode {
      *
      * <p>JWT Header의 kid에 해당하는 Public Key가 JWKS에 없는 경우 발생
      */
-    PUBLIC_KEY_NOT_FOUND("AUTH-003", 404, "Public key not found");
+    PUBLIC_KEY_NOT_FOUND("AUTH-003", 404, "Public key not found"),
+
+    /**
+     * Refresh Token 유효하지 않음
+     *
+     * <p>Refresh Token 형식 오류, 검증 실패 등의 경우 발생
+     */
+    REFRESH_TOKEN_INVALID("AUTH-004", 401, "Refresh token is invalid"),
+
+    /**
+     * Refresh Token 만료
+     *
+     * <p>Refresh Token의 exp claim이 현재 시간보다 과거인 경우 발생
+     */
+    REFRESH_TOKEN_EXPIRED("AUTH-005", 401, "Refresh token has expired"),
+
+    /**
+     * Refresh Token 재사용 감지
+     *
+     * <p>이미 사용된(Blacklist 등록된) Refresh Token 재사용 시 발생 (탈취 의심)
+     */
+    REFRESH_TOKEN_REUSED("AUTH-006", 401, "Refresh token reuse detected"),
+
+    /**
+     * Refresh Token 누락
+     *
+     * <p>Cookie에 Refresh Token이 없는 경우 발생
+     */
+    REFRESH_TOKEN_MISSING("AUTH-007", 401, "Refresh token is missing"),
+
+    /**
+     * Token Refresh 실패
+     *
+     * <p>Lock 획득 실패, AuthHub 장애 등으로 재발급 실패 시 발생
+     */
+    TOKEN_REFRESH_FAILED("AUTH-008", 500, "Token refresh failed");
 
     private final String code;
     private final int httpStatus;

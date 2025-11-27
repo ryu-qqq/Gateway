@@ -6,9 +6,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
+import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -102,6 +104,13 @@ class RateLimitIntegrationTest {
         registry.add("gateway.rate-limit.ip-limit", () -> "100");
         registry.add("gateway.rate-limit.user-limit", () -> "5");
         registry.add("gateway.rate-limit.window-seconds", () -> "60");
+        // Redisson 설정 (Testcontainers Redis 사용)
+        registry.add(
+                "spring.redis.redisson.config",
+                () ->
+                        String.format(
+                                "singleServerConfig:\n  address: redis://%s:%d",
+                                redis.getHost(), redis.getFirstMappedPort()));
     }
 
     @TestConfiguration
@@ -168,6 +177,17 @@ class RateLimitIntegrationTest {
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody("{\"message\":\"success\"}")));
+
+        // Mock Tenant Config API (GATEWAY-004 Tenant 격리 기능)
+        wireMockServer.stubFor(
+                get(WireMock.urlPathMatching("/api/v1/tenants/.+/config"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                TenantConfigTestFixture.tenantConfigResponse(
+                                                        "tenant-001"))));
     }
 
     @Nested
