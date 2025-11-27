@@ -123,10 +123,10 @@ class JwtAuthenticationFilterUnitTest {
         }
 
         @Test
-        @DisplayName("Bearer prefix가 없으면 401을 반환해야 한다")
+        @DisplayName("Bearer prefix가 없으면 401을 반환해야 한다 (실패 기록 없이)")
         void shouldReturn401WhenBearerPrefixMissing() {
             // given
-            setupRecordFailureStub();
+            // Bearer prefix가 없는 경우는 Invalid JWT 공격이 아니므로 recordFailure 호출되지 않음
             MockServerHttpRequest request =
                     MockServerHttpRequest.get("/api/test")
                             .header(HttpHeaders.AUTHORIZATION, "Basic abc123")
@@ -140,6 +140,7 @@ class JwtAuthenticationFilterUnitTest {
             // then
             assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
             verify(validateJwtUseCase, never()).execute(any());
+            verify(recordFailureUseCase, never()).execute(any());
         }
     }
 

@@ -4,12 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
 import com.ryuqq.gateway.application.ratelimit.dto.command.RecordFailureCommand;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.RecordFailureUseCase;
-import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -54,7 +54,6 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String PERMISSION_HASH_ATTRIBUTE = "permissionHash";
     private static final String ROLES_ATTRIBUTE = "roles";
     private static final String X_USER_ID_HEADER = "X-User-Id";
-    private static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
 
     private final ValidateJwtUseCase validateJwtUseCase;
     private final RecordFailureUseCase recordFailureUseCase;
@@ -78,8 +77,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
+        // Authorization 헤더가 없거나 Bearer prefix가 없는 경우:
+        // Invalid JWT 공격이 아니므로 실패 기록 없이 단순히 401 반환
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
-            return recordFailureAndUnauthorized(exchange);
+            return unauthorized(exchange);
         }
 
         String token = authHeader.substring(BEARER_PREFIX.length());
@@ -88,6 +89,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                 .execute(new ValidateJwtCommand(token))
                 .flatMap(
                         response -> {
+                            // 실제 JWT 토큰이 있지만 검증 실패한 경우에만 Invalid JWT로 기록
                             if (!response.isValid()) {
                                 return recordFailureAndUnauthorized(exchange);
                             }
@@ -126,29 +128,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
      * <p>RecordFailureUseCase를 호출하여 IP별 실패 횟수를 증가시킵니다. 임계값 초과 시 IP가 차단됩니다.
      */
     private Mono<Void> recordFailureAndUnauthorized(ServerWebExchange exchange) {
-        String clientIp = extractClientIp(exchange);
+        String clientIp = ClientIpExtractor.extract(exchange);
         RecordFailureCommand command = RecordFailureCommand.forInvalidJwt(clientIp);
 
         return recordFailureUseCase.execute(command).then(unauthorized(exchange));
-    }
-
-    /**
-     * 클라이언트 IP 추출
-     *
-     * <p>X-Forwarded-For 헤더 우선, 없으면 RemoteAddress 사용
-     */
-    private String extractClientIp(ServerWebExchange exchange) {
-        String xForwardedFor = exchange.getRequest().getHeaders().getFirst(X_FORWARDED_FOR_HEADER);
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-
-        InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
-        if (remoteAddress != null && remoteAddress.getAddress() != null) {
-            return remoteAddress.getAddress().getHostAddress();
-        }
-
-        return "unknown";
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {

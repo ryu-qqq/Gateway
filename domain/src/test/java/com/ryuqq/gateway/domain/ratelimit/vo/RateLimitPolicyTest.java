@@ -204,8 +204,8 @@ class RateLimitPolicyTest {
     class IsExceededTest {
 
         @Test
-        @DisplayName("현재 카운트가 최대값 이하이면 false")
-        void shouldReturnFalseWhenCountIsWithinLimit() {
+        @DisplayName("현재 카운트가 최대값 미만이면 false")
+        void shouldReturnFalseWhenCountIsBelowLimit() {
             // given
             RateLimitPolicy policy =
                     RateLimitPolicy.of(
@@ -217,12 +217,11 @@ class RateLimitPolicyTest {
 
             // when & then
             assertThat(policy.isExceeded(99)).isFalse();
-            assertThat(policy.isExceeded(100)).isFalse();
         }
 
         @Test
-        @DisplayName("현재 카운트가 최대값 초과이면 true")
-        void shouldReturnTrueWhenCountExceedsLimit() {
+        @DisplayName("현재 카운트가 최대값 이상이면 true (경계값 포함)")
+        void shouldReturnTrueWhenCountReachesOrExceedsLimit() {
             // given
             RateLimitPolicy policy =
                     RateLimitPolicy.of(
@@ -232,7 +231,8 @@ class RateLimitPolicyTest {
                             RateLimitAction.REJECT,
                             false);
 
-            // when & then
+            // when & then - maxRequests=100일 때 100번째 요청부터 차단
+            assertThat(policy.isExceeded(100)).isTrue();
             assertThat(policy.isExceeded(101)).isTrue();
             assertThat(policy.isExceeded(1000)).isTrue();
         }

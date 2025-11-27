@@ -97,8 +97,8 @@ class RequestCountTest {
     class IsExceededTest {
 
         @Test
-        @DisplayName("limit 이하이면 false")
-        void shouldReturnFalseWhenWithinLimit() {
+        @DisplayName("limit 미만이면 false")
+        void shouldReturnFalseWhenBelowLimit() {
             // given
             RequestCount count = RequestCount.of(99);
 
@@ -107,23 +107,15 @@ class RequestCountTest {
         }
 
         @Test
-        @DisplayName("limit과 같으면 false")
-        void shouldReturnFalseWhenEqualToLimit() {
+        @DisplayName("limit 이상이면 true (경계값 포함)")
+        void shouldReturnTrueWhenReachesOrExceedsLimit() {
             // given
-            RequestCount count = RequestCount.of(100);
+            RequestCount countAtLimit = RequestCount.of(100);
+            RequestCount countOverLimit = RequestCount.of(101);
 
-            // when & then
-            assertThat(count.isExceeded(100)).isFalse();
-        }
-
-        @Test
-        @DisplayName("limit 초과이면 true")
-        void shouldReturnTrueWhenExceedsLimit() {
-            // given
-            RequestCount count = RequestCount.of(101);
-
-            // when & then
-            assertThat(count.isExceeded(100)).isTrue();
+            // when & then - limit=100일 때 100번째 요청부터 차단
+            assertThat(countAtLimit.isExceeded(100)).isTrue();
+            assertThat(countOverLimit.isExceeded(100)).isTrue();
         }
     }
 

@@ -106,11 +106,13 @@ public final class RateLimitPolicy {
     /**
      * 현재 카운트가 정책을 초과했는지 확인
      *
+     * <p>maxRequests에 도달하면 초과로 판단합니다. 예를 들어 maxRequests=10인 경우, 10번째 요청부터 차단됩니다.
+     *
      * @param currentCount 현재 요청 수
      * @return 초과 여부
      */
     public boolean isExceeded(long currentCount) {
-        return currentCount > maxRequests;
+        return currentCount >= maxRequests;
     }
 
     /**

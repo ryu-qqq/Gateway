@@ -4,12 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.CheckRateLimitUseCase;
 import com.ryuqq.gateway.domain.ratelimit.exception.IpBlockedException;
 import com.ryuqq.gateway.domain.ratelimit.exception.RateLimitExceededException;
-import java.net.InetSocketAddress;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -42,7 +42,6 @@ import reactor.core.publisher.Mono;
 @Component
 public class RateLimitFilter implements GlobalFilter, Ordered {
 
-    private static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
     private static final String X_RATE_LIMIT_LIMIT_HEADER = "X-RateLimit-Limit";
     private static final String X_RATE_LIMIT_REMAINING_HEADER = "X-RateLimit-Remaining";
     private static final String RETRY_AFTER_HEADER = "Retry-After";
@@ -62,7 +61,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String clientIp = extractClientIp(exchange);
+        String clientIp = ClientIpExtractor.extract(exchange);
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().name();
 
@@ -110,26 +109,6 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                 .onErrorResume(
                         RateLimitExceededException.class,
                         e -> tooManyRequests(exchange, e.getLimit(), e.getRetryAfterSeconds()));
-    }
-
-    /**
-     * 클라이언트 IP 추출
-     *
-     * <p>X-Forwarded-For 헤더 우선, 없으면 RemoteAddress 사용
-     */
-    private String extractClientIp(ServerWebExchange exchange) {
-        String xForwardedFor = exchange.getRequest().getHeaders().getFirst(X_FORWARDED_FOR_HEADER);
-        if (xForwardedFor != null && !xForwardedFor.isBlank()) {
-            // 첫 번째 IP 추출 (프록시 체인에서 원본 IP)
-            return xForwardedFor.split(",")[0].trim();
-        }
-
-        InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
-        if (remoteAddress != null && remoteAddress.getAddress() != null) {
-            return remoteAddress.getAddress().getHostAddress();
-        }
-
-        return "unknown";
     }
 
     /** Rate Limit 헤더 추가 */

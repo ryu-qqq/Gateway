@@ -61,13 +61,15 @@ public final class RequestCount {
     }
 
     /**
-     * 주어진 limit을 초과했는지 확인
+     * 주어진 limit에 도달했거나 초과했는지 확인
+     *
+     * <p>limit에 도달하면 초과로 판단합니다. 예를 들어 limit=10인 경우, 10번째 요청부터 차단됩니다.
      *
      * @param limit 최대 허용 요청 수
      * @return 초과 여부
      */
     public boolean isExceeded(int limit) {
-        return value > limit;
+        return value >= limit;
     }
 
     /**

@@ -2,6 +2,8 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -103,10 +105,10 @@ class JwtAuthenticationFilterTest {
     }
 
     @Test
-    @DisplayName("Authorization 헤더가 없으면 401을 반환해야 한다")
+    @DisplayName("Authorization 헤더가 없으면 401을 반환해야 한다 (실패 기록 없이)")
     void shouldReturn401WhenAuthorizationHeaderMissing() {
         // given
-        setupRecordFailureStub();
+        // Authorization 헤더가 없는 경우는 Invalid JWT 공격이 아니므로 recordFailure 호출되지 않음
         MockServerHttpRequest request = MockServerHttpRequest.get("/api/test").build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
@@ -117,6 +119,7 @@ class JwtAuthenticationFilterTest {
         StepVerifier.create(result).verifyComplete();
 
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        verify(recordFailureUseCase, never()).execute(any());
     }
 
     @Test

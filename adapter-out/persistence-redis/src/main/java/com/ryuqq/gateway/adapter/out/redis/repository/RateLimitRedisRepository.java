@@ -1,8 +1,10 @@
 package com.ryuqq.gateway.adapter.out.redis.repository;
 
 import java.time.Duration;
+import java.util.Collections;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Mono;
 
@@ -33,6 +35,27 @@ import reactor.core.publisher.Mono;
 @Repository
 public class RateLimitRedisRepository {
 
+    /**
+     * Lua Script: INCR + EXPIRE 원자적 연산
+     *
+     * <p>INCR로 카운터 증가 후, TTL이 없으면(-1) EXPIRE 설정
+     *
+     * <p>KEYS[1] = rate limit key, ARGV[1] = TTL (초)
+     *
+     * @return 증가 후 카운트 값
+     */
+    private static final String INCREMENT_AND_EXPIRE_SCRIPT =
+            """
+            local count = redis.call('INCR', KEYS[1])
+            if redis.call('TTL', KEYS[1]) == -1 then
+                redis.call('EXPIRE', KEYS[1], ARGV[1])
+            end
+            return count
+            """;
+
+    private static final RedisScript<Long> INCREMENT_EXPIRE_SCRIPT =
+            RedisScript.of(INCREMENT_AND_EXPIRE_SCRIPT, Long.class);
+
     private final ReactiveStringRedisTemplate reactiveStringRedisTemplate;
 
     public RateLimitRedisRepository(
@@ -42,9 +65,9 @@ public class RateLimitRedisRepository {
     }
 
     /**
-     * 카운터 증가 및 TTL 설정
+     * 카운터 증가 및 TTL 설정 (Atomic)
      *
-     * <p>INCR 실행 후 TTL이 설정되지 않은 경우에만 EXPIRE 설정 (최초 1회)
+     * <p>Lua Script를 사용하여 INCR + EXPIRE를 원자적으로 실행합니다. Race condition 방지.
      *
      * @param key Redis Key
      * @param ttl TTL (Duration)
@@ -52,18 +75,12 @@ public class RateLimitRedisRepository {
      */
     public Mono<Long> incrementAndExpire(String key, Duration ttl) {
         return reactiveStringRedisTemplate
-                .opsForValue()
-                .increment(key)
-                .flatMap(
-                        count -> {
-                            if (count == 1L) {
-                                // 최초 증가 시에만 TTL 설정
-                                return reactiveStringRedisTemplate
-                                        .expire(key, ttl)
-                                        .thenReturn(count);
-                            }
-                            return Mono.just(count);
-                        });
+                .execute(
+                        INCREMENT_EXPIRE_SCRIPT,
+                        Collections.singletonList(key),
+                        Collections.singletonList(String.valueOf(ttl.getSeconds())))
+                .next()
+                .defaultIfEmpty(0L);
     }
 
     /**
@@ -84,10 +101,13 @@ public class RateLimitRedisRepository {
      * 남은 TTL 조회 (초)
      *
      * @param key Redis Key
-     * @return Mono&lt;Long&gt; 남은 TTL (초, 없으면 -2, TTL 없으면 -1)
+     * @return Mono&lt;Long&gt; 남은 TTL (초, 키 없으면 -2, TTL 설정 안됨 -1)
      */
     public Mono<Long> getTtl(String key) {
-        return reactiveStringRedisTemplate.getExpire(key).map(Duration::getSeconds);
+        return reactiveStringRedisTemplate
+                .getExpire(key)
+                .map(Duration::getSeconds)
+                .defaultIfEmpty(-2L);
     }
 
     /**

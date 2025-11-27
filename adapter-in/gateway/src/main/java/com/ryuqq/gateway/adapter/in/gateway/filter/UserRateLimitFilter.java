@@ -7,6 +7,9 @@ import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.CheckRateLimitUseCase;
+import com.ryuqq.gateway.domain.ratelimit.exception.RateLimitExceededException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -37,6 +40,8 @@ import reactor.core.publisher.Mono;
  */
 @Component
 public class UserRateLimitFilter implements GlobalFilter, Ordered {
+
+    private static final Logger log = LoggerFactory.getLogger(UserRateLimitFilter.class);
 
     private static final String USER_ID_ATTRIBUTE = "userId";
     private static final String X_RATE_LIMIT_LIMIT_HEADER = "X-RateLimit-Limit";
@@ -81,6 +86,19 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
                             // User Rate Limit 헤더 추가 (기존 헤더 덮어쓰기)
                             addRateLimitHeaders(exchange, response.limit(), response.remaining());
 
+                            return chain.filter(exchange);
+                        })
+                .onErrorResume(
+                        RateLimitExceededException.class,
+                        e -> tooManyRequests(exchange, e.getLimit(), e.getRetryAfterSeconds()))
+                .onErrorResume(
+                        e -> {
+                            // Redis 장애 등 예외 상황에서는 요청을 통과시킴 (fail-open)
+                            log.warn(
+                                    "User rate limit check failed for userId='{}'. Allowing"
+                                            + " request. Error: {}",
+                                    userId,
+                                    e.getMessage());
                             return chain.filter(exchange);
                         });
     }
