@@ -83,6 +83,41 @@ public final class JwtTestFixture {
     }
 
     /**
+     * 유효한 JWT 생성 (커스텀 tenantId)
+     *
+     * @param subject 사용자 ID
+     * @param tenantId 테넌트 ID
+     * @return JWT 문자열
+     */
+    public static String aValidJwtWithTenant(String subject, String tenantId) {
+        return createJwt(
+                subject,
+                List.of("USER"),
+                Instant.now().plus(1, ChronoUnit.HOURS),
+                tenantId,
+                DEFAULT_PERMISSION_HASH,
+                false);
+    }
+
+    /**
+     * 유효한 JWT 생성 (MFA 검증됨)
+     *
+     * @param subject 사용자 ID
+     * @param tenantId 테넌트 ID
+     * @param mfaVerified MFA 검증 여부
+     * @return JWT 문자열
+     */
+    public static String aValidJwtWithMfa(String subject, String tenantId, boolean mfaVerified) {
+        return createJwt(
+                subject,
+                List.of("USER"),
+                Instant.now().plus(1, ChronoUnit.HOURS),
+                tenantId,
+                DEFAULT_PERMISSION_HASH,
+                mfaVerified);
+    }
+
+    /**
      * 만료된 JWT 생성
      *
      * @return 만료된 JWT 문자열
@@ -93,7 +128,8 @@ public final class JwtTestFixture {
                 List.of("USER"),
                 Instant.now().minus(1, ChronoUnit.HOURS),
                 DEFAULT_TENANT_ID,
-                DEFAULT_PERMISSION_HASH);
+                DEFAULT_PERMISSION_HASH,
+                false);
     }
 
     /**
@@ -184,6 +220,16 @@ public final class JwtTestFixture {
             Instant expiresAt,
             String tenantId,
             String permissionHash) {
+        return createJwt(subject, roles, expiresAt, tenantId, permissionHash, false);
+    }
+
+    private static String createJwt(
+            String subject,
+            List<String> roles,
+            Instant expiresAt,
+            String tenantId,
+            String permissionHash,
+            boolean mfaVerified) {
         try {
             JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(DEFAULT_KID).build();
 
@@ -194,6 +240,7 @@ public final class JwtTestFixture {
                             .claim("roles", roles)
                             .claim("tenantId", tenantId)
                             .claim("permissionHash", permissionHash)
+                            .claim("mfaVerified", mfaVerified)
                             .expirationTime(Date.from(expiresAt))
                             .issueTime(Date.from(Instant.now()))
                             .build();

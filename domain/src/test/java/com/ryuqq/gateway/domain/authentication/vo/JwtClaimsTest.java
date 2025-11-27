@@ -41,7 +41,8 @@ class JwtClaimsTest {
                             ISSUED_TIME,
                             roles,
                             tenantId,
-                            permissionHash);
+                            permissionHash,
+                            false);
 
             // then
             assertThat(claims.subject()).isEqualTo(VALID_SUBJECT);
@@ -51,6 +52,7 @@ class JwtClaimsTest {
             assertThat(claims.roles()).isEqualTo(roles);
             assertThat(claims.tenantId()).isEqualTo(tenantId);
             assertThat(claims.permissionHash()).isEqualTo(permissionHash);
+            assertThat(claims.mfaVerified()).isFalse();
         }
 
         @Test
@@ -65,7 +67,8 @@ class JwtClaimsTest {
                             ISSUED_TIME,
                             null,
                             null,
-                            null);
+                            null,
+                            false);
 
             // then
             assertThat(claims.roles()).isEmpty();
@@ -89,7 +92,8 @@ class JwtClaimsTest {
                             ISSUED_TIME,
                             originalRoles,
                             null,
-                            null);
+                            null,
+                            false);
 
             // then - 원본 수정해도 내부 상태에 영향 없음
             originalRoles.add("ADMIN");
@@ -109,7 +113,8 @@ class JwtClaimsTest {
                                             ISSUED_TIME,
                                             List.of(),
                                             null,
-                                            null))
+                                            null,
+                                            false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Subject (sub) cannot be null or blank");
         }
@@ -126,7 +131,8 @@ class JwtClaimsTest {
                                             ISSUED_TIME,
                                             List.of(),
                                             null,
-                                            null))
+                                            null,
+                                            false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Subject (sub) cannot be null or blank");
         }
@@ -143,7 +149,8 @@ class JwtClaimsTest {
                                             ISSUED_TIME,
                                             List.of(),
                                             null,
-                                            null))
+                                            null,
+                                            false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Issuer (iss) cannot be null or blank");
         }
@@ -160,7 +167,8 @@ class JwtClaimsTest {
                                             ISSUED_TIME,
                                             List.of(),
                                             null,
-                                            null))
+                                            null,
+                                            false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Issuer (iss) cannot be null or blank");
         }
@@ -177,7 +185,8 @@ class JwtClaimsTest {
                                             ISSUED_TIME,
                                             List.of(),
                                             null,
-                                            null))
+                                            null,
+                                            false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("ExpiresAt (exp) cannot be null");
         }

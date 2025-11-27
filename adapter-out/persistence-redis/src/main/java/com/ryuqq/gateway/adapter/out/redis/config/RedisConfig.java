@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ryuqq.gateway.adapter.out.redis.entity.PermissionHashEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.PermissionSpecEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.PublicKeyEntity;
+import com.ryuqq.gateway.adapter.out.redis.entity.TenantConfigEntity;
 import io.lettuce.core.ClientOptions;
 import io.lettuce.core.resource.ClientResources;
 import io.lettuce.core.resource.DefaultClientResources;
@@ -136,6 +137,29 @@ public class RedisConfig {
 
         RedisSerializationContext<String, PermissionHashEntity> context =
                 RedisSerializationContext.<String, PermissionHashEntity>newSerializationContext(
+                                new StringRedisSerializer())
+                        .key(new StringRedisSerializer())
+                        .value(serializer)
+                        .hashKey(new StringRedisSerializer())
+                        .hashValue(serializer)
+                        .build();
+
+        return new ReactiveRedisTemplate<>(reactiveRedisConnectionFactory, context);
+    }
+
+    /** ReactiveRedisTemplate for TenantConfigEntity */
+    @Bean
+    public ReactiveRedisTemplate<String, TenantConfigEntity> tenantConfigRedisTemplate(
+            ReactiveRedisConnectionFactory reactiveRedisConnectionFactory) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        Jackson2JsonRedisSerializer<TenantConfigEntity> serializer =
+                new Jackson2JsonRedisSerializer<>(objectMapper, TenantConfigEntity.class);
+
+        RedisSerializationContext<String, TenantConfigEntity> context =
+                RedisSerializationContext.<String, TenantConfigEntity>newSerializationContext(
                                 new StringRedisSerializer())
                         .key(new StringRedisSerializer())
                         .value(serializer)
