@@ -61,17 +61,22 @@ public class RedisLockCommandAdapter implements RedisLockCommandPort {
         RLockReactive lock = redissonReactiveClient.getLock(lockKey);
 
         return lock.tryLock(WAIT_TIME_SECONDS, LEASE_TIME_SECONDS, TimeUnit.SECONDS)
-                .doOnNext(acquired -> {
-                    if (acquired) {
-                        log.debug("Lock acquired: {}", lockKey);
-                    } else {
-                        log.debug("Lock acquisition failed: {}", lockKey);
-                    }
-                })
-                .onErrorResume(e -> {
-                    log.error("Lock acquisition error for key {}: {}", lockKey, e.getMessage());
-                    return Mono.just(false);
-                });
+                .doOnNext(
+                        acquired -> {
+                            if (acquired) {
+                                log.debug("Lock acquired: {}", lockKey);
+                            } else {
+                                log.debug("Lock acquisition failed: {}", lockKey);
+                            }
+                        })
+                .onErrorResume(
+                        e -> {
+                            log.error(
+                                    "Lock acquisition error for key {}: {}",
+                                    lockKey,
+                                    e.getMessage());
+                            return Mono.just(false);
+                        });
     }
 
     /**
@@ -87,16 +92,18 @@ public class RedisLockCommandAdapter implements RedisLockCommandPort {
         RLockReactive lock = redissonReactiveClient.getLock(lockKey);
 
         return lock.forceUnlock()
-                .doOnSuccess(released -> {
-                    if (released) {
-                        log.debug("Lock released: {}", lockKey);
-                    }
-                })
+                .doOnSuccess(
+                        released -> {
+                            if (released) {
+                                log.debug("Lock released: {}", lockKey);
+                            }
+                        })
                 .then()
-                .onErrorResume(e -> {
-                    log.warn("Lock release error for key {}: {}", lockKey, e.getMessage());
-                    return Mono.empty();
-                });
+                .onErrorResume(
+                        e -> {
+                            log.warn("Lock release error for key {}: {}", lockKey, e.getMessage());
+                            return Mono.empty();
+                        });
     }
 
     /**

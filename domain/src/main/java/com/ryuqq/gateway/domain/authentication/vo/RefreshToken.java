@@ -47,13 +47,11 @@ public final class RefreshToken {
      */
     public static RefreshToken of(String tokenValue) {
         if (tokenValue == null || tokenValue.isBlank()) {
-            throw new RefreshTokenInvalidException(
-                    "Refresh token cannot be null or blank");
+            throw new RefreshTokenInvalidException("Refresh token cannot be null or blank");
         }
 
         if (tokenValue.length() < MINIMUM_LENGTH) {
-            throw new RefreshTokenInvalidException(
-                    "Refresh token must be at least 32 characters");
+            throw new RefreshTokenInvalidException("Refresh token must be at least 32 characters");
         }
 
         return new RefreshToken(tokenValue);

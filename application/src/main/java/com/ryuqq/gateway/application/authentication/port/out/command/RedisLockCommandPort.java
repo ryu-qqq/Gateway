@@ -7,8 +7,7 @@ import reactor.core.publisher.Mono;
  *
  * <p>분산 Lock 관리를 담당하는 Outbound Port
  *
- * <p><strong>Redis Key 패턴</strong>:
- * {@code tenant:{tenantId}:refresh:lock:{userId}}
+ * <p><strong>Redis Key 패턴</strong>: {@code tenant:{tenantId}:refresh:lock:{userId}}
  *
  * <p><strong>사용 시점</strong>:
  *

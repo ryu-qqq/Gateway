@@ -5,8 +5,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
 import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
@@ -73,9 +73,12 @@ class JwtAuthenticationIntegrationTest {
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
         registry.add("authhub.client.base-url", () -> "http://localhost:8888");
         // Redisson 설정 (Testcontainers Redis 사용)
-        registry.add("spring.redis.redisson.config", () ->
-                String.format("singleServerConfig:\n  address: redis://%s:%d",
-                        redis.getHost(), redis.getFirstMappedPort()));
+        registry.add(
+                "spring.redis.redisson.config",
+                () ->
+                        String.format(
+                                "singleServerConfig:\n  address: redis://%s:%d",
+                                redis.getHost(), redis.getFirstMappedPort()));
     }
 
     @TestConfiguration

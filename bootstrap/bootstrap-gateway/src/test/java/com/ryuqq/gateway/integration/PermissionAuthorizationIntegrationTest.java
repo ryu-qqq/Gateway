@@ -86,9 +86,12 @@ class PermissionAuthorizationIntegrationTest {
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
         registry.add("authhub.client.base-url", () -> "http://localhost:8889");
         // Redisson 설정 (Testcontainers Redis 사용)
-        registry.add("spring.redis.redisson.config", () ->
-                String.format("singleServerConfig:\n  address: redis://%s:%d",
-                        redis.getHost(), redis.getFirstMappedPort()));
+        registry.add(
+                "spring.redis.redisson.config",
+                () ->
+                        String.format(
+                                "singleServerConfig:\n  address: redis://%s:%d",
+                                redis.getHost(), redis.getFirstMappedPort()));
     }
 
     @TestConfiguration

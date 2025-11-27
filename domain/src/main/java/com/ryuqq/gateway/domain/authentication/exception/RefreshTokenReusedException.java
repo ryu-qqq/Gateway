@@ -5,8 +5,7 @@ import com.ryuqq.gateway.domain.common.exception.DomainException;
 /**
  * RefreshTokenReusedException - Refresh Token 재사용이 감지된 경우 발생하는 예외
  *
- * <p>이미 사용되어 Blacklist에 등록된 Refresh Token이 다시 사용된 경우 발생합니다.
- * 이는 Token 탈취 가능성을 나타내므로 보안 경고입니다.
+ * <p>이미 사용되어 Blacklist에 등록된 Refresh Token이 다시 사용된 경우 발생합니다. 이는 Token 탈취 가능성을 나타내므로 보안 경고입니다.
  *
  * <p><strong>발생 조건:</strong>
  *

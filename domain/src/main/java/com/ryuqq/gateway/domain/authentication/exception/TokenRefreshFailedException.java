@@ -36,7 +36,9 @@ public class TokenRefreshFailedException extends DomainException {
      * @param cause 원인 예외
      */
     public TokenRefreshFailedException(String message, Throwable cause) {
-        super(AuthenticationErrorCode.TOKEN_REFRESH_FAILED.getCode(), message + ": " + cause.getMessage());
+        super(
+                AuthenticationErrorCode.TOKEN_REFRESH_FAILED.getCode(),
+                message + ": " + cause.getMessage());
     }
 
     /**

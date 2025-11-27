@@ -239,8 +239,7 @@ class TokenPairTest {
         @Test
         @DisplayName("final 클래스임")
         void shouldBeFinalClass() {
-            assertThat(java.lang.reflect.Modifier.isFinal(TokenPair.class.getModifiers()))
-                    .isTrue();
+            assertThat(java.lang.reflect.Modifier.isFinal(TokenPair.class.getModifiers())).isTrue();
         }
 
         @Test

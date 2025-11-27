@@ -25,7 +25,8 @@ class RefreshTokenExceptionTest {
             // then
             assertThat(exception.getMessage()).isEqualTo(message);
             assertThat(exception.code()).isEqualTo("AUTH-004");
-            assertThat(exception.getErrorCode()).isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_INVALID);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_INVALID);
         }
 
         @Test
@@ -57,7 +58,8 @@ class RefreshTokenExceptionTest {
             // then
             assertThat(exception.getMessage()).isEqualTo(message);
             assertThat(exception.code()).isEqualTo("AUTH-005");
-            assertThat(exception.getErrorCode()).isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
         @Test
@@ -69,7 +71,8 @@ class RefreshTokenExceptionTest {
             // when & then
             assertThat(exception.getErrorCode().getCode()).isEqualTo("AUTH-005");
             assertThat(exception.getErrorCode().getHttpStatus()).isEqualTo(401);
-            assertThat(exception.getErrorCode().getMessage()).isEqualTo("Refresh token has expired");
+            assertThat(exception.getErrorCode().getMessage())
+                    .isEqualTo("Refresh token has expired");
         }
     }
 
@@ -89,7 +92,8 @@ class RefreshTokenExceptionTest {
             // then
             assertThat(exception.getMessage()).isEqualTo(message);
             assertThat(exception.code()).isEqualTo("AUTH-006");
-            assertThat(exception.getErrorCode()).isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_REUSED);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_REUSED);
         }
 
         @Test
@@ -101,7 +105,8 @@ class RefreshTokenExceptionTest {
             // when & then
             assertThat(exception.getErrorCode().getCode()).isEqualTo("AUTH-006");
             assertThat(exception.getErrorCode().getHttpStatus()).isEqualTo(401);
-            assertThat(exception.getErrorCode().getMessage()).isEqualTo("Refresh token reuse detected");
+            assertThat(exception.getErrorCode().getMessage())
+                    .isEqualTo("Refresh token reuse detected");
         }
     }
 
@@ -121,7 +126,8 @@ class RefreshTokenExceptionTest {
             // then
             assertThat(exception.getMessage()).isEqualTo(message);
             assertThat(exception.code()).isEqualTo("AUTH-007");
-            assertThat(exception.getErrorCode()).isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_MISSING);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_MISSING);
         }
 
         @Test
@@ -153,7 +159,8 @@ class RefreshTokenExceptionTest {
             // then
             assertThat(exception.getMessage()).isEqualTo(message);
             assertThat(exception.code()).isEqualTo("AUTH-008");
-            assertThat(exception.getErrorCode()).isEqualTo(AuthenticationErrorCode.TOKEN_REFRESH_FAILED);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(AuthenticationErrorCode.TOKEN_REFRESH_FAILED);
         }
 
         @Test

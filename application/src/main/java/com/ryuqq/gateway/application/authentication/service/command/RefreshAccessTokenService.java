@@ -89,100 +89,119 @@ public class RefreshAccessTokenService implements RefreshAccessTokenUseCase {
         RefreshToken currentRefreshToken = RefreshToken.of(command.refreshToken());
 
         return acquireLock(tenantId, userId)
-                .flatMap(lockAcquired -> {
-                    if (!lockAcquired) {
-                        return Mono.error(new TokenRefreshFailedException(
-                                "Failed to acquire lock for token refresh"));
-                    }
-                    return executeRefresh(tenantId, userId, currentRefreshToken)
-                            .doFinally(signal -> releaseLock(tenantId, userId).subscribe());
-                });
+                .flatMap(
+                        lockAcquired -> {
+                            if (!lockAcquired) {
+                                return Mono.error(
+                                        new TokenRefreshFailedException(
+                                                "Failed to acquire lock for token refresh"));
+                            }
+                            return executeRefresh(tenantId, userId, currentRefreshToken)
+                                    .doFinally(signal -> releaseLock(tenantId, userId).subscribe());
+                        });
     }
 
-    /**
-     * Lock 획득
-     */
+    /** Lock 획득 */
     private Mono<Boolean> acquireLock(String tenantId, Long userId) {
-        return redisLockCommandPort.tryLock(tenantId, userId)
-                .doOnNext(acquired -> {
-                    if (acquired) {
-                        log.debug("Lock acquired for tenant:{}, user:{}", tenantId, userId);
-                    } else {
-                        log.warn("Failed to acquire lock for tenant:{}, user:{}", tenantId, userId);
-                    }
-                });
+        return redisLockCommandPort
+                .tryLock(tenantId, userId)
+                .doOnNext(
+                        acquired -> {
+                            if (acquired) {
+                                log.debug("Lock acquired for tenant:{}, user:{}", tenantId, userId);
+                            } else {
+                                log.warn(
+                                        "Failed to acquire lock for tenant:{}, user:{}",
+                                        tenantId,
+                                        userId);
+                            }
+                        });
     }
 
-    /**
-     * Lock 해제
-     */
+    /** Lock 해제 */
     private Mono<Void> releaseLock(String tenantId, Long userId) {
-        return redisLockCommandPort.unlock(tenantId, userId)
-                .doOnSuccess(v -> log.debug("Lock released for tenant:{}, user:{}", tenantId, userId))
-                .onErrorResume(e -> {
-                    log.warn("Failed to release lock for tenant:{}, user:{}", tenantId, userId, e);
-                    return Mono.empty();
-                });
+        return redisLockCommandPort
+                .unlock(tenantId, userId)
+                .doOnSuccess(
+                        v -> log.debug("Lock released for tenant:{}, user:{}", tenantId, userId))
+                .onErrorResume(
+                        e -> {
+                            log.warn(
+                                    "Failed to release lock for tenant:{}, user:{}",
+                                    tenantId,
+                                    userId,
+                                    e);
+                            return Mono.empty();
+                        });
     }
 
-    /**
-     * Token Refresh 실행 (Lock 획득 후)
-     */
+    /** Token Refresh 실행 (Lock 획득 후) */
     private Mono<RefreshAccessTokenResponse> executeRefresh(
             String tenantId, Long userId, RefreshToken currentRefreshToken) {
 
         return checkBlacklist(tenantId, currentRefreshToken)
-                .flatMap(isBlacklisted -> {
-                    if (isBlacklisted) {
-                        log.warn("Refresh token reuse detected for tenant:{}, user:{}", tenantId, userId);
-                        return Mono.error(new RefreshTokenReusedException(
-                                "Refresh token reuse detected - possible token theft"));
-                    }
-                    return refreshAndRotate(tenantId, currentRefreshToken);
-                });
+                .flatMap(
+                        isBlacklisted -> {
+                            if (isBlacklisted) {
+                                log.warn(
+                                        "Refresh token reuse detected for tenant:{}, user:{}",
+                                        tenantId,
+                                        userId);
+                                return Mono.error(
+                                        new RefreshTokenReusedException(
+                                                "Refresh token reuse detected - possible token"
+                                                        + " theft"));
+                            }
+                            return refreshAndRotate(tenantId, currentRefreshToken);
+                        });
     }
 
-    /**
-     * Blacklist 확인
-     */
+    /** Blacklist 확인 */
     private Mono<Boolean> checkBlacklist(String tenantId, RefreshToken refreshToken) {
-        return blacklistQueryPort.isBlacklisted(tenantId, refreshToken)
-                .doOnNext(isBlacklisted -> {
-                    if (isBlacklisted) {
-                        log.warn("Blacklisted token attempted for tenant:{}", tenantId);
-                    }
-                });
+        return blacklistQueryPort
+                .isBlacklisted(tenantId, refreshToken)
+                .doOnNext(
+                        isBlacklisted -> {
+                            if (isBlacklisted) {
+                                log.warn("Blacklisted token attempted for tenant:{}", tenantId);
+                            }
+                        });
     }
 
-    /**
-     * AuthHub Refresh 호출 및 Rotation (Blacklist 등록)
-     */
+    /** AuthHub Refresh 호출 및 Rotation (Blacklist 등록) */
     private Mono<RefreshAccessTokenResponse> refreshAndRotate(
             String tenantId, RefreshToken currentRefreshToken) {
 
-        return authHubClient.refreshAccessToken(tenantId, currentRefreshToken.getValue())
-                .flatMap(newTokenPair -> addToBlacklistAndReturn(tenantId, currentRefreshToken, newTokenPair))
-                .onErrorResume(this::isExternalServiceError, e -> {
-                    log.error("AuthHub token refresh failed", e);
-                    return Mono.error(new TokenRefreshFailedException("Token refresh failed", e));
-                });
+        return authHubClient
+                .refreshAccessToken(tenantId, currentRefreshToken.getValue())
+                .flatMap(
+                        newTokenPair ->
+                                addToBlacklistAndReturn(
+                                        tenantId, currentRefreshToken, newTokenPair))
+                .onErrorResume(
+                        this::isExternalServiceError,
+                        e -> {
+                            log.error("AuthHub token refresh failed", e);
+                            return Mono.error(
+                                    new TokenRefreshFailedException("Token refresh failed", e));
+                        });
     }
 
-    /**
-     * 기존 Token Blacklist 등록 후 새 Token 반환
-     */
+    /** 기존 Token Blacklist 등록 후 새 Token 반환 */
     private Mono<RefreshAccessTokenResponse> addToBlacklistAndReturn(
             String tenantId, RefreshToken oldToken, TokenPair newTokenPair) {
 
-        return blacklistCommandPort.addToBlacklist(tenantId, oldToken, BLACKLIST_TTL_SECONDS)
+        return blacklistCommandPort
+                .addToBlacklist(tenantId, oldToken, BLACKLIST_TTL_SECONDS)
                 .thenReturn(RefreshAccessTokenResponse.from(newTokenPair))
-                .doOnSuccess(response ->
-                        log.debug("Token refresh completed successfully for tenant:{}", tenantId));
+                .doOnSuccess(
+                        response ->
+                                log.debug(
+                                        "Token refresh completed successfully for tenant:{}",
+                                        tenantId));
     }
 
-    /**
-     * 외부 서비스 오류인지 확인
-     */
+    /** 외부 서비스 오류인지 확인 */
     private boolean isExternalServiceError(Throwable e) {
         return !(e instanceof RefreshTokenReusedException)
                 && !(e instanceof TokenRefreshFailedException);

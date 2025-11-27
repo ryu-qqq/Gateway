@@ -8,8 +8,7 @@ import reactor.core.publisher.Mono;
  *
  * <p>Refresh Token Blacklist 저장을 담당하는 Outbound Port
  *
- * <p><strong>Redis Key 패턴</strong>:
- * {@code tenant:{tenantId}:refresh:blacklist:{tokenHash}}
+ * <p><strong>Redis Key 패턴</strong>: {@code tenant:{tenantId}:refresh:blacklist:{tokenHash}}
  *
  * <p><strong>사용 시점</strong>:
  *

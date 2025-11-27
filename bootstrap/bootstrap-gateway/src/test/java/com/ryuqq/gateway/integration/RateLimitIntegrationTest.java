@@ -6,11 +6,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
 import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import java.time.Duration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -105,9 +105,12 @@ class RateLimitIntegrationTest {
         registry.add("gateway.rate-limit.user-limit", () -> "5");
         registry.add("gateway.rate-limit.window-seconds", () -> "60");
         // Redisson 설정 (Testcontainers Redis 사용)
-        registry.add("spring.redis.redisson.config", () ->
-                String.format("singleServerConfig:\n  address: redis://%s:%d",
-                        redis.getHost(), redis.getFirstMappedPort()));
+        registry.add(
+                "spring.redis.redisson.config",
+                () ->
+                        String.format(
+                                "singleServerConfig:\n  address: redis://%s:%d",
+                                redis.getHost(), redis.getFirstMappedPort()));
     }
 
     @TestConfiguration
