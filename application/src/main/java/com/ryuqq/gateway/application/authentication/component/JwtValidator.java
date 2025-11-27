@@ -82,6 +82,8 @@ public class JwtValidator {
                             List<String> roles = claims.getStringListClaim("roles");
                             String tenantId = claims.getStringClaim("tenantId");
                             String permissionHash = claims.getStringClaim("permissionHash");
+                            Boolean mfaVerifiedClaim = claims.getBooleanClaim("mfaVerified");
+                            boolean mfaVerified = mfaVerifiedClaim != null && mfaVerifiedClaim;
 
                             return JwtClaims.of(
                                     subject,
@@ -90,7 +92,8 @@ public class JwtValidator {
                                     issuedAt,
                                     roles != null ? roles : List.of(),
                                     tenantId,
-                                    permissionHash);
+                                    permissionHash,
+                                    mfaVerified);
                         })
                 .subscribeOn(Schedulers.boundedElastic())
                 .onErrorMap(e -> new IllegalStateException("Failed to extract JWT claims", e));

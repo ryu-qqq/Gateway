@@ -28,6 +28,7 @@ import java.util.List;
  * @param roles 사용자 권한 목록 (JWT roles claim)
  * @param tenantId 테넌트 ID (JWT tenantId claim, nullable)
  * @param permissionHash 권한 해시 (JWT permissionHash claim, nullable)
+ * @param mfaVerified MFA 검증 여부 (JWT mfaVerified claim)
  * @author development-team
  * @since 1.0.0
  */
@@ -38,7 +39,8 @@ public record JwtClaims(
         Instant issuedAt,
         List<String> roles,
         String tenantId,
-        String permissionHash) {
+        String permissionHash,
+        boolean mfaVerified) {
 
     /** Compact Constructor (검증 로직) */
     public JwtClaims {
@@ -66,7 +68,7 @@ public record JwtClaims(
      * @return JwtClaims
      */
     public static JwtClaims of(String subject, String issuer, Instant expiresAt, Instant issuedAt) {
-        return new JwtClaims(subject, issuer, expiresAt, issuedAt, List.of(), null, null);
+        return new JwtClaims(subject, issuer, expiresAt, issuedAt, List.of(), null, null, false);
     }
 
     /**
@@ -85,11 +87,11 @@ public record JwtClaims(
             Instant expiresAt,
             Instant issuedAt,
             List<String> roles) {
-        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles, null, null);
+        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles, null, null, false);
     }
 
     /**
-     * JWT Claims 생성 (전체 정보)
+     * JWT Claims 생성 (전체 정보, mfaVerified 제외 - 기본 false)
      *
      * @param subject 사용자 ID
      * @param issuer 발급자
@@ -108,7 +110,34 @@ public record JwtClaims(
             List<String> roles,
             String tenantId,
             String permissionHash) {
-        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles, tenantId, permissionHash);
+        return new JwtClaims(
+                subject, issuer, expiresAt, issuedAt, roles, tenantId, permissionHash, false);
+    }
+
+    /**
+     * JWT Claims 생성 (전체 정보, mfaVerified 포함)
+     *
+     * @param subject 사용자 ID
+     * @param issuer 발급자
+     * @param expiresAt 만료 시간
+     * @param issuedAt 발급 시간
+     * @param roles 권한 목록
+     * @param tenantId 테넌트 ID
+     * @param permissionHash 권한 해시
+     * @param mfaVerified MFA 검증 여부
+     * @return JwtClaims
+     */
+    public static JwtClaims of(
+            String subject,
+            String issuer,
+            Instant expiresAt,
+            Instant issuedAt,
+            List<String> roles,
+            String tenantId,
+            String permissionHash,
+            boolean mfaVerified) {
+        return new JwtClaims(
+                subject, issuer, expiresAt, issuedAt, roles, tenantId, permissionHash, mfaVerified);
     }
 
     /**

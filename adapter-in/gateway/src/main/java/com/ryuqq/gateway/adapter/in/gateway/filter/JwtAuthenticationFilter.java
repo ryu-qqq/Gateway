@@ -53,6 +53,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String TENANT_ID_ATTRIBUTE = "tenantId";
     private static final String PERMISSION_HASH_ATTRIBUTE = "permissionHash";
     private static final String ROLES_ATTRIBUTE = "roles";
+    private static final String MFA_VERIFIED_ATTRIBUTE = "mfaVerified";
     private static final String X_USER_ID_HEADER = "X-User-Id";
 
     private final ValidateJwtUseCase validateJwtUseCase;
@@ -104,6 +105,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                                     .put(PERMISSION_HASH_ATTRIBUTE, claims.permissionHash());
                             Set<String> rolesSet = new HashSet<>(claims.roles());
                             exchange.getAttributes().put(ROLES_ATTRIBUTE, rolesSet);
+                            exchange.getAttributes()
+                                    .put(MFA_VERIFIED_ATTRIBUTE, claims.mfaVerified());
 
                             // Downstream 서비스로 userId 전달 (Header)
                             ServerHttpRequest mutatedRequest =
