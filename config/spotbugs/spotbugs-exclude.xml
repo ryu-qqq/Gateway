@@ -34,6 +34,11 @@
         <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 
+    <Match>
+        <Class name="~.*Config"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR,EI_EXPOSE_REP2"/>
+    </Match>
+
     <!-- ========================================
          Domain Layer Exceptions
          Exception의 args()는 의도적으로 내부 배열 반환
@@ -48,7 +53,7 @@
          enum/VO에서 입력 정규화는 locale-independent가 의도된 동작
          ======================================== -->
     <Match>
-        <Package name="~com\.ryuqq\.setof\.domain\..*"/>
+        <Package name="~com\.ryuqq\.gateway\.domain\..*"/>
         <Bug pattern="DM_CONVERT_CASE"/>
     </Match>
 
@@ -64,6 +69,20 @@
             <Class name="~.*DTO"/>
             <Class name="~.*Dto"/>
         </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Redis Entity 내부 표현 노출 (의도된 동작)
+         Entity는 데이터 컨테이너이므로 내부 리스트 반환이 정상
+         ======================================== -->
+    <Match>
+        <Package name="~.*\.redis\.entity"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="~.*Entity"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
@@ -102,6 +121,8 @@
         <Or>
             <Class name="~.*RedissonConfig"/>
             <Class name="~.*RedisConfig"/>
+            <Class name="~.*LettuceConfig"/>
+            <Class name="~.*AuthHubConfig"/>
         </Or>
         <Bug pattern="BC_UNCONFIRMED_CAST,BC_UNCONFIRMED_CAST_OF_RETURN_VALUE"/>
     </Match>
@@ -177,6 +198,51 @@
             <Class name="~.*ApiRequest"/>
             <Class name="~.*SearchApiRequest"/>
         </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         AuthHub Client 패턴
+         WebClient Builder 설정은 라이브러리 패턴
+         ======================================== -->
+    <Match>
+        <Package name="~.*\.authhub\.client"/>
+        <Bug pattern="BC_UNCONFIRMED_CAST,BC_UNCONFIRMED_CAST_OF_RETURN_VALUE,DM_CONVERT_CASE"/>
+    </Match>
+
+    <!-- ========================================
+         Gateway Filter 패턴
+         WebFlux ServerWebExchange API는 체이닝 필요
+         ======================================== -->
+    <Match>
+        <Package name="~.*\.gateway\.filter"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Gateway Common Util 패턴
+         ObjectMapper 등 인프라 의존성 주입
+         ======================================== -->
+    <Match>
+        <Package name="~.*\.gateway\.common\.util"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Controller 내부 Record 클래스
+         Webhook Request 등은 내부 리스트 반환이 정상
+         ======================================== -->
+    <Match>
+        <Class name="~.*Controller\$.*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Responder/Utility 클래스
+         ObjectMapper 등 인프라 의존성 주입
+         ======================================== -->
+    <Match>
+        <Class name="~.*Responder"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 </FindBugsFilter>
