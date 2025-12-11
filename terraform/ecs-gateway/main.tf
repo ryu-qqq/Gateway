@@ -481,10 +481,11 @@ module "ecs_service" {
   health_check_grace_period_seconds = 180
 
   # Container Environment Variables
+  # Spring Boot 환경변수 네이밍: spring.data.redis.host → SPRING_DATA_REDIS_HOST
   container_environment = [
     { name = "SPRING_PROFILES_ACTIVE", value = var.environment },
-    { name = "REDIS_HOST", value = local.redis_host },
-    { name = "REDIS_PORT", value = tostring(local.redis_port) },
+    { name = "SPRING_DATA_REDIS_HOST", value = local.redis_host },
+    { name = "SPRING_DATA_REDIS_PORT", value = tostring(local.redis_port) },
     { name = "AUTH_HUB_URL", value = var.auth_hub_url }
   ]
 
