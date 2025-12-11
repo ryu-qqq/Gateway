@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.ratelimit.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-import java.util.Map;
 
 /**
  * AccountLockedException - 계정 잠금 예외
@@ -31,9 +30,7 @@ public final class AccountLockedException extends DomainException {
 
     /** 기본 생성자 */
     public AccountLockedException() {
-        super(
-                RateLimitErrorCode.ACCOUNT_LOCKED.getCode(),
-                RateLimitErrorCode.ACCOUNT_LOCKED.getMessage());
+        super(RateLimitErrorCode.ACCOUNT_LOCKED);
         this.userId = null;
         this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
@@ -44,12 +41,7 @@ public final class AccountLockedException extends DomainException {
      * @param userId 잠금된 사용자 ID
      */
     public AccountLockedException(String userId) {
-        super(
-                RateLimitErrorCode.ACCOUNT_LOCKED.getCode(),
-                RateLimitErrorCode.ACCOUNT_LOCKED.getMessage(),
-                Map.of(
-                        "userId", userId,
-                        "retryAfterSeconds", DEFAULT_RETRY_AFTER_SECONDS));
+        super(RateLimitErrorCode.ACCOUNT_LOCKED, buildDetail(userId, DEFAULT_RETRY_AFTER_SECONDS));
         this.userId = userId;
         this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
@@ -61,12 +53,7 @@ public final class AccountLockedException extends DomainException {
      * @param retryAfterSeconds 재시도 가능 시간 (초)
      */
     public AccountLockedException(String userId, int retryAfterSeconds) {
-        super(
-                RateLimitErrorCode.ACCOUNT_LOCKED.getCode(),
-                RateLimitErrorCode.ACCOUNT_LOCKED.getMessage(),
-                Map.of(
-                        "userId", userId,
-                        "retryAfterSeconds", retryAfterSeconds));
+        super(RateLimitErrorCode.ACCOUNT_LOCKED, buildDetail(userId, retryAfterSeconds));
         this.userId = userId;
         this.retryAfterSeconds = retryAfterSeconds;
     }
@@ -76,7 +63,7 @@ public final class AccountLockedException extends DomainException {
      *
      * @return 사용자 ID
      */
-    public String getUserId() {
+    public String userId() {
         return userId;
     }
 
@@ -85,7 +72,11 @@ public final class AccountLockedException extends DomainException {
      *
      * @return 재시도 가능 시간
      */
-    public int getRetryAfterSeconds() {
+    public int retryAfterSeconds() {
         return retryAfterSeconds;
+    }
+
+    private static String buildDetail(String userId, int retryAfterSeconds) {
+        return String.format("userId=%s, retryAfterSeconds=%d", userId, retryAfterSeconds);
     }
 }

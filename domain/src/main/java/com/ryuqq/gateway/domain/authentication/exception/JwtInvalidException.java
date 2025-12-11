@@ -37,7 +37,7 @@ public final class JwtInvalidException extends DomainException {
      * @since 1.0.0
      */
     public JwtInvalidException(String reason) {
-        super(AuthenticationErrorCode.JWT_INVALID.getCode(), "JWT token is invalid: " + reason);
+        super(AuthenticationErrorCode.JWT_INVALID, reason);
     }
 
     /**
@@ -49,8 +49,6 @@ public final class JwtInvalidException extends DomainException {
      * @since 1.0.0
      */
     public JwtInvalidException() {
-        super(
-                AuthenticationErrorCode.JWT_INVALID.getCode(),
-                AuthenticationErrorCode.JWT_INVALID.getMessage());
+        super(AuthenticationErrorCode.JWT_INVALID);
     }
 }

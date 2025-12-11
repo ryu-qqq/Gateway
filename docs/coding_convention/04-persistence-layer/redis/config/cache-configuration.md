@@ -25,7 +25,7 @@
 ### CacheConfig.java
 
 ```java
-package com.ryuqq.adapter.out.persistence.redis.config;
+package com.company.adapter.out.persistence.redis.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -163,7 +163,7 @@ public enum CacheName {
 ### @Cacheable (조회)
 
 ```java
-package com.ryuqq.application.order.service;
+package com.company.application.order.service;
 
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;

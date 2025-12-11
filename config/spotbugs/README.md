@@ -168,7 +168,7 @@ spotbugs {
 `config/spotbugs/spotbugs-exclude.xml`:
 ```xml
 <Match>
-    <Class name="com.ryuqq.template.LegacyCode"/>
+    <Class name="com.company.template.LegacyCode"/>
     <Bug pattern="NP_NULL_ON_SOME_PATH"/>
 </Match>
 ```

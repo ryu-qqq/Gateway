@@ -58,11 +58,11 @@ public class GetRateLimitStatusService implements GetRateLimitStatusUseCase {
                                     limitType,
                                     identifier,
                                     currentCount,
-                                    policy.getMaxRequests(),
+                                    policy.maxRequests(),
                                     ttlSeconds);
                         })
                 .defaultIfEmpty(
                         RateLimitStatusResponse.notFound(
-                                limitType, identifier, policy.getMaxRequests()));
+                                limitType, identifier, policy.maxRequests()));
     }
 }

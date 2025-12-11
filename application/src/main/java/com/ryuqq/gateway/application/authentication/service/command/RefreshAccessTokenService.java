@@ -173,7 +173,7 @@ public class RefreshAccessTokenService implements RefreshAccessTokenUseCase {
             String tenantId, RefreshToken currentRefreshToken) {
 
         return authHubClient
-                .refreshAccessToken(tenantId, currentRefreshToken.getValue())
+                .refreshAccessToken(tenantId, currentRefreshToken.value())
                 .flatMap(
                         newTokenPair ->
                                 addToBlacklistAndReturn(

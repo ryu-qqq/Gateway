@@ -4,8 +4,6 @@ import com.ryuqq.gateway.adapter.out.redis.mapper.PermissionSpecMapper;
 import com.ryuqq.gateway.adapter.out.redis.repository.PermissionSpecRedisRepository;
 import com.ryuqq.gateway.application.authorization.port.out.query.PermissionSpecQueryPort;
 import com.ryuqq.gateway.domain.authorization.vo.PermissionSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -27,8 +25,6 @@ import reactor.core.publisher.Mono;
 @Component
 public class PermissionSpecQueryAdapter implements PermissionSpecQueryPort {
 
-    private static final Logger log = LoggerFactory.getLogger(PermissionSpecQueryAdapter.class);
-
     private final PermissionSpecRedisRepository permissionSpecRedisRepository;
     private final PermissionSpecMapper permissionSpecMapper;
 
@@ -48,19 +44,8 @@ public class PermissionSpecQueryAdapter implements PermissionSpecQueryPort {
     public Mono<PermissionSpec> findPermissionSpec() {
         return permissionSpecRedisRepository
                 .find()
-                .doOnNext(entity -> log.debug("Permission spec entity found: {}", entity))
-                .doOnError(e -> log.error("Error fetching permission spec from Redis", e))
                 .map(permissionSpecMapper::toPermissionSpec)
-                .doOnNext(
-                        spec ->
-                                log.debug(
-                                        "Permission spec mapped successfully: {} endpoints",
-                                        spec.permissions().size()))
                 .onErrorMap(
-                        e -> {
-                            log.error("Failed to get permission spec from Redis", e);
-                            return new RuntimeException(
-                                    "Failed to get permission spec from Redis", e);
-                        });
+                        e -> new RuntimeException("Failed to get permission spec from Redis", e));
     }
 }

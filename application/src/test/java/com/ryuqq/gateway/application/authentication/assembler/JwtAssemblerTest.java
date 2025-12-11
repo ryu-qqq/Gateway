@@ -51,7 +51,7 @@ class JwtAssemblerTest {
 
             // then
             assertThat(result).isNotNull();
-            assertThat(result.getValue()).isEqualTo(VALID_JWT);
+            assertThat(result.value()).isEqualTo(VALID_JWT);
         }
 
         @Test
@@ -80,7 +80,9 @@ class JwtAssemblerTest {
                             Instant.now().minusSeconds(60),
                             List.of("ROLE_USER"),
                             "tenant-123",
-                            "hash-456");
+                            "org-789",
+                            "hash-456",
+                            false);
 
             // when
             ValidateJwtResponse result = jwtAssembler.toValidateJwtResponse(claims);

@@ -1,0 +1,198 @@
+name: Terraform Apply
+
+on:
+  workflow_dispatch: # 수동 트리거 허용
+  workflow_call: # 다른 워크플로우에서 호출 가능
+    inputs:
+      gateway-image-tag:
+        description: 'Gateway Docker image tag (e.g., gateway-1-abc1234)'
+        required: false
+        type: string
+    secrets:
+      AWS_ROLE_ARN:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform-apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      # 순차 실행으로 변경 (의존성 고려)
+      max-parallel: 1
+      matrix:
+        module:
+          # 의존성 순서대로 배치
+          - name: ecr
+            dir: terraform/ecr
+            order: 0
+          - name: ecs-cluster
+            dir: terraform/ecs-cluster
+            order: 1
+          - name: elasticache
+            dir: terraform/elasticache
+            order: 2
+          - name: ecs-gateway
+            dir: terraform/ecs-gateway
+            order: 3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-duration-seconds: 3600
+          role-session-name: GitHubActions-Gateway-TerraformApply
+
+      - name: Terraform Init - ${{ matrix.module.name }}
+        working-directory: ${{ matrix.module.dir }}
+        run: terraform init -reconfigure
+
+      - name: Check and Import Existing Resources - ${{ matrix.module.name }}
+        working-directory: ${{ matrix.module.dir }}
+        run: |
+          echo "🔍 기존 리소스 확인 및 Import 중..."
+
+          # Plan 실행하여 충돌 확인
+          set +e
+          terraform plan -out=tfplan 2>&1 | tee plan_output.txt
+          PLAN_EXIT_CODE=$?
+          set -e
+
+          # 409 에러 또는 "already exists" 패턴 확인
+          if grep -q "EntityAlreadyExists\|already exists" plan_output.txt; then
+            echo "⚠️  기존 리소스 발견! Import 작업 시작..."
+
+            # ECR 모듈
+            if [ "${{ matrix.module.name }}" == "ecr" ]; then
+              echo "📦 ECR Repository 리소스 Import 중..."
+              if aws ecr describe-repositories --repository-names gateway-prod --region ap-northeast-2 >/dev/null 2>&1; then
+                echo "  → Importing gateway-prod ECR repository..."
+                terraform import -input=false 'module.ecr_gateway.aws_ecr_repository.this[0]' gateway-prod || echo "  ⚠️  Import failed or already in state"
+              fi
+            fi
+
+            # ECS Cluster 모듈
+            if [ "${{ matrix.module.name }}" == "ecs-cluster" ]; then
+              echo "📦 ECS Cluster 리소스 Import 중..."
+              CLUSTER_ARN=$(aws ecs describe-clusters --clusters gateway-cluster-prod --region ap-northeast-2 --query 'clusters[0].clusterArn' --output text 2>/dev/null || echo "")
+              if [ -n "$CLUSTER_ARN" ] && [ "$CLUSTER_ARN" != "None" ]; then
+                echo "  → Importing ECS Cluster: $CLUSTER_ARN"
+                terraform import -input=false aws_ecs_cluster.main "$CLUSTER_ARN" || echo "  ⚠️  Import failed or already in state"
+              fi
+            fi
+
+            # ElastiCache 모듈
+            if [ "${{ matrix.module.name }}" == "elasticache" ]; then
+              echo "📦 ElastiCache Redis 리소스 Import 중..."
+              if aws elasticache describe-cache-clusters --cache-cluster-id gateway-redis-prod --region ap-northeast-2 >/dev/null 2>&1; then
+                echo "  → Importing gateway-redis-prod..."
+                terraform import -input=false 'module.redis.aws_elasticache_cluster.this[0]' gateway-redis-prod || echo "  ⚠️  Import failed or already in state"
+              fi
+            fi
+
+            # ECS Gateway 모듈
+            if [ "${{ matrix.module.name }}" == "ecs-gateway" ]; then
+              echo "📦 ECS Gateway 리소스 Import 중..."
+
+              # ALB
+              ALB_ARN=$(aws elbv2 describe-load-balancers --names gateway-alb-prod --region ap-northeast-2 --query 'LoadBalancers[0].LoadBalancerArn' --output text 2>/dev/null || echo "")
+              if [ -n "$ALB_ARN" ] && [ "$ALB_ARN" != "None" ]; then
+                echo "  → Importing ALB: $ALB_ARN"
+                terraform import -input=false aws_lb.gateway "$ALB_ARN" || echo "  ⚠️  Import failed or already in state"
+              fi
+
+              # Target Group
+              TG_ARN=$(aws elbv2 describe-target-groups --names gateway-tg-prod --region ap-northeast-2 --query 'TargetGroups[0].TargetGroupArn' --output text 2>/dev/null || echo "")
+              if [ -n "$TG_ARN" ] && [ "$TG_ARN" != "None" ]; then
+                echo "  → Importing Target Group: $TG_ARN"
+                terraform import -input=false aws_lb_target_group.gateway "$TG_ARN" || echo "  ⚠️  Import failed or already in state"
+              fi
+            fi
+
+            echo "✅ Import 완료! Plan 재실행..."
+            terraform plan -out=tfplan
+          else
+            echo "✅ 기존 리소스 없음 또는 State와 일치. 정상 진행."
+          fi
+
+          rm -f plan_output.txt
+
+      - name: Terraform Apply - ${{ matrix.module.name }}
+        working-directory: ${{ matrix.module.dir }}
+        run: |
+          echo "🚀 Applying Terraform for ${{ matrix.module.name }}..."
+
+          # Image Tag 변수 설정 (Build & Deploy 워크플로우에서 전달됨)
+          EXTRA_VARS=""
+
+          if [ "${{ matrix.module.name }}" == "ecs-gateway" ] && [ -n "${{ inputs.gateway-image-tag }}" ]; then
+            echo "📦 Using Gateway image tag: ${{ inputs.gateway-image-tag }}"
+            EXTRA_VARS="-var=image_tag=${{ inputs.gateway-image-tag }}"
+          else
+            echo "ℹ️  No image tag provided for ${{ matrix.module.name }}, using default from provider.tf"
+          fi
+
+          # Terraform Plan with optional image_tag variable
+          echo "📋 Generating fresh terraform plan..."
+          terraform plan $EXTRA_VARS -out=tfplan
+
+          terraform apply -auto-approve -no-color tfplan
+          echo "✅ Apply completed for ${{ matrix.module.name }}"
+
+      - name: Terraform Output - ${{ matrix.module.name }}
+        working-directory: ${{ matrix.module.dir }}
+        run: |
+          echo "📋 Outputs for ${{ matrix.module.name }}:"
+          terraform output -json > outputs-${{ matrix.module.name }}.json
+          terraform output
+
+      - name: Upload Apply Results - ${{ matrix.module.name }}
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: apply-results-${{ matrix.module.name }}
+          path: ${{ matrix.module.dir }}/outputs-${{ matrix.module.name }}.json
+          retention-days: 30
+
+  notify-completion:
+    name: Notify Deployment Completion
+    needs: terraform-apply
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Create Deployment Summary
+        run: |
+          echo "## 🎉 Connectly Gateway Infrastructure Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ needs.terraform-apply.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**: Production" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed by**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Modules Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ ECR Repository" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ ECS Cluster" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ ElastiCache (Redis)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ ECS Gateway" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Application URL**: https://gateway.set-of.com" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Next Steps**:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Verify infrastructure in AWS Console" >> $GITHUB_STEP_SUMMARY
+          echo "2. Check CloudWatch logs" >> $GITHUB_STEP_SUMMARY
+          echo "3. Test application endpoints" >> $GITHUB_STEP_SUMMARY

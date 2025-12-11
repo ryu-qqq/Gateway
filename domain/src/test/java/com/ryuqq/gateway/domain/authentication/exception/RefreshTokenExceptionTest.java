@@ -17,14 +17,15 @@ class RefreshTokenExceptionTest {
         @DisplayName("예외 생성 및 메시지 확인")
         void shouldCreateExceptionWithMessage() {
             // given
-            String message = "Refresh token is invalid";
+            String detail = "invalid format";
 
             // when
-            RefreshTokenInvalidException exception = new RefreshTokenInvalidException(message);
+            RefreshTokenInvalidException exception = new RefreshTokenInvalidException(detail);
 
             // then
-            assertThat(exception.getMessage()).isEqualTo(message);
-            assertThat(exception.code()).isEqualTo("AUTH-004");
+            // DomainException 형식: ErrorCode.getMessage() + ": " + detail
+            assertThat(exception.getMessage()).isEqualTo("Refresh token is invalid: " + detail);
+            assertThat(exception.getCode()).isEqualTo("AUTH-004");
             assertThat(exception.getErrorCode())
                     .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_INVALID);
         }
@@ -50,14 +51,15 @@ class RefreshTokenExceptionTest {
         @DisplayName("예외 생성 및 메시지 확인")
         void shouldCreateExceptionWithMessage() {
             // given
-            String message = "Refresh token has expired";
+            String detail = "token TTL exceeded";
 
             // when
-            RefreshTokenExpiredException exception = new RefreshTokenExpiredException(message);
+            RefreshTokenExpiredException exception = new RefreshTokenExpiredException(detail);
 
             // then
-            assertThat(exception.getMessage()).isEqualTo(message);
-            assertThat(exception.code()).isEqualTo("AUTH-005");
+            // DomainException 형식: ErrorCode.getMessage() + ": " + detail
+            assertThat(exception.getMessage()).isEqualTo("Refresh token has expired: " + detail);
+            assertThat(exception.getCode()).isEqualTo("AUTH-005");
             assertThat(exception.getErrorCode())
                     .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED);
         }
@@ -84,14 +86,15 @@ class RefreshTokenExceptionTest {
         @DisplayName("예외 생성 및 메시지 확인")
         void shouldCreateExceptionWithMessage() {
             // given
-            String message = "Token reuse detected";
+            String detail = "reuse count exceeded";
 
             // when
-            RefreshTokenReusedException exception = new RefreshTokenReusedException(message);
+            RefreshTokenReusedException exception = new RefreshTokenReusedException(detail);
 
             // then
-            assertThat(exception.getMessage()).isEqualTo(message);
-            assertThat(exception.code()).isEqualTo("AUTH-006");
+            // DomainException 형식: ErrorCode.getMessage() + ": " + detail
+            assertThat(exception.getMessage()).isEqualTo("Refresh token reuse detected: " + detail);
+            assertThat(exception.getCode()).isEqualTo("AUTH-006");
             assertThat(exception.getErrorCode())
                     .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_REUSED);
         }
@@ -118,14 +121,15 @@ class RefreshTokenExceptionTest {
         @DisplayName("예외 생성 및 메시지 확인")
         void shouldCreateExceptionWithMessage() {
             // given
-            String message = "Refresh token is missing from cookie";
+            String detail = "cookie not found";
 
             // when
-            RefreshTokenMissingException exception = new RefreshTokenMissingException(message);
+            RefreshTokenMissingException exception = new RefreshTokenMissingException(detail);
 
             // then
-            assertThat(exception.getMessage()).isEqualTo(message);
-            assertThat(exception.code()).isEqualTo("AUTH-007");
+            // DomainException 형식: ErrorCode.getMessage() + ": " + detail
+            assertThat(exception.getMessage()).isEqualTo("Refresh token is missing: " + detail);
+            assertThat(exception.getCode()).isEqualTo("AUTH-007");
             assertThat(exception.getErrorCode())
                     .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_MISSING);
         }
@@ -151,14 +155,15 @@ class RefreshTokenExceptionTest {
         @DisplayName("예외 생성 및 메시지 확인")
         void shouldCreateExceptionWithMessage() {
             // given
-            String message = "Lock acquisition failed";
+            String detail = "Lock acquisition failed";
 
             // when
-            TokenRefreshFailedException exception = new TokenRefreshFailedException(message);
+            TokenRefreshFailedException exception = new TokenRefreshFailedException(detail);
 
             // then
-            assertThat(exception.getMessage()).isEqualTo(message);
-            assertThat(exception.code()).isEqualTo("AUTH-008");
+            // DomainException 형식: ErrorCode.getMessage() + ": " + detail
+            assertThat(exception.getMessage()).isEqualTo("Token refresh failed: " + detail);
+            assertThat(exception.getCode()).isEqualTo("AUTH-008");
             assertThat(exception.getErrorCode())
                     .isEqualTo(AuthenticationErrorCode.TOKEN_REFRESH_FAILED);
         }

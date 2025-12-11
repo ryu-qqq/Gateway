@@ -30,6 +30,7 @@ class JwtClaimsTest {
             // given
             List<String> roles = List.of("USER", "ADMIN");
             String tenantId = "tenant123";
+            String organizationId = "org123";
             String permissionHash = "hash123";
 
             // when
@@ -41,6 +42,7 @@ class JwtClaimsTest {
                             ISSUED_TIME,
                             roles,
                             tenantId,
+                            organizationId,
                             permissionHash,
                             false);
 
@@ -51,6 +53,7 @@ class JwtClaimsTest {
             assertThat(claims.issuedAt()).isEqualTo(ISSUED_TIME);
             assertThat(claims.roles()).isEqualTo(roles);
             assertThat(claims.tenantId()).isEqualTo(tenantId);
+            assertThat(claims.organizationId()).isEqualTo(organizationId);
             assertThat(claims.permissionHash()).isEqualTo(permissionHash);
             assertThat(claims.mfaVerified()).isFalse();
         }
@@ -68,11 +71,13 @@ class JwtClaimsTest {
                             null,
                             null,
                             null,
+                            null,
                             false);
 
             // then
             assertThat(claims.roles()).isEmpty();
             assertThat(claims.tenantId()).isNull();
+            assertThat(claims.organizationId()).isNull();
             assertThat(claims.permissionHash()).isNull();
         }
 
@@ -91,6 +96,7 @@ class JwtClaimsTest {
                             FUTURE_TIME,
                             ISSUED_TIME,
                             originalRoles,
+                            null,
                             null,
                             null,
                             false);
@@ -114,6 +120,7 @@ class JwtClaimsTest {
                                             List.of(),
                                             null,
                                             null,
+                                            null,
                                             false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Subject (sub) cannot be null or blank");
@@ -130,6 +137,7 @@ class JwtClaimsTest {
                                             FUTURE_TIME,
                                             ISSUED_TIME,
                                             List.of(),
+                                            null,
                                             null,
                                             null,
                                             false))
@@ -150,6 +158,7 @@ class JwtClaimsTest {
                                             List.of(),
                                             null,
                                             null,
+                                            null,
                                             false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Issuer (iss) cannot be null or blank");
@@ -168,6 +177,7 @@ class JwtClaimsTest {
                                             List.of(),
                                             null,
                                             null,
+                                            null,
                                             false))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("Issuer (iss) cannot be null or blank");
@@ -184,6 +194,7 @@ class JwtClaimsTest {
                                             null,
                                             ISSUED_TIME,
                                             List.of(),
+                                            null,
                                             null,
                                             null,
                                             false))

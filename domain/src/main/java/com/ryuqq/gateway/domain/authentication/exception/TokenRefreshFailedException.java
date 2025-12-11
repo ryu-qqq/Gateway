@@ -18,35 +18,30 @@ import com.ryuqq.gateway.domain.common.exception.DomainException;
  * @author development-team
  * @since 1.0.0
  */
-public class TokenRefreshFailedException extends DomainException {
+public final class TokenRefreshFailedException extends DomainException {
 
     /**
-     * Constructor - 메시지로 예외 생성
+     * Constructor - 상세 정보로 예외 생성
      *
-     * @param message 상세 에러 메시지
+     * @param detail 상세 정보
      */
-    public TokenRefreshFailedException(String message) {
-        super(AuthenticationErrorCode.TOKEN_REFRESH_FAILED.getCode(), message);
+    public TokenRefreshFailedException(String detail) {
+        super(AuthenticationErrorCode.TOKEN_REFRESH_FAILED, detail);
     }
 
     /**
-     * Constructor - 메시지와 원인으로 예외 생성
+     * Constructor - 상세 정보와 원인으로 예외 생성
      *
-     * @param message 상세 에러 메시지
+     * @param detail 상세 정보
      * @param cause 원인 예외
      */
-    public TokenRefreshFailedException(String message, Throwable cause) {
-        super(
-                AuthenticationErrorCode.TOKEN_REFRESH_FAILED.getCode(),
-                message + ": " + cause.getMessage());
+    public TokenRefreshFailedException(String detail, Throwable cause) {
+        super(AuthenticationErrorCode.TOKEN_REFRESH_FAILED, detail + ": " + cause.getMessage());
+        initCause(cause);
     }
 
-    /**
-     * 에러 코드 조회
-     *
-     * @return AuthenticationErrorCode.TOKEN_REFRESH_FAILED
-     */
-    public AuthenticationErrorCode getErrorCode() {
-        return AuthenticationErrorCode.TOKEN_REFRESH_FAILED;
+    /** Constructor - 기본 예외 생성 */
+    public TokenRefreshFailedException() {
+        super(AuthenticationErrorCode.TOKEN_REFRESH_FAILED);
     }
 }

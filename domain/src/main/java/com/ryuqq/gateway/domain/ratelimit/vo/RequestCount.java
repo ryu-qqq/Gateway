@@ -1,7 +1,5 @@
 package com.ryuqq.gateway.domain.ratelimit.vo;
 
-import java.util.Objects;
-
 /**
  * RequestCount - 요청 횟수 Value Object
  *
@@ -15,15 +13,17 @@ import java.util.Objects;
  *   <li>increment() 메서드로 새 인스턴스 반환
  * </ul>
  *
+ * @param value 요청 횟수
  * @author development-team
  * @since 1.0.0
  */
-public final class RequestCount {
+public record RequestCount(long value) {
 
-    private final long value;
-
-    private RequestCount(long value) {
-        this.value = value;
+    /** Compact Constructor (검증 로직) */
+    public RequestCount {
+        if (value < 0) {
+            throw new IllegalArgumentException("count cannot be negative");
+        }
     }
 
     /**
@@ -34,9 +34,6 @@ public final class RequestCount {
      * @throws IllegalArgumentException count가 음수인 경우
      */
     public static RequestCount of(long count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("count cannot be negative");
-        }
         return new RequestCount(count);
     }
 
@@ -70,32 +67,6 @@ public final class RequestCount {
      */
     public boolean isExceeded(int limit) {
         return value >= limit;
-    }
-
-    /**
-     * 요청 횟수 값 반환
-     *
-     * @return 요청 횟수
-     */
-    public long getValue() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        RequestCount that = (RequestCount) o;
-        return value == that.value;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
     }
 
     @Override

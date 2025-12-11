@@ -149,7 +149,7 @@ public final class TenantConfig {
      */
     public void validateMfa(Boolean mfaVerified) {
         if (mfaRequired && (mfaVerified == null || !mfaVerified)) {
-            throw new MfaRequiredException(tenantId.getValue());
+            throw new MfaRequiredException(tenantId.value());
         }
     }
 
@@ -165,7 +165,7 @@ public final class TenantConfig {
      */
     public void validateSocialLoginProvider(SocialProvider provider) {
         if (!isSocialLoginAllowed(provider)) {
-            throw new SocialLoginNotAllowedException(tenantId.getValue(), provider.getCode());
+            throw new SocialLoginNotAllowedException(tenantId.value(), provider.getCode());
         }
     }
 
@@ -229,7 +229,7 @@ public final class TenantConfig {
      * @since 1.0.0
      */
     public String getTenantIdValue() {
-        return tenantId.getValue();
+        return tenantId.value();
     }
 
     /**

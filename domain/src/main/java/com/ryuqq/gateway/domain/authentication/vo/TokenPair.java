@@ -1,7 +1,5 @@
 package com.ryuqq.gateway.domain.authentication.vo;
 
-import java.util.Objects;
-
 /**
  * TokenPair Value Object
  *
@@ -22,18 +20,21 @@ import java.util.Objects;
  *   <li>보안을 위해 toString에 토큰 값 마스킹
  * </ul>
  *
+ * @param accessToken Access Token VO
+ * @param refreshToken Refresh Token VO
  * @author development-team
  * @since 1.0.0
  */
-public final class TokenPair {
+public record TokenPair(AccessToken accessToken, RefreshToken refreshToken) {
 
-    private final AccessToken accessToken;
-    private final RefreshToken refreshToken;
-
-    /** Private Constructor (정적 팩토리 메서드 사용) */
-    private TokenPair(AccessToken accessToken, RefreshToken refreshToken) {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
+    /** Compact Constructor (검증 로직) */
+    public TokenPair {
+        if (accessToken == null) {
+            throw new IllegalArgumentException("Access token cannot be null");
+        }
+        if (refreshToken == null) {
+            throw new IllegalArgumentException("Refresh token cannot be null");
+        }
     }
 
     /**
@@ -45,12 +46,6 @@ public final class TokenPair {
      * @throws IllegalArgumentException 토큰이 null인 경우
      */
     public static TokenPair of(AccessToken accessToken, RefreshToken refreshToken) {
-        if (accessToken == null) {
-            throw new IllegalArgumentException("Access token cannot be null");
-        }
-        if (refreshToken == null) {
-            throw new IllegalArgumentException("Refresh token cannot be null");
-        }
         return new TokenPair(accessToken, refreshToken);
     }
 
@@ -70,39 +65,25 @@ public final class TokenPair {
     }
 
     /**
-     * Access Token 조회
+     * Access Token 값(문자열) 조회
      *
-     * @return Access Token VO
+     * <p>Law of Demeter 준수를 위한 위임 메서드
+     *
+     * @return Access Token 문자열 값
      */
-    public AccessToken getAccessToken() {
-        return accessToken;
+    public String accessTokenValue() {
+        return accessToken.value();
     }
 
     /**
-     * Refresh Token 조회
+     * Refresh Token 값(문자열) 조회
      *
-     * @return Refresh Token VO
+     * <p>Law of Demeter 준수를 위한 위임 메서드
+     *
+     * @return Refresh Token 문자열 값
      */
-    public RefreshToken getRefreshToken() {
-        return refreshToken;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        TokenPair tokenPair = (TokenPair) o;
-        return Objects.equals(accessToken, tokenPair.accessToken)
-                && Objects.equals(refreshToken, tokenPair.refreshToken);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(accessToken, refreshToken);
+    public String refreshTokenValue() {
+        return refreshToken.value();
     }
 
     /**

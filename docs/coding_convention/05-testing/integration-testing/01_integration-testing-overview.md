@@ -21,7 +21,7 @@ UseCase (Application Layer)
     ↓
 Repository (Persistence Layer)
     ↓
-Real Database (MySQL via TestContainers)
+Real Database (PostgreSQL via TestContainers)
     ↓
 HTTP Response
 ```
@@ -36,7 +36,7 @@ HTTP Response
 | **목적** | 로직 정확도 | 전체 흐름 검증 |
 | **테스트** | `@DataJpaTest`, `@WebMvcTest` | `@SpringBootTest` |
 | **HTTP** | MockMvc (가짜) | TestRestTemplate (실제) |
-| **DB** | H2 (인메모리) | MySQL (실제) |
+| **DB** | H2 (인메모리) | PostgreSQL (실제) |
 | **신뢰도** | 중간 | 높음 |
 
 **예시**:
@@ -117,17 +117,17 @@ class OrderIntegrationTest {
 ```sql
 -- Flyway가 실행: 테이블 생성
 CREATE TABLE IF NOT EXISTS orders (
-    order_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    order_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     customer_id BIGINT NOT NULL,
     status VARCHAR(50) NOT NULL,
     total_amount BIGINT NOT NULL,
     order_date DATE NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
-    INDEX idx_customer_id (customer_id),
-    INDEX idx_order_date (order_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE INDEX idx_orders_customer_id ON orders (customer_id);
+CREATE INDEX idx_orders_order_date ON orders (order_date);
 ```
 
 #### @Sql: 테스트 데이터 삽입 (DML)
@@ -140,18 +140,23 @@ DELETE FROM orders;
 DELETE FROM customers;
 
 INSERT INTO customers (customer_id, name, email)
+OVERRIDING SYSTEM VALUE
 VALUES (1, 'Alice', 'alice@example.com');
 
 INSERT INTO customers (customer_id, name, email)
+OVERRIDING SYSTEM VALUE
 VALUES (2, 'Bob', 'bob@example.com');
 
 INSERT INTO orders (order_id, customer_id, status, total_amount, order_date)
+OVERRIDING SYSTEM VALUE
 VALUES (100, 1, 'PENDING', 10000, '2024-01-01');
 
 INSERT INTO orders (order_id, customer_id, status, total_amount, order_date)
+OVERRIDING SYSTEM VALUE
 VALUES (101, 1, 'CONFIRMED', 20000, '2024-01-02');
 
 INSERT INTO orders (order_id, customer_id, status, total_amount, order_date)
+OVERRIDING SYSTEM VALUE
 VALUES (102, 2, 'PENDING', 30000, '2024-01-03');
 ```
 
@@ -196,7 +201,7 @@ Integration 테스트의 전체 실행 흐름을 이해하면 복잡성이 많�
 
 ```
 1. TestContainers 시작
-   └─ Docker로 MySQL 8.0 컨테이너 시작
+   └─ Docker로 PostgreSQL 컨테이너 시작
    └─ 임시 데이터베이스 생성
 
 2. Spring Boot 애플리케이션 시작
@@ -225,15 +230,15 @@ Integration 테스트의 전체 실행 흐름을 이해하면 복잡성이 많�
 
 8. 모든 테스트 완료 후
    └─ TestContainers 종료
-   └─ MySQL 컨테이너 자동 삭제
+   └─ PostgreSQL 컨테이너 자동 삭제
 ```
 
 ### 다이어그램
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ 1. TestContainers Start (MySQL 8.0)                     │
-│    Docker → MySQL Container → 임시 DB 생성                │
+│ 1. TestContainers Start (PostgreSQL)                    │
+│    Docker → PostgreSQL Container → 임시 DB 생성          │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -265,7 +270,7 @@ Integration 테스트의 전체 실행 흐름을 이해하면 복잡성이 많�
                          ↓
 ┌─────────────────────────────────────────────────────────┐
 │ 7. TestContainers Stop                                  │
-│    MySQL Container 자동 삭제                             │
+│    PostgreSQL Container 자동 삭제                        │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -273,27 +278,44 @@ Integration 테스트의 전체 실행 흐름을 이해하면 복잡성이 많�
 
 ## 4️⃣ 기본 설정
 
-### Gradle 의존성
+### Gradle 의존성 (Version Catalog 사용)
 
 ```gradle
+// gradle/libs.versions.toml에서 버전 관리
+// 실제 의존성 선언은 libs.* 참조 사용
+
 dependencies {
     // Spring Boot
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation libs.spring.boot.starter.web
+    implementation libs.spring.boot.starter.data.jpa
 
     // Flyway
-    implementation 'org.flywaydb:flyway-core:9.22.0'
-    implementation 'org.flywaydb:flyway-mysql:9.22.0'
+    implementation libs.flyway.core
+    implementation libs.flyway.postgresql
 
-    // MySQL
-    runtimeOnly 'com.mysql:mysql-connector-j:8.0.33'
+    // PostgreSQL
+    runtimeOnly libs.postgresql
 
     // 테스트
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.testcontainers:testcontainers:1.19.0'
-    testImplementation 'org.testcontainers:mysql:1.19.0'
-    testImplementation 'org.testcontainers:junit-jupiter:1.19.0'
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.junit
 }
+```
+
+**libs.versions.toml 참고**:
+```toml
+[versions]
+flyway = "10.10.0"
+testcontainers = "1.19.7"
+postgresql = "42.7.3"
+
+[libraries]
+flyway-core = { module = "org.flywaydb:flyway-core", version.ref = "flyway" }
+flyway-postgresql = { module = "org.flywaydb:flyway-database-postgresql", version.ref = "flyway" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 ```
 
 ### application-test.yml
@@ -333,7 +355,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -360,7 +382,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class OrderIntegrationTest {
 
     @Container
-    static MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0")
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
         .withDatabaseName("test")
         .withUsername("test")
         .withPassword("test");
@@ -436,7 +458,7 @@ Integration 테스트에서 반드시 지켜야 할 규칙:
 
 7. @Testcontainers 필수
    - 실제 DB 사용 (H2 금지)
-   - TestContainers로 MySQL 시작
+   - TestContainers로 PostgreSQL 시작
 ```
 
 ### 금지 규칙 ❌
@@ -482,11 +504,11 @@ Integration 테스트 작성 시 확인:
 - [ ] `src/test/resources/sql/` @Sql 테스트 데이터 파일 존재
 - [ ] `src/test/resources/application-test.yml` 테스트 설정 존재
 
-### Gradle 의존성
-- [ ] `spring-boot-starter-web` 존재
-- [ ] `spring-boot-starter-data-jpa` 존재
-- [ ] `flyway-core`, `flyway-mysql` 존재
-- [ ] `testcontainers`, `testcontainers:mysql` 존재
+### Gradle 의존성 (Version Catalog 사용)
+- [ ] `libs.spring.boot.starter.web` 존재
+- [ ] `libs.spring.boot.starter.data.jpa` 존재
+- [ ] `libs.flyway.core`, `libs.flyway.postgresql` 존재
+- [ ] `libs.testcontainers.postgresql`, `libs.testcontainers.junit` 존재
 
 ### 설정 파일
 - [ ] `spring.flyway.enabled=true` (application-test.yml)
@@ -498,7 +520,7 @@ Integration 테스트 작성 시 확인:
 - [ ] `@ActiveProfiles("test")` 존재
 - [ ] `@Testcontainers` 존재
 - [ ] `@Transactional` 존재
-- [ ] `@Container static MySQLContainer` 존재
+- [ ] `@Container static PostgreSQLContainer` 존재
 - [ ] `TestRestTemplate` 주입 존재
 
 ### 테스트 메서드
@@ -517,10 +539,8 @@ Integration 테스트 작성 시 확인:
 
 ## 7️⃣ 참고 문서
 
-- [flyway-testing-guide.md](../../04-persistence-layer/mysql/config/flyway-testing-guide.md) - Flyway 상세 가이드
-- [query-adapter-integration-testing.md](../../04-persistence-layer/mysql/adapter/query/query-adapter-integration-testing.md) - Query Adapter 통합 테스트
-- [02_e2e-test-pattern.md](./02_e2e-test-pattern.md) - E2E 테스트 패턴 (작성 예정)
-- [03_test-data-strategy.md](./03_test-data-strategy.md) - @Sql 데이터 전략 (작성 예정)
+- [Flyway 설정 가이드](../../04-persistence-layer/mysql/config/flyway-guide.md) - Flyway 상세 설정
+- [Test Fixtures Guide](../test-fixtures/01_test-fixtures-guide.md) - 테스트 픽스쳐 전략
 
 ---
 
@@ -544,15 +564,8 @@ Integration 테스트 작성 시 확인:
    - Flyway 스키마 + @Sql 데이터
    - @Transactional 롤백
 
-### 다음 단계
-
-- E2E 테스트 패턴 학습 (02_e2e-test-pattern.md)
-- @Sql 데이터 전략 학습 (03_test-data-strategy.md)
-- WireMock 외부 API 모킹 (04_wiremock-integration.md)
-- TestContainers 고급 설정 (05_testcontainers-setup.md)
-
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-13
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-05
+**버전**: 2.0.0

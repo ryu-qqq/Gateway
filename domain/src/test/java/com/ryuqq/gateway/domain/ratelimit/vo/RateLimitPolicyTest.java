@@ -29,11 +29,11 @@ class RateLimitPolicyTest {
 
             // then
             assertThat(policy).isNotNull();
-            assertThat(policy.getLimitType()).isEqualTo(LimitType.ENDPOINT);
-            assertThat(policy.getMaxRequests()).isEqualTo(1000);
-            assertThat(policy.getWindow()).isEqualTo(Duration.ofMinutes(1));
-            assertThat(policy.getAction()).isEqualTo(RateLimitAction.REJECT);
-            assertThat(policy.isAuditLogRequired()).isFalse();
+            assertThat(policy.limitType()).isEqualTo(LimitType.ENDPOINT);
+            assertThat(policy.maxRequests()).isEqualTo(1000);
+            assertThat(policy.window()).isEqualTo(Duration.ofMinutes(1));
+            assertThat(policy.action()).isEqualTo(RateLimitAction.REJECT);
+            assertThat(policy.auditLogRequired()).isFalse();
         }
 
         @Test
@@ -45,7 +45,7 @@ class RateLimitPolicyTest {
                             LimitType.OTP, 3, Duration.ofHours(1), RateLimitAction.REJECT, true);
 
             // then
-            assertThat(policy.isAuditLogRequired()).isTrue();
+            assertThat(policy.auditLogRequired()).isTrue();
         }
 
         @Test
@@ -135,11 +135,11 @@ class RateLimitPolicyTest {
             RateLimitPolicy policy = RateLimitPolicy.defaultPolicy(LimitType.ENDPOINT);
 
             // then
-            assertThat(policy.getLimitType()).isEqualTo(LimitType.ENDPOINT);
-            assertThat(policy.getMaxRequests()).isEqualTo(1000);
-            assertThat(policy.getWindow()).isEqualTo(Duration.ofMinutes(1));
-            assertThat(policy.getAction()).isEqualTo(RateLimitAction.REJECT);
-            assertThat(policy.isAuditLogRequired()).isFalse();
+            assertThat(policy.limitType()).isEqualTo(LimitType.ENDPOINT);
+            assertThat(policy.maxRequests()).isEqualTo(1000);
+            assertThat(policy.window()).isEqualTo(Duration.ofMinutes(1));
+            assertThat(policy.action()).isEqualTo(RateLimitAction.REJECT);
+            assertThat(policy.auditLogRequired()).isFalse();
         }
 
         @Test
@@ -149,11 +149,11 @@ class RateLimitPolicyTest {
             RateLimitPolicy policy = RateLimitPolicy.defaultPolicy(LimitType.OTP);
 
             // then
-            assertThat(policy.getLimitType()).isEqualTo(LimitType.OTP);
-            assertThat(policy.getMaxRequests()).isEqualTo(3);
-            assertThat(policy.getWindow()).isEqualTo(Duration.ofHours(1));
-            assertThat(policy.getAction()).isEqualTo(RateLimitAction.REJECT);
-            assertThat(policy.isAuditLogRequired()).isTrue();
+            assertThat(policy.limitType()).isEqualTo(LimitType.OTP);
+            assertThat(policy.maxRequests()).isEqualTo(3);
+            assertThat(policy.window()).isEqualTo(Duration.ofHours(1));
+            assertThat(policy.action()).isEqualTo(RateLimitAction.REJECT);
+            assertThat(policy.auditLogRequired()).isTrue();
         }
 
         @Test
@@ -163,11 +163,11 @@ class RateLimitPolicyTest {
             RateLimitPolicy policy = RateLimitPolicy.defaultPolicy(LimitType.LOGIN);
 
             // then
-            assertThat(policy.getLimitType()).isEqualTo(LimitType.LOGIN);
-            assertThat(policy.getMaxRequests()).isEqualTo(5);
-            assertThat(policy.getWindow()).isEqualTo(Duration.ofMinutes(5));
-            assertThat(policy.getAction()).isEqualTo(RateLimitAction.BLOCK_IP);
-            assertThat(policy.isAuditLogRequired()).isTrue();
+            assertThat(policy.limitType()).isEqualTo(LimitType.LOGIN);
+            assertThat(policy.maxRequests()).isEqualTo(5);
+            assertThat(policy.window()).isEqualTo(Duration.ofMinutes(5));
+            assertThat(policy.action()).isEqualTo(RateLimitAction.BLOCK_IP);
+            assertThat(policy.auditLogRequired()).isTrue();
         }
 
         @Test
@@ -177,11 +177,11 @@ class RateLimitPolicyTest {
             RateLimitPolicy policy = RateLimitPolicy.defaultPolicy(LimitType.TOKEN_REFRESH);
 
             // then
-            assertThat(policy.getLimitType()).isEqualTo(LimitType.TOKEN_REFRESH);
-            assertThat(policy.getMaxRequests()).isEqualTo(3);
-            assertThat(policy.getWindow()).isEqualTo(Duration.ofMinutes(1));
-            assertThat(policy.getAction()).isEqualTo(RateLimitAction.REVOKE_TOKEN);
-            assertThat(policy.isAuditLogRequired()).isTrue();
+            assertThat(policy.limitType()).isEqualTo(LimitType.TOKEN_REFRESH);
+            assertThat(policy.maxRequests()).isEqualTo(3);
+            assertThat(policy.window()).isEqualTo(Duration.ofMinutes(1));
+            assertThat(policy.action()).isEqualTo(RateLimitAction.REVOKE_TOKEN);
+            assertThat(policy.auditLogRequired()).isTrue();
         }
 
         @Test
@@ -191,11 +191,11 @@ class RateLimitPolicyTest {
             RateLimitPolicy policy = RateLimitPolicy.defaultPolicy(LimitType.INVALID_JWT);
 
             // then
-            assertThat(policy.getLimitType()).isEqualTo(LimitType.INVALID_JWT);
-            assertThat(policy.getMaxRequests()).isEqualTo(10);
-            assertThat(policy.getWindow()).isEqualTo(Duration.ofMinutes(5));
-            assertThat(policy.getAction()).isEqualTo(RateLimitAction.BLOCK_IP);
-            assertThat(policy.isAuditLogRequired()).isTrue();
+            assertThat(policy.limitType()).isEqualTo(LimitType.INVALID_JWT);
+            assertThat(policy.maxRequests()).isEqualTo(10);
+            assertThat(policy.window()).isEqualTo(Duration.ofMinutes(5));
+            assertThat(policy.action()).isEqualTo(RateLimitAction.BLOCK_IP);
+            assertThat(policy.auditLogRequired()).isTrue();
         }
     }
 

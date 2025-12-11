@@ -29,7 +29,7 @@ class RefreshTokenTest {
 
             // then
             assertThat(refreshToken).isNotNull();
-            assertThat(refreshToken.getValue()).isEqualTo(validToken);
+            assertThat(refreshToken.value()).isEqualTo(validToken);
         }
 
         @Test
@@ -42,7 +42,7 @@ class RefreshTokenTest {
             RefreshToken refreshToken = RefreshToken.of(token32Chars);
 
             // then
-            assertThat(refreshToken.getValue()).isEqualTo(token32Chars);
+            assertThat(refreshToken.value()).isEqualTo(token32Chars);
         }
 
         @Test
@@ -55,7 +55,7 @@ class RefreshTokenTest {
             RefreshToken refreshToken = RefreshToken.of(longToken);
 
             // then
-            assertThat(refreshToken.getValue()).isEqualTo(longToken);
+            assertThat(refreshToken.value()).isEqualTo(longToken);
         }
     }
 
@@ -124,7 +124,7 @@ class RefreshTokenTest {
             RefreshToken refreshToken = RefreshToken.of(token);
 
             // when
-            String value = refreshToken.getValue();
+            String value = refreshToken.value();
 
             // then
             assertThat(value).isEqualTo(token);
@@ -251,7 +251,7 @@ class RefreshTokenTest {
             RefreshToken token = RefreshToken.of(base64Token);
 
             // then
-            assertThat(token.getValue()).isEqualTo(base64Token);
+            assertThat(token.value()).isEqualTo(base64Token);
         }
 
         @Test
@@ -264,7 +264,7 @@ class RefreshTokenTest {
             RefreshToken token = RefreshToken.of(uuidToken);
 
             // then
-            assertThat(token.getValue()).isEqualTo(uuidToken);
+            assertThat(token.value()).isEqualTo(uuidToken);
         }
 
         @Test
@@ -277,7 +277,7 @@ class RefreshTokenTest {
             RefreshToken token = RefreshToken.of(tokenWithSpecial);
 
             // then
-            assertThat(token.getValue()).isEqualTo(tokenWithSpecial);
+            assertThat(token.value()).isEqualTo(tokenWithSpecial);
         }
     }
 }

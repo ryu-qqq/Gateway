@@ -24,8 +24,9 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException(accessToken);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-001");
-            assertThat(exception.getMessage()).isEqualTo("JWT token has expired: " + accessToken);
+            assertThat(exception.getCode()).isEqualTo("AUTH-001");
+            assertThat(exception.getMessage())
+                    .isEqualTo("JWT token has expired: accessToken: " + accessToken);
         }
 
         @Test
@@ -35,7 +36,7 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException();
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-001");
+            assertThat(exception.getCode()).isEqualTo("AUTH-001");
             assertThat(exception.getMessage()).isEqualTo("JWT token has expired");
         }
 
@@ -49,8 +50,8 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException(accessToken);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-001");
-            assertThat(exception.getMessage()).isEqualTo("JWT token has expired: ");
+            assertThat(exception.getCode()).isEqualTo("AUTH-001");
+            assertThat(exception.getMessage()).isEqualTo("JWT token has expired: accessToken: ");
         }
 
         @Test
@@ -63,8 +64,9 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException(accessToken);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-001");
-            assertThat(exception.getMessage()).isEqualTo("JWT token has expired: null");
+            assertThat(exception.getCode()).isEqualTo("AUTH-001");
+            assertThat(exception.getMessage())
+                    .isEqualTo("JWT token has expired: accessToken: null");
         }
     }
 
@@ -79,8 +81,9 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException("test-token");
 
             // when & then
-            assertThat(exception.code()).isEqualTo(AuthenticationErrorCode.JWT_EXPIRED.getCode());
-            assertThat(exception.code()).isEqualTo("AUTH-001");
+            assertThat(exception.getCode())
+                    .isEqualTo(AuthenticationErrorCode.JWT_EXPIRED.getCode());
+            assertThat(exception.getCode()).isEqualTo("AUTH-001");
         }
 
         @Test
@@ -90,7 +93,8 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException();
 
             // when & then
-            assertThat(exception.code()).isEqualTo(AuthenticationErrorCode.JWT_EXPIRED.getCode());
+            assertThat(exception.getCode())
+                    .isEqualTo(AuthenticationErrorCode.JWT_EXPIRED.getCode());
         }
     }
 
@@ -146,7 +150,7 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException(accessToken);
 
             // then
-            String expectedMessage = "JWT token has expired: " + accessToken;
+            String expectedMessage = "JWT token has expired: accessToken: " + accessToken;
             assertThat(exception.getMessage()).isEqualTo(expectedMessage);
         }
 
@@ -173,7 +177,7 @@ class JwtExpiredExceptionTest {
             try {
                 throw new JwtExpiredException("expired-token");
             } catch (JwtExpiredException e) {
-                assertThat(e.code()).isEqualTo("AUTH-001");
+                assertThat(e.getCode()).isEqualTo("AUTH-001");
                 assertThat(e.getMessage()).contains("expired-token");
             }
         }
@@ -207,7 +211,7 @@ class JwtExpiredExceptionTest {
                 throw new JwtExpiredException("test");
             } catch (DomainException e) {
                 caught = true;
-                caughtCode = e.code();
+                caughtCode = e.getCode();
             }
 
             // then
@@ -233,7 +237,7 @@ class JwtExpiredExceptionTest {
             JwtExpiredException exception = new JwtExpiredException(expiredToken);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-001");
+            assertThat(exception.getCode()).isEqualTo("AUTH-001");
             assertThat(exception.getMessage()).contains(expiredToken);
         }
     }

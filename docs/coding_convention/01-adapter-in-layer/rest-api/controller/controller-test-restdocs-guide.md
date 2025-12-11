@@ -35,11 +35,96 @@
 
 ## 2️⃣ Gradle 설정 (Build Configuration)
 
-### build.gradle 추가
+### 멀티모듈 아키텍처
+
+본 프로젝트는 **멀티모듈 구조**로 REST Docs를 설정합니다:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         빌드 시점                                │
+├─────────────────────────────────────────────────────────────────┤
+│  adapter-in/rest-api                                            │
+│  └── src/test/java/                                            │
+│      └── **/*DocsTest.java  →  ./gradlew test                   │
+│                              ↓                                  │
+│  build/generated-snippets/   (adoc 스니펫 생성)                  │
+│                              ↓                                  │
+│  bootstrap/bootstrap-web-api                                    │
+│  └── ./gradlew asciidoctor                                      │
+│                              ↓                                  │
+│  build/docs/asciidoc/index.html  (HTML 문서 생성)                │
+│                              ↓                                  │
+│  src/main/resources/static/docs/  (복사)                         │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         런타임 시점                              │
+├─────────────────────────────────────────────────────────────────┤
+│  Spring Boot 앱                                                 │
+│  └── GET /docs/index.html  →  static 리소스로 서빙               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+| 모듈 | 역할 |
+|------|------|
+| `adapter-in/rest-api` | 테스트 실행 → Snippets 생성 |
+| `bootstrap/bootstrap-web-api` | Asciidoctor → HTML 생성 → JAR 패키징 |
+
+### Version Catalog 설정 (gradle/libs.versions.toml)
+
+```toml
+[versions]
+restdocs = "3.0.1"
+asciidoctor = "3.3.2"
+
+[libraries]
+spring-restdocs-mockmvc = { module = "org.springframework.restdocs:spring-restdocs-mockmvc", version.ref = "restdocs" }
+spring-restdocs-asciidoctor = { module = "org.springframework.restdocs:spring-restdocs-asciidoctor", version.ref = "restdocs" }
+
+[plugins]
+asciidoctor = { id = "org.asciidoctor.jvm.convert", version.ref = "asciidoctor" }
+```
+
+### adapter-in/rest-api/build.gradle
 
 ```gradle
 plugins {
-    id 'org.asciidoctor.jvm.convert' version '4.0.0'  // ✅ AsciiDoc 변환
+    id 'java-library'
+}
+
+// ========================================
+// REST Docs Snippets Output Directory
+// ========================================
+ext {
+    snippetsDir = file('build/generated-snippets')
+}
+
+dependencies {
+    // REST Docs (테스트 의존성)
+    testImplementation libs.spring.restdocs.mockmvc
+}
+
+tasks.test {
+    outputs.dir snippetsDir  // ✅ 테스트 실행 시 Snippet 생성
+}
+```
+
+### bootstrap/bootstrap-web-api/build.gradle
+
+```gradle
+plugins {
+    id 'java'
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.asciidoctor)  // ✅ Asciidoctor 플러그인
+}
+
+// ========================================
+// REST Docs Configuration
+// ========================================
+ext {
+    // rest-api 모듈의 snippets 디렉토리 참조
+    snippetsDir = file("${project(':adapter-in:rest-api').buildDir}/generated-snippets")
 }
 
 configurations {
@@ -47,51 +132,106 @@ configurations {
 }
 
 dependencies {
-    // REST Docs
-    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
-    asciidoctorExt 'org.springframework.restdocs:spring-restdocs-asciidoctor'
+    // Adapters
+    implementation project(':adapter-in:rest-api')
+
+    // REST Docs (Asciidoctor Extension)
+    asciidoctorExt libs.spring.restdocs.asciidoctor
 }
 
-ext {
-    snippetsDir = file('build/generated-snippets')  // ✅ Snippet 생성 위치
-}
-
-test {
-    outputs.dir snippetsDir  // ✅ 테스트 실행 시 Snippet 생성
-}
-
+// ========================================
+// Asciidoctor Task
+// ========================================
 asciidoctor {
-    inputs.dir snippetsDir  // ✅ Snippet을 AsciiDoc에서 참조
+    dependsOn ':adapter-in:rest-api:test'  // ✅ rest-api 테스트 먼저 실행
+
+    inputs.dir snippetsDir
     configurations 'asciidoctorExt'
-    dependsOn test  // ✅ 테스트 실행 후 문서 생성
+
+    sources {
+        include '**/index.adoc'  // ✅ 메인 문서만 처리
+    }
 
     baseDirFollowsSourceFile()  // ✅ include 상대 경로 지원
 }
 
+// ========================================
+// Copy Docs to Static Resources
+// ========================================
+tasks.register('copyDocs', Copy) {
+    dependsOn asciidoctor
+    from "${asciidoctor.outputDir}"
+    into "${sourceSets.main.output.resourcesDir}/static/docs"
+}
+
 bootJar {
-    dependsOn asciidoctor  // ✅ JAR 패키징 시 문서 포함
-    from("${asciidoctor.outputDir}") {
-        into 'static/docs'  // ✅ /docs 경로로 서빙
-    }
+    dependsOn copyDocs  // ✅ JAR 패키징 시 문서 포함
 }
 ```
 
-### 빌드 플로우
+### 디렉토리 구조
 
 ```
-./gradlew clean build
+bootstrap/bootstrap-web-api/
+├── src/
+│   ├── docs/
+│   │   └── asciidoc/
+│   │       └── index.adoc          # 메인 문서 (스니펫 include)
+│   └── main/
+│       └── resources/
+│           └── static/
+│               └── docs/           # 빌드된 HTML 위치
+│                   └── .gitkeep
+└── build/
+    └── docs/
+        └── asciidoc/
+            └── index.html          # 생성된 HTML
+```
+
+### 빌드 플로우 (멀티모듈)
+
+```
+./gradlew :bootstrap:bootstrap-web-api:bootJar
     ↓
-1. test 실행
-    → build/generated-snippets/ 생성
+1. :adapter-in:rest-api:test 실행
+    → adapter-in/rest-api/build/generated-snippets/ 생성
     ↓
-2. asciidoctor 실행
-    → src/docs/asciidoc/*.adoc 읽기
-    → Snippet include
-    → build/docs/asciidoc/*.html 생성
+2. :bootstrap:bootstrap-web-api:asciidoctor 실행
+    → src/docs/asciidoc/index.adoc 읽기
+    → Snippet include (rest-api 모듈 참조)
+    → build/docs/asciidoc/index.html 생성
     ↓
-3. bootJar 실행
-    → HTML 문서를 JAR에 포함
-    → /static/docs/*.html
+3. :bootstrap:bootstrap-web-api:copyDocs 실행
+    → HTML을 static/docs/로 복사
+    ↓
+4. :bootstrap:bootstrap-web-api:bootJar 실행
+    → JAR에 문서 포함
+    → /BOOT-INF/classes/static/docs/index.html
+```
+
+### 빌드 명령어
+
+```bash
+# 문서만 빌드
+./gradlew :bootstrap:bootstrap-web-api:asciidoctor
+
+# JAR 빌드 (문서 포함)
+./gradlew :bootstrap:bootstrap-web-api:bootJar
+
+# 생성된 HTML 확인
+open bootstrap/bootstrap-web-api/build/docs/asciidoc/index.html
+```
+
+### Docker 배포
+
+**마운트 불필요** - JAR 내부에 문서가 포함됩니다.
+
+```dockerfile
+# Dockerfile (변경 불필요)
+COPY bootstrap/bootstrap-web-api/build/libs/*.jar app.jar
+
+# static 리소스는 JAR 내부에 포함됨
+# /BOOT-INF/classes/static/docs/index.html
 ```
 
 ---
@@ -563,20 +703,23 @@ src/test/resources/org/springframework/restdocs/templates/asciidoctor/
 
 ## 7️⃣ HTML 문서 생성 및 서빙
 
-### 문서 생성 명령어
+### 문서 생성 명령어 (멀티모듈)
 
 ```bash
-# 1. 테스트 실행 + Snippet 생성
-./gradlew clean test
+# 1. 테스트 실행 + Snippet 생성 (rest-api 모듈)
+./gradlew :adapter-in:rest-api:test
 
-# 2. AsciiDoc → HTML 변환
-./gradlew asciidoctor
+# 2. AsciiDoc → HTML 변환 (bootstrap 모듈)
+./gradlew :bootstrap:bootstrap-web-api:asciidoctor
 
 # 3. 생성된 HTML 확인
-open build/docs/asciidoc/index.html
+open bootstrap/bootstrap-web-api/build/docs/asciidoc/index.html
 
-# 4. JAR에 포함하여 패키징
-./gradlew bootJar
+# 4. JAR에 포함하여 패키징 (문서 자동 포함)
+./gradlew :bootstrap:bootstrap-web-api:bootJar
+
+# 5. 전체 빌드 (테스트 → 문서 → JAR)
+./gradlew clean build
 ```
 
 ### 애플리케이션에서 서빙
@@ -748,13 +891,15 @@ public ResponseEntity<?> createOrder() { }
 
 ## 🔟 체크리스트
 
-### 초기 설정 체크리스트
+### 초기 설정 체크리스트 (멀티모듈)
 
-- [ ] `build.gradle`에 REST Docs 의존성 추가
-- [ ] `asciidoctor` 플러그인 설정
-- [ ] `RestDocsTestSupport` Base 클래스 작성
-- [ ] `src/docs/asciidoc/` 디렉토리 생성
+- [ ] `gradle/libs.versions.toml`에 REST Docs 버전 및 플러그인 추가
+- [ ] `adapter-in/rest-api/build.gradle`에 snippetsDir 및 테스트 의존성 설정
+- [ ] `bootstrap/bootstrap-web-api/build.gradle`에 asciidoctor 플러그인 및 태스크 설정
+- [ ] `RestDocsTestSupport` Base 클래스 작성 (rest-api 모듈)
+- [ ] `bootstrap/bootstrap-web-api/src/docs/asciidoc/` 디렉토리 생성
 - [ ] `index.adoc` 메인 문서 작성
+- [ ] `static/docs/.gitkeep` 생성 (빌드된 HTML 위치)
 
 ### 테스트 작성 체크리스트
 
@@ -774,12 +919,13 @@ public ResponseEntity<?> createOrder() { }
 - [ ] 예시 (curl, HTTP 요청/응답) 포함
 - [ ] 공통 에러 응답 문서화
 
-### 빌드 및 배포 체크리스트
+### 빌드 및 배포 체크리스트 (멀티모듈)
 
-- [ ] `./gradlew clean test` 실행 (Snippet 생성)
-- [ ] `./gradlew asciidoctor` 실행 (HTML 생성)
-- [ ] `build/docs/asciidoc/index.html` 확인
-- [ ] `./gradlew bootJar` 실행 (JAR에 포함)
+- [ ] `./gradlew :adapter-in:rest-api:test` 실행 (Snippet 생성)
+- [ ] `./gradlew :bootstrap:bootstrap-web-api:asciidoctor` 실행 (HTML 생성)
+- [ ] `bootstrap/bootstrap-web-api/build/docs/asciidoc/index.html` 확인
+- [ ] `./gradlew :bootstrap:bootstrap-web-api:bootJar` 실행 (JAR에 포함)
+- [ ] Docker 마운트 불필요 확인 (JAR 내부에 문서 포함)
 - [ ] `/docs/index.html` 접근 확인
 
 ---
@@ -794,5 +940,5 @@ public ResponseEntity<?> createOrder() { }
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-13
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-05
+**버전**: 1.1.0

@@ -103,6 +103,7 @@ adapter-in/rest-api/
   * [ArchUnit Guide](./controller/controller-archunit.md) - 아키텍처 검증 가이드
 
 ### 📦 **DTO 패턴**
+* [**DTO Industry Standards**](./dto/dto-industry-standards.md) - **업계 표준 가이드** (ISO 8601, RFC 7807, 버전 관리, Idempotency)
 * [Command DTO Guide](./dto/command/command-dto-guide.md) - 상태 변경 요청 DTO (POST, PUT, PATCH, DELETE)
   * [Test Guide](./dto/command/command-dto-test-guide.md) - 단위 테스트 가이드
   * [ArchUnit Guide](./dto/command/command-dto-archunit.md) - 아키텍처 검증 가이드
@@ -117,7 +118,13 @@ adapter-in/rest-api/
 * [Mapper Guide](./mapper/mapper-guide.md) - API DTO ↔ Application DTO 변환 가이드 (@Component Bean, Static 금지)
 
 ### 🚨 **예외 처리**
-* TBD (작업 예정)
+* [Error Guide](./error/error-guide.md) - 에러 처리 가이드 (RFC 7807, GlobalExceptionHandler, ErrorMapper)
+  * [Test Guide](./error/error-test-guide.md) - 테스트 가이드
+  * [ArchUnit Guide](./error/error-archunit.md) - 아키텍처 검증 가이드
+
+### 📖 **OpenAPI/Swagger**
+* [OpenAPI Guide](./openapi/openapi-guide.md) - OpenAPI 3.0 어노테이션 가이드 (@Operation, @Schema, @ApiResponse)
+  * [ArchUnit Guide](./openapi/openapi-archunit.md) - 아키텍처 검증 규칙 (12개)
 
 ### ⚙️ **Configuration**
 * [Endpoint Properties Guide](./config/endpoint-properties-guide.md) - 엔드포인트 중앙 관리 가이드 (ApiEndpointProperties)

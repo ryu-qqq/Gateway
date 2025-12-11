@@ -33,7 +33,7 @@ public record RefreshAccessTokenResponse(TokenPair tokenPair) {
      * @return Access Token 문자열
      */
     public String accessTokenValue() {
-        return tokenPair.getAccessToken().getValue();
+        return tokenPair.accessTokenValue();
     }
 
     /**
@@ -42,6 +42,6 @@ public record RefreshAccessTokenResponse(TokenPair tokenPair) {
      * @return Refresh Token 문자열
      */
     public String refreshTokenValue() {
-        return tokenPair.getRefreshToken().getValue();
+        return tokenPair.refreshTokenValue();
     }
 }

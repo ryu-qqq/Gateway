@@ -17,23 +17,19 @@ import com.ryuqq.gateway.domain.common.exception.DomainException;
  * @author development-team
  * @since 1.0.0
  */
-public class RefreshTokenExpiredException extends DomainException {
+public final class RefreshTokenExpiredException extends DomainException {
 
     /**
-     * Constructor - 메시지로 예외 생성
+     * Constructor - 상세 정보로 예외 생성
      *
-     * @param message 상세 에러 메시지
+     * @param detail 상세 정보
      */
-    public RefreshTokenExpiredException(String message) {
-        super(AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED.getCode(), message);
+    public RefreshTokenExpiredException(String detail) {
+        super(AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED, detail);
     }
 
-    /**
-     * 에러 코드 조회
-     *
-     * @return AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED
-     */
-    public AuthenticationErrorCode getErrorCode() {
-        return AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED;
+    /** Constructor - 기본 예외 생성 */
+    public RefreshTokenExpiredException() {
+        super(AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED);
     }
 }

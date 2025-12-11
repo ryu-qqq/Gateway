@@ -332,7 +332,7 @@ knowledge_base:
       - "**/.claude/scripts/README-langfuse-trace.md"
 
   learnings:
-    scope: "organization"
+    scope: "auto"
 
   # 외부 지식 통합 (선택)
   web_search:

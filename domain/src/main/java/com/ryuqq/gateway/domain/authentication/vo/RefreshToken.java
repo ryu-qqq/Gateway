@@ -22,18 +22,23 @@ import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenInvalidExce
  *   <li>보안을 위해 toString에 토큰 값 마스킹
  * </ul>
  *
+ * @param value Refresh Token 문자열
  * @author development-team
  * @since 1.0.0
  */
-public final class RefreshToken {
+public record RefreshToken(String value) {
 
     private static final int MINIMUM_LENGTH = 32;
 
-    private final String value;
+    /** Compact Constructor (검증 로직) */
+    public RefreshToken {
+        if (value == null || value.isBlank()) {
+            throw new RefreshTokenInvalidException("Refresh token cannot be null or blank");
+        }
 
-    /** Private Constructor (정적 팩토리 메서드 사용) */
-    private RefreshToken(String value) {
-        this.value = value;
+        if (value.length() < MINIMUM_LENGTH) {
+            throw new RefreshTokenInvalidException("Refresh token must be at least 32 characters");
+        }
     }
 
     /**
@@ -46,43 +51,7 @@ public final class RefreshToken {
      * @throws RefreshTokenInvalidException 토큰이 유효하지 않은 경우
      */
     public static RefreshToken of(String tokenValue) {
-        if (tokenValue == null || tokenValue.isBlank()) {
-            throw new RefreshTokenInvalidException("Refresh token cannot be null or blank");
-        }
-
-        if (tokenValue.length() < MINIMUM_LENGTH) {
-            throw new RefreshTokenInvalidException("Refresh token must be at least 32 characters");
-        }
-
         return new RefreshToken(tokenValue);
-    }
-
-    /**
-     * Refresh Token 값 조회
-     *
-     * <p>토큰 재발급 시 AuthHub 호출에 사용됩니다.
-     *
-     * @return Refresh Token 원본 문자열
-     */
-    public String getValue() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        RefreshToken that = (RefreshToken) o;
-        return value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return value.hashCode();
     }
 
     /**

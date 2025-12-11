@@ -104,11 +104,10 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                                             });
                         })
                 .onErrorResume(
-                        IpBlockedException.class,
-                        e -> forbidden(exchange, e.getRetryAfterSeconds()))
+                        IpBlockedException.class, e -> forbidden(exchange, e.retryAfterSeconds()))
                 .onErrorResume(
                         RateLimitExceededException.class,
-                        e -> tooManyRequests(exchange, e.getLimit(), e.getRetryAfterSeconds()));
+                        e -> tooManyRequests(exchange, e.limit(), e.retryAfterSeconds()));
     }
 
     /** Rate Limit 헤더 추가 */

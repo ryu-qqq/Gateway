@@ -132,6 +132,7 @@ class JwtValidatorTest {
                             now,
                             List.of("ADMIN", "USER"),
                             "tenant-456",
+                            "org-789",
                             "hash-abc");
 
             // when & then
@@ -144,6 +145,7 @@ class JwtValidatorTest {
                                 assertThat(claims.issuedAt()).isEqualTo(now);
                                 assertThat(claims.roles()).containsExactly("ADMIN", "USER");
                                 assertThat(claims.tenantId()).isEqualTo("tenant-456");
+                                assertThat(claims.organizationId()).isEqualTo("org-789");
                                 assertThat(claims.permissionHash()).isEqualTo("hash-abc");
                             })
                     .verifyComplete();
@@ -172,13 +174,14 @@ class JwtValidatorTest {
                             claims -> {
                                 assertThat(claims.roles()).isEmpty();
                                 assertThat(claims.tenantId()).isNull();
+                                assertThat(claims.organizationId()).isNull();
                                 assertThat(claims.permissionHash()).isNull();
                             })
                     .verifyComplete();
         }
 
         @Test
-        @DisplayName("tenantId와 permissionHash가 없는 JWT 처리")
+        @DisplayName("tenantId, organizationId, permissionHash가 없는 JWT 처리")
         void handleJwtWithoutOptionalClaims() throws Exception {
             // given
             Instant now = Instant.now();
@@ -186,7 +189,14 @@ class JwtValidatorTest {
 
             String accessToken =
                     createJwtWithClaims(
-                            "user-123", "test-issuer", expiresAt, now, List.of("USER"), null, null);
+                            "user-123",
+                            "test-issuer",
+                            expiresAt,
+                            now,
+                            List.of("USER"),
+                            null,
+                            null,
+                            null);
 
             // when & then
             StepVerifier.create(jwtValidator.extractClaims(accessToken))
@@ -194,6 +204,7 @@ class JwtValidatorTest {
                             claims -> {
                                 assertThat(claims.subject()).isEqualTo("user-123");
                                 assertThat(claims.tenantId()).isNull();
+                                assertThat(claims.organizationId()).isNull();
                                 assertThat(claims.permissionHash()).isNull();
                             })
                     .verifyComplete();
@@ -266,6 +277,7 @@ class JwtValidatorTest {
                             now.minus(2, ChronoUnit.HOURS),
                             List.of("USER"),
                             "tenant-456",
+                            "org-789",
                             "hash-abc");
 
             // when & then
@@ -292,6 +304,7 @@ class JwtValidatorTest {
                             expiredAt,
                             now.minus(2, ChronoUnit.HOURS),
                             List.of("USER"),
+                            null,
                             null,
                             null);
 
@@ -326,6 +339,7 @@ class JwtValidatorTest {
                             now,
                             manyRoles,
                             "tenant-456",
+                            "org-789",
                             "hash-abc");
 
             // when & then
@@ -353,6 +367,7 @@ class JwtValidatorTest {
                             now,
                             List.of("ADMIN", "USER"),
                             "tenant-123-abc",
+                            "org-456-def",
                             "hash+abc/123==");
 
             // when & then
@@ -362,6 +377,7 @@ class JwtValidatorTest {
                                 assertThat(claims.subject()).isEqualTo("user@example.com");
                                 assertThat(claims.issuer()).isEqualTo("https://auth.example.com");
                                 assertThat(claims.tenantId()).isEqualTo("tenant-123-abc");
+                                assertThat(claims.organizationId()).isEqualTo("org-456-def");
                                 assertThat(claims.permissionHash()).isEqualTo("hash+abc/123==");
                             })
                     .verifyComplete();
@@ -380,6 +396,7 @@ class JwtValidatorTest {
                 now,
                 List.of("USER"),
                 "tenant-456",
+                "org-789",
                 "hash-abc");
     }
 
@@ -390,6 +407,7 @@ class JwtValidatorTest {
             Instant issuedAt,
             List<String> roles,
             String tenantId,
+            String organizationId,
             String permissionHash)
             throws Exception {
         JWTClaimsSet.Builder builder =
@@ -408,6 +426,10 @@ class JwtValidatorTest {
 
         if (tenantId != null) {
             builder.claim("tenantId", tenantId);
+        }
+
+        if (organizationId != null) {
+            builder.claim("organizationId", organizationId);
         }
 
         if (permissionHash != null) {

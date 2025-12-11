@@ -24,7 +24,7 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException(kid);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-003");
+            assertThat(exception.getCode()).isEqualTo("AUTH-003");
             assertThat(exception.getMessage()).isEqualTo("Public key not found: kid=" + kid);
         }
 
@@ -35,7 +35,7 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException();
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-003");
+            assertThat(exception.getCode()).isEqualTo("AUTH-003");
             assertThat(exception.getMessage()).isEqualTo("Public key not found");
         }
 
@@ -49,7 +49,7 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException(kid);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-003");
+            assertThat(exception.getCode()).isEqualTo("AUTH-003");
             assertThat(exception.getMessage()).isEqualTo("Public key not found: kid=");
         }
 
@@ -63,7 +63,7 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException(kid);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-003");
+            assertThat(exception.getCode()).isEqualTo("AUTH-003");
             assertThat(exception.getMessage()).isEqualTo("Public key not found: kid=null");
         }
     }
@@ -79,9 +79,9 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException("test-kid");
 
             // when & then
-            assertThat(exception.code())
+            assertThat(exception.getCode())
                     .isEqualTo(AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getCode());
-            assertThat(exception.code()).isEqualTo("AUTH-003");
+            assertThat(exception.getCode()).isEqualTo("AUTH-003");
         }
 
         @Test
@@ -91,7 +91,7 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException();
 
             // when & then
-            assertThat(exception.code())
+            assertThat(exception.getCode())
                     .isEqualTo(AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getCode());
         }
     }
@@ -177,7 +177,7 @@ class PublicKeyNotFoundExceptionTest {
             try {
                 throw new PublicKeyNotFoundException("unknown-kid");
             } catch (PublicKeyNotFoundException e) {
-                assertThat(e.code()).isEqualTo("AUTH-003");
+                assertThat(e.getCode()).isEqualTo("AUTH-003");
                 assertThat(e.getMessage()).contains("unknown-kid");
             }
         }
@@ -211,7 +211,7 @@ class PublicKeyNotFoundExceptionTest {
                 throw new PublicKeyNotFoundException("test");
             } catch (DomainException e) {
                 caught = true;
-                caughtCode = e.code();
+                caughtCode = e.getCode();
             }
 
             // then
@@ -234,7 +234,7 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException(kid);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-003");
+            assertThat(exception.getCode()).isEqualTo("AUTH-003");
             assertThat(exception.getMessage()).contains(kid);
         }
 
@@ -248,7 +248,7 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException(kid);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-003");
+            assertThat(exception.getCode()).isEqualTo("AUTH-003");
             assertThat(exception.getMessage()).contains("kid=" + kid);
         }
 
@@ -262,7 +262,7 @@ class PublicKeyNotFoundExceptionTest {
             PublicKeyNotFoundException exception = new PublicKeyNotFoundException(newKid);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-003");
+            assertThat(exception.getCode()).isEqualTo("AUTH-003");
             assertThat(exception.getMessage()).contains(newKid);
         }
     }

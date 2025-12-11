@@ -51,10 +51,12 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String USER_ID_ATTRIBUTE = "userId";
     private static final String TENANT_ID_ATTRIBUTE = "tenantId";
+    private static final String ORGANIZATION_ID_ATTRIBUTE = "organizationId";
     private static final String PERMISSION_HASH_ATTRIBUTE = "permissionHash";
     private static final String ROLES_ATTRIBUTE = "roles";
     private static final String MFA_VERIFIED_ATTRIBUTE = "mfaVerified";
     private static final String X_USER_ID_HEADER = "X-User-Id";
+    private static final String X_ORGANIZATION_ID_HEADER = "X-Organization-Id";
 
     private final ValidateJwtUseCase validateJwtUseCase;
     private final RecordFailureUseCase recordFailureUseCase;
@@ -102,18 +104,25 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                             exchange.getAttributes().put(USER_ID_ATTRIBUTE, userId);
                             exchange.getAttributes().put(TENANT_ID_ATTRIBUTE, claims.tenantId());
                             exchange.getAttributes()
+                                    .put(ORGANIZATION_ID_ATTRIBUTE, claims.organizationId());
+                            exchange.getAttributes()
                                     .put(PERMISSION_HASH_ATTRIBUTE, claims.permissionHash());
                             Set<String> rolesSet = new HashSet<>(claims.roles());
                             exchange.getAttributes().put(ROLES_ATTRIBUTE, rolesSet);
                             exchange.getAttributes()
                                     .put(MFA_VERIFIED_ATTRIBUTE, claims.mfaVerified());
 
-                            // Downstream 서비스로 userId 전달 (Header)
-                            ServerHttpRequest mutatedRequest =
-                                    exchange.getRequest()
-                                            .mutate()
-                                            .header(X_USER_ID_HEADER, userId)
-                                            .build();
+                            // Downstream 서비스로 userId, organizationId 전달 (Header)
+                            ServerHttpRequest.Builder requestBuilder =
+                                    exchange.getRequest().mutate().header(X_USER_ID_HEADER, userId);
+
+                            // organizationId가 있는 경우에만 헤더 추가
+                            if (claims.organizationId() != null) {
+                                requestBuilder.header(
+                                        X_ORGANIZATION_ID_HEADER, claims.organizationId());
+                            }
+
+                            ServerHttpRequest mutatedRequest = requestBuilder.build();
 
                             ServerWebExchange mutatedExchange =
                                     exchange.mutate().request(mutatedRequest).build();

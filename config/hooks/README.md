@@ -1,21 +1,16 @@
-# Git Hooks (Pre-Commit + Post-Commit)
+# Git Hooks (Pre-Commit)
 
-Git hooks를 사용하여 코드 품질 검증 및 TDD 메트릭 수집을 자동화합니다.
+Git hooks를 사용하여 코드 품질 검증을 자동화합니다.
 
 ---
 
 ## 개요
 
-이 프로젝트의 Git hooks는 **이중 안전망**을 제공합니다:
+이 프로젝트의 Git hooks는 **코드 품질 안전망**을 제공합니다:
 
-### 1. Pre-Commit Hook (코드 품질 검증)
+### Pre-Commit Hook (코드 품질 검증)
 - **ArchUnit 테스트** - 아키텍처 규칙 검증 (Zero-Tolerance 포함)
 - **Gradle Quality Checks** - Checkstyle, PMD, SpotBugs
-
-### 2. Post-Commit Hook (TDD 메트릭 수집)
-- **Kent Beck TDD 사이클 추적** - Red/Green/Refactor 자동 분류
-- **LangFuse Span 생성** - 커밋 타입, 크기, 시간 측정
-- **JSONL 로그** - 로컬 메트릭 저장 (`~/.claude/logs/tdd-cycle.jsonl`)
 
 > **Note**: 이전 버전의 13개 validator 스크립트는 제거되고, ArchUnit으로 통합되었습니다.
 
@@ -31,19 +26,16 @@ Git hooks를 사용하여 코드 품질 검증 및 TDD 메트릭 수집을 자�
 
 # 또는 수동 설치:
 ln -sf ../../config/hooks/pre-commit .git/hooks/pre-commit
-ln -sf ../../config/hooks/post-commit .git/hooks/post-commit
 chmod +x .git/hooks/pre-commit
-chmod +x .git/hooks/post-commit
 ```
 
 ### 2. 설치 확인
 
 ```bash
 # Hooks가 제대로 링크되었는지 확인
-ls -la .git/hooks/pre-commit .git/hooks/post-commit
+ls -la .git/hooks/pre-commit
 
 # 출력 예시:
-# lrwxr-xr-x  1 user  staff  29 Nov 18 12:00 .git/hooks/post-commit -> ../../config/hooks/post-commit
 # lrwxr-xr-x  1 user  staff  28 Nov  4 16:00 .git/hooks/pre-commit -> ../../config/hooks/pre-commit
 ```
 
@@ -270,9 +262,9 @@ ln -sf ../../hooks/pre-commit .git/hooks/pre-commit
 |------|----------------------|----------------------------------|
 | **실행 시점** | `git commit` 실행 시 | Claude가 코드 생성/수정 시 |
 | **실행 주체** | Git (개발자 로컬) | Claude Code AI |
-| **목적** | 잘못된 코드 커밋 차단 + TDD 메트릭 수집 | AI 코드 생성 가이드 제공 |
-| **검증 방식** | ArchUnit + Gradle (pre) / LangFuse (post) | 프롬프트 주입 + 실시간 검증 |
-| **차단 여부** | ❌ pre-commit 실패 시 커밋 차단 <br> ✅ post-commit은 non-blocking | ⚠️ 경고만 제공 (차단 안 함) |
+| **목적** | 잘못된 코드 커밋 차단 | AI 코드 생성 가이드 제공 |
+| **검증 방식** | ArchUnit + Gradle | 프롬프트 주입 + 실시간 검증 |
+| **차단 여부** | ❌ pre-commit 실패 시 커밋 차단 | ⚠️ 경고만 제공 (차단 안 함) |
 
 ### 실행 흐름 비교
 
@@ -287,10 +279,6 @@ git commit -m "..."
 config/hooks/pre-commit 실행  ← 코드 검증 (blocking)
     ↓
 검증 통과 → 커밋 완료
-    ↓
-config/hooks/post-commit 실행  ← TDD 메트릭 수집 (non-blocking)
-    ↓
-LangFuse Span 생성 + JSONL 로그
 ```
 
 **Claude Hooks 흐름**:
@@ -311,57 +299,14 @@ Claude가 코드 생성
 
 ---
 
-## LangFuse TDD 메트릭 수집
-
-### 작동 조건
-
-LangFuse가 작동하려면 **다음 4가지 조건이 모두 필요**합니다:
-
-1. ✅ **post-commit hook 설치** (가장 중요!)
-   ```bash
-   ./scripts/setup-hooks.sh
-   # 또는: ln -sf ../../config/hooks/post-commit .git/hooks/post-commit
-   ```
-   → **이것이 없으면 .env가 있어도 LangFuse 작동 안 함!**
-
-2. ✅ **Python langfuse 패키지 설치**
-   ```bash
-   pip3 install langfuse
-   ```
-
-3. ✅ **.env 파일 생성** (선택사항 - LangFuse Cloud 사용 시만)
-   ```bash
-   cat > .env << 'EOF'
-   LANGFUSE_PUBLIC_KEY=pk-lf-your-public-key
-   LANGFUSE_SECRET_KEY=sk-lf-your-secret-key
-   LANGFUSE_HOST=https://us.cloud.langfuse.com
-   EOF
-   ```
-
-4. ✅ **테스트**
-   ```bash
-   git commit --allow-empty -m "test: LangFuse 테스트"
-   tail -1 ~/.claude/logs/tdd-cycle.jsonl
-   ```
-
-**중요**:
-- JSONL 로그는 1번만 설치하면 항상 작동합니다 (`~/.claude/logs/tdd-cycle.jsonl`)
-- LangFuse Cloud 업로드는 2번 + 3번 추가 필요
-- `.env` 파일만 만들어도 작동하지 않습니다! → **반드시 post-commit hook 먼저 설치**
-
-### 로그 확인
-
-```bash
-# JSONL 로그 (항상 작동)
-tail -f ~/.claude/logs/tdd-cycle.jsonl
-
-# LangFuse 대시보드 (3번 설정 시)
-# https://cloud.langfuse.com → Traces 탭
-```
-
----
-
 ## 변경 이력
+
+### 2025-12-05 (v3.0.0) - Remove Metrics Tracking
+
+**Major Changes:**
+- ✅ Post-commit hook 제거 (TDD 메트릭 수집 제거)
+- ✅ LangFuse 및 JSONL 로깅 제거
+- ✅ Pre-commit hook만 유지 (코드 품질 검증)
 
 ### 2025-11-04 (v2.0.0) - Simplified Architecture
 
@@ -378,19 +323,6 @@ tail -f ~/.claude/logs/tdd-cycle.jsonl
 
 **Removed:**
 - `hooks/validators/` 디렉토리 전체 (13개 스크립트)
-  - orchestration-validator.sh
-  - transaction-boundary-validator.sh
-  - transaction-proxy-validator.sh
-  - demeter-validator.sh
-  - domain-validator.sh
-  - application-validator.sh
-  - persistence-validator.sh
-  - controller-validator.sh
-  - adapter-in-validator.sh
-  - adapter-out-validator.sh
-  - common-validator.sh
-  - dead-code-detector.sh
-  - srp-validator.sh
 
 **Added:**
 - `ZeroToleranceArchitectureTest.java` - Zero-Tolerance 규칙 통합 테스트

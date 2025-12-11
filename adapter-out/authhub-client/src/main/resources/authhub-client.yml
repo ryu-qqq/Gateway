@@ -2,25 +2,58 @@
 # AuthHub Client Configuration
 # ===============================================
 # External AuthHub service client settings
-# JWKS (JSON Web Key Set) endpoint for JWT verification
+# All endpoint paths and client configurations
 #
 # @since 1.0.0
 # ===============================================
 
 authhub:
   client:
-    jwks-endpoint: /api/v1/auth/jwks
-    timeout:
-      connection: 3000  # 3 seconds (milliseconds)
-      response: 3000    # 3 seconds (milliseconds)
+    # ===============================================
+    # Endpoints Configuration
+    # ===============================================
+    endpoints:
+      # Authentication endpoints
+      jwks: /api/v1/auth/jwks
+      refresh: /api/v1/auth/refresh
+      extract-expired-info: /api/v1/auth/extract-expired-info
+
+      # Tenant endpoints
+      tenant-config: /api/v1/tenants/{tenantId}/config
+
+      # Permission endpoints
+      permission-spec: /api/v1/permissions/spec
+      user-permissions: /api/v1/permissions/users/{userId}
+
+    # ===============================================
+    # WebClient Configuration
+    # ===============================================
+    webclient:
+      # Connection pool settings
+      max-connections: 500
+      pending-acquire-timeout: 45000  # 45 seconds
+      max-idle-time: 20000            # 20 seconds
+
+      # Timeout settings
+      connection-timeout: 3000   # 3 seconds
+      response-timeout: 3000     # 3 seconds
+
+      # Logging
+      wire-logging-enabled: false
+
+    # ===============================================
+    # Resilience4j Configuration
+    # ===============================================
     retry:
       max-attempts: 3
-      wait-duration: 100  # milliseconds
+      wait-duration: 100  # milliseconds (exponential backoff base)
+
     circuit-breaker:
       failure-rate-threshold: 50
       wait-duration-in-open-state: 10000  # 10 seconds
       sliding-window-size: 10
       minimum-number-of-calls: 5
+      permitted-calls-in-half-open: 3
 
 ---
 # ===============================================
@@ -34,6 +67,8 @@ spring:
 authhub:
   client:
     base-url: http://localhost:9090
+    webclient:
+      wire-logging-enabled: true
 
 ---
 # ===============================================
@@ -47,6 +82,8 @@ spring:
 authhub:
   client:
     base-url: http://localhost:9090
+    webclient:
+      wire-logging-enabled: true
 
 ---
 # ===============================================
@@ -60,3 +97,8 @@ spring:
 authhub:
   client:
     base-url: https://auth.set-of.com
+    webclient:
+      wire-logging-enabled: false
+      max-connections: 1000
+      connection-timeout: 5000
+      response-timeout: 5000

@@ -27,9 +27,7 @@ public final class InvalidTraceIdException extends DomainException {
      * <p>기본 에러 메시지를 사용합니다.
      */
     public InvalidTraceIdException() {
-        super(
-                TraceErrorCode.INVALID_TRACE_ID.getCode(),
-                TraceErrorCode.INVALID_TRACE_ID.getMessage());
+        super(TraceErrorCode.INVALID_TRACE_ID);
     }
 
     /**
@@ -38,8 +36,6 @@ public final class InvalidTraceIdException extends DomainException {
      * @param traceId 유효하지 않은 Trace-ID 값
      */
     public InvalidTraceIdException(String traceId) {
-        super(
-                TraceErrorCode.INVALID_TRACE_ID.getCode(),
-                TraceErrorCode.INVALID_TRACE_ID.getMessage() + ": " + traceId);
+        super(TraceErrorCode.INVALID_TRACE_ID, "traceId=" + traceId);
     }
 }

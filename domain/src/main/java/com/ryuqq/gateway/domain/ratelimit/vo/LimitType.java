@@ -30,64 +30,67 @@ public enum LimitType {
      *
      * <p>특정 API 엔드포인트에 대한 전체 요청 제한
      */
-    ENDPOINT("gateway:rate_limit:endpoint", 1000, Duration.ofMinutes(1), false),
+    ENDPOINT("gateway:rate_limit:endpoint", 1000, Duration.ofMinutes(1), false, "엔드포인트별 제한"),
 
     /**
      * 사용자별 Rate Limit
      *
      * <p>인증된 사용자별 요청 제한
      */
-    USER("gateway:rate_limit:user", 100, Duration.ofMinutes(1), false),
+    USER("gateway:rate_limit:user", 100, Duration.ofMinutes(1), false, "사용자별 제한"),
 
     /**
      * IP별 Rate Limit
      *
      * <p>클라이언트 IP 주소별 요청 제한
      */
-    IP("gateway:rate_limit:ip", 100, Duration.ofMinutes(1), false),
+    IP("gateway:rate_limit:ip", 100, Duration.ofMinutes(1), false, "IP별 제한"),
 
     /**
      * OTP 요청 Rate Limit
      *
      * <p>SMS 폭탄 공격 방지를 위한 OTP 요청 제한
      */
-    OTP("gateway:rate_limit:otp", 3, Duration.ofHours(1), true),
+    OTP("gateway:rate_limit:otp", 3, Duration.ofHours(1), true, "OTP 요청 제한"),
 
     /**
      * 로그인 시도 Rate Limit
      *
      * <p>Brute Force 공격 방지를 위한 로그인 시도 제한
      */
-    LOGIN("gateway:rate_limit:login", 5, Duration.ofMinutes(5), true),
+    LOGIN("gateway:rate_limit:login", 5, Duration.ofMinutes(5), true, "로그인 시도 제한"),
 
     /**
      * Token Refresh Rate Limit
      *
      * <p>Refresh Token 남용 방지를 위한 재발급 제한
      */
-    TOKEN_REFRESH("gateway:rate_limit:token_refresh", 3, Duration.ofMinutes(1), true),
+    TOKEN_REFRESH("gateway:rate_limit:token_refresh", 3, Duration.ofMinutes(1), true, "토큰 재발급 제한"),
 
     /**
      * 잘못된 JWT 제출 Rate Limit
      *
      * <p>잘못된 JWT 반복 제출 차단
      */
-    INVALID_JWT("gateway:rate_limit:invalid_jwt", 10, Duration.ofMinutes(5), true);
+    INVALID_JWT("gateway:rate_limit:invalid_jwt", 10, Duration.ofMinutes(5), true, "잘못된 JWT 제한");
 
     private final String keyPrefix;
     private final int defaultMaxRequests;
     private final Duration defaultWindow;
     private final boolean auditLogRequired;
+    private final String displayName;
 
     LimitType(
             String keyPrefix,
             int defaultMaxRequests,
             Duration defaultWindow,
-            boolean auditLogRequired) {
+            boolean auditLogRequired,
+            String displayName) {
         this.keyPrefix = keyPrefix;
         this.defaultMaxRequests = defaultMaxRequests;
         this.defaultWindow = defaultWindow;
         this.auditLogRequired = auditLogRequired;
+        this.displayName = displayName;
     }
 
     /**
@@ -124,6 +127,17 @@ public enum LimitType {
      */
     public boolean isAuditLogRequired() {
         return auditLogRequired;
+    }
+
+    /**
+     * 표시용 이름 반환
+     *
+     * @return 표시용 이름
+     * @author development-team
+     * @since 1.0.0
+     */
+    public String displayName() {
+        return displayName;
     }
 
     /**

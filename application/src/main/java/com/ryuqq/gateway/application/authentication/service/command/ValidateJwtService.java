@@ -83,11 +83,11 @@ public class ValidateJwtService implements ValidateJwtUseCase {
 
     private Mono<ValidateJwtResponse> validateJwt(AccessToken accessToken) {
         return getPublicKeyService
-                .getPublicKey(accessToken.getKid())
+                .getPublicKey(accessToken.kid())
                 .flatMap(
                         publicKey ->
                                 jwtValidator
-                                        .verifySignature(accessToken.getValue(), publicKey)
+                                        .verifySignature(accessToken.value(), publicKey)
                                         .flatMap(
                                                 isValid -> {
                                                     if (!isValid) {
@@ -96,7 +96,7 @@ public class ValidateJwtService implements ValidateJwtUseCase {
                                                                         .toFailedValidateJwtResponse());
                                                     }
                                                     return jwtValidator
-                                                            .extractClaims(accessToken.getValue())
+                                                            .extractClaims(accessToken.value())
                                                             .map(
                                                                     claims -> {
                                                                         if (claims.isExpired()) {

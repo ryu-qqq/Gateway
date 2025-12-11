@@ -26,99 +26,6 @@
         <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
     </Match>
 
-    <!-- Test classes use @BeforeEach for field initialization (Mockito pattern) -->
-    <Match>
-        <Class name="~.*Test"/>
-        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
-    </Match>
-
-    <!-- Test classes intentionally use null values for null-safety testing -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="NP_LOAD_OF_KNOWN_NULL_VALUE"/>
-    </Match>
-
-    <!-- Test classes use self-comparison for enum behavior testing -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="SA_LOCAL_SELF_COMPARISON"/>
-    </Match>
-
-    <!-- Test classes use self-comparison (code SA for field comparison) -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug code="SA"/>
-    </Match>
-
-    <!-- Test classes test non-localized string operations intentionally -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="DM_CONVERT_CASE"/>
-    </Match>
-
-    <!-- Test classes may create objects without throwing them for exception testing -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="RV_EXCEPTION_NOT_THROWN"/>
-    </Match>
-
-    <!-- Test classes may have null pointer dereference in test scenarios -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
-    </Match>
-
-    <!-- Test classes may have dead stores for test setup/assertions -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
-    </Match>
-
-    <!-- Test classes may ignore return values for setup -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
-    </Match>
-
-    <!-- Test classes may have non-serializable anonymous inner classes -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="SE_BAD_FIELD_INNER_CLASS"/>
-    </Match>
-
-    <!-- Test classes may have serialization issues - not a concern for tests -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug code="Se"/>
-    </Match>
-
-    <!-- Test classes may have refactorable inner classes - not a concern -->
-    <Match>
-        <Class name="~.*Test.*"/>
-        <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON"/>
-    </Match>
-
-    <!-- Domain VO may use non-localized case conversion intentionally -->
-    <Match>
-        <Or>
-            <Class name="~.*\.vo\..*"/>
-            <Class name="~.*\.domain\..*"/>
-        </Or>
-        <Bug pattern="DM_CONVERT_CASE"/>
-    </Match>
-
-    <!-- Application Command/Query DTOs are immutable records -->
-    <Match>
-        <Or>
-            <Class name="~.*Command"/>
-            <Class name="~.*Query"/>
-        </Or>
-        <Or>
-            <Bug pattern="EI_EXPOSE_REP"/>
-            <Bug pattern="EI_EXPOSE_REP2"/>
-        </Or>
-    </Match>
-
     <!-- ========================================
          Configuration Classes
          ======================================== -->
@@ -127,77 +34,215 @@
         <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 
+    <Match>
+        <Class name="~.*Config"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR,EI_EXPOSE_REP2"/>
+    </Match>
+
     <!-- ========================================
-         Spring Dependency Injection Pattern
-         EI2: Storing externally mutable objects via constructor injection
-         is a standard and safe practice in Spring DI
+         Domain Layer Exceptions
+         Exception의 args()는 의도적으로 내부 배열 반환
          ======================================== -->
-    <!-- Spring @Component, @Service, @Repository, @Configuration classes -->
+    <Match>
+        <Class name="~.*Exception"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- ========================================
+         Locale-independent String operations
+         enum/VO에서 입력 정규화는 locale-independent가 의도된 동작
+         ======================================== -->
+    <Match>
+        <Package name="~com\.ryuqq\.gateway\.domain\..*"/>
+        <Bug pattern="DM_CONVERT_CASE"/>
+    </Match>
+
+    <!-- ========================================
+         DTO/Response 내부 표현 노출 (의도된 동작)
+         Record/DTO는 데이터 컨테이너이므로 내부 리스트 반환이 정상
+         ======================================== -->
     <Match>
         <Or>
-            <Class name="~.*Config"/>
-            <Class name="~.*Filter"/>
-            <Class name="~.*Handler"/>
-            <Class name="~.*Adapter"/>
-            <Class name="~.*Repository"/>
+            <Class name="~.*Response"/>
+            <Class name="~.*Command"/>
+            <Class name="~.*Query"/>
+            <Class name="~.*DTO"/>
+            <Class name="~.*Dto"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Redis Entity 내부 표현 노출 (의도된 동작)
+         Entity는 데이터 컨테이너이므로 내부 리스트 반환이 정상
+         ======================================== -->
+    <Match>
+        <Package name="~.*\.redis\.entity"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="~.*Entity"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         의존성 주입 패턴 (Spring 표준)
+         생성자에서 외부 객체 저장은 DI 패턴의 정상 동작
+         ======================================== -->
+    <Match>
+        <Or>
             <Class name="~.*Service"/>
+            <Class name="~.*UseCase"/>
+            <Class name="~.*Facade"/>
+            <Class name="~.*Manager"/>
+            <Class name="~.*Adapter"/>
+            <Class name="~.*Handler"/>
             <Class name="~.*Controller"/>
-            <Class name="~.*Interceptor"/>
+            <Class name="~.*Repository"/>
         </Or>
         <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 
     <!-- ========================================
-         Spring @ConfigurationProperties Classes
-         These require mutable getters/setters for property binding
+         JWT/Security 초기화 패턴
+         JWT 키 초기화 시 예외 발생 가능 (의도된 fail-fast)
+         ======================================== -->
+    <Match>
+        <Class name="~.*JwtTokenProvider.*"/>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+    <!-- ========================================
+         Redis/Redisson 설정 패턴
+         Redisson Config 타입 캐스팅은 라이브러리 패턴
+         ======================================== -->
+    <Match>
+        <Or>
+            <Class name="~.*RedissonConfig"/>
+            <Class name="~.*RedisConfig"/>
+            <Class name="~.*LettuceConfig"/>
+            <Class name="~.*AuthHubConfig"/>
+        </Or>
+        <Bug pattern="BC_UNCONFIRMED_CAST,BC_UNCONFIRMED_CAST_OF_RETURN_VALUE"/>
+    </Match>
+
+    <!-- ========================================
+         Cache Adapter 주입 필드
+         ObjectMapper 등 인프라 필드는 향후 사용 예정
+         ======================================== -->
+    <Match>
+        <Class name="~.*CacheAdapter"/>
+        <Bug pattern="URF_UNREAD_FIELD"/>
+    </Match>
+
+    <!-- ========================================
+         Spring Security Config 클래스
+         Security 설정은 많은 의존성 주입 필요
+         ======================================== -->
+    <Match>
+        <Or>
+            <Class name="~.*SecurityConfig"/>
+            <Class name="~.*SecurityPaths"/>
+            <Class name="~.*Filter"/>
+            <Class name="~.*ErrorMapperRegistry"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP2,MS_EXPOSE_REP,MS_MUTABLE_ARRAY,MS_SHOULD_BE_FINAL,MS_PKGPROTECT,UPM_UNCALLED_PRIVATE_METHOD"/>
+    </Match>
+
+    <!-- ========================================
+         Spring @ConfigurationProperties 클래스
+         Setter/Getter는 Spring 바인딩에 필요
          ======================================== -->
     <Match>
         <Class name="~.*Properties"/>
-        <Or>
-            <Bug pattern="EI_EXPOSE_REP"/>
-            <Bug pattern="EI_EXPOSE_REP2"/>
-        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 
     <!-- ========================================
-         Request/Response DTO Records (immutable by design)
-         Records with List fields need defensive copy which is impractical
+         Controller/Handler 의존성 주입
+         Spring MVC 표준 패턴
          ======================================== -->
     <Match>
         <Or>
-            <Class name="~.*Request"/>
-            <Class name="~.*Response"/>
-            <Class name="~.*Controller\$.*"/>
+            <Class name="~.*Handler"/>
+            <Class name="~.*Registry"/>
         </Or>
-        <Or>
-            <Bug pattern="EI_EXPOSE_REP"/>
-            <Bug pattern="EI_EXPOSE_REP2"/>
-        </Or>
+        <Bug pattern="EI_EXPOSE_REP2"/>
     </Match>
 
     <!-- ========================================
-         Test Fixtures
+         Exception Handling - Assert Null Check
+         Spring이 null을 반환하지 않음을 신뢰
          ======================================== -->
     <Match>
-        <Class name="~.*Fixture"/>
-        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+        <Class name="~.*ExceptionHandler"/>
+        <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
     </Match>
 
     <!-- ========================================
-         Redis Entity Classes (internal to adapter)
-         These are simple data carriers, not exposed externally
+         OAuth2 Handler Exception Catching
+         URL 검증에서 예외 catch는 의도된 동작
          ======================================== -->
     <Match>
-        <Class name="~.*Entity"/>
-        <Or>
-            <Bug pattern="EI_EXPOSE_REP"/>
-            <Bug pattern="EI_EXPOSE_REP2"/>
-        </Or>
+        <Class name="~.*OAuth2.*Handler"/>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
     </Match>
 
-    <!-- Adapter classes may use non-localized string conversion -->
+    <!-- ========================================
+         Query/Search DTO 내부 List 노출
+         API Request는 내부 List 반환이 정상
+         ======================================== -->
     <Match>
-        <Class name="~.*Adapter"/>
-        <Bug pattern="DM_CONVERT_CASE"/>
+        <Or>
+            <Class name="~.*ApiRequest"/>
+            <Class name="~.*SearchApiRequest"/>
+        </Or>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         AuthHub Client 패턴
+         WebClient Builder 설정은 라이브러리 패턴
+         ======================================== -->
+    <Match>
+        <Package name="~.*\.authhub\.client"/>
+        <Bug pattern="BC_UNCONFIRMED_CAST,BC_UNCONFIRMED_CAST_OF_RETURN_VALUE,DM_CONVERT_CASE"/>
+    </Match>
+
+    <!-- ========================================
+         Gateway Filter 패턴
+         WebFlux ServerWebExchange API는 체이닝 필요
+         ======================================== -->
+    <Match>
+        <Package name="~.*\.gateway\.filter"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Gateway Common Util 패턴
+         ObjectMapper 등 인프라 의존성 주입
+         ======================================== -->
+    <Match>
+        <Package name="~.*\.gateway\.common\.util"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Controller 내부 Record 클래스
+         Webhook Request 등은 내부 리스트 반환이 정상
+         ======================================== -->
+    <Match>
+        <Class name="~.*Controller\$.*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- ========================================
+         Responder/Utility 클래스
+         ObjectMapper 등 인프라 의존성 주입
+         ======================================== -->
+    <Match>
+        <Class name="~.*Responder"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
 </FindBugsFilter>

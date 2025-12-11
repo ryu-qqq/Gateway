@@ -40,7 +40,7 @@ public class RateLimitCounterCommandAdapter implements RateLimitCounterCommandPo
      */
     @Override
     public Mono<Long> incrementAndGet(RateLimitKey key, Duration window) {
-        return rateLimitRedisRepository.incrementAndExpire(key.getValue(), window);
+        return rateLimitRedisRepository.incrementAndExpire(key.value(), window);
     }
 
     /**
@@ -51,6 +51,6 @@ public class RateLimitCounterCommandAdapter implements RateLimitCounterCommandPo
      */
     @Override
     public Mono<Boolean> delete(RateLimitKey key) {
-        return rateLimitRedisRepository.delete(key.getValue());
+        return rateLimitRedisRepository.delete(key.value());
     }
 }

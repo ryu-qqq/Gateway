@@ -98,8 +98,8 @@ class CheckRateLimitServiceTest {
                             error -> {
                                 assertThat(error).isInstanceOf(IpBlockedException.class);
                                 IpBlockedException ex = (IpBlockedException) error;
-                                assertThat(ex.getIpAddress()).isEqualTo("192.168.1.1");
-                                assertThat(ex.getRetryAfterSeconds()).isEqualTo(1500);
+                                assertThat(ex.ipAddress()).isEqualTo("192.168.1.1");
+                                assertThat(ex.retryAfterSeconds()).isEqualTo(1500);
                                 return true;
                             })
                     .verify();

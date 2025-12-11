@@ -48,32 +48,42 @@ class OrderJpaEntityTest {
     void of_WhenCalled_ShouldSetAllFieldsCorrectly() {
         // Given
         Long id = 1L;
+        String orderNumber = "ORD-2025-001";
+        OrderStatus status = OrderStatus.PENDING;
         Long userId = 100L;
         LocalDateTime createdAt = LocalDateTime.of(2025, 1, 1, 0, 0);
         LocalDateTime updatedAt = LocalDateTime.of(2025, 1, 2, 0, 0);
 
         // When
-        OrderJpaEntity order = OrderJpaEntity.of(id, userId, createdAt, updatedAt);
+        OrderJpaEntity order = OrderJpaEntity.of(
+            id, orderNumber, status, userId, createdAt, updatedAt
+        );
 
         // Then
         assertThat(order.getId()).isEqualTo(id);
+        assertThat(order.getOrderNumber()).isEqualTo(orderNumber);
+        assertThat(order.getStatus()).isEqualTo(status);
         assertThat(order.getUserId()).isEqualTo(userId);
         assertThat(order.getCreatedAt()).isEqualTo(createdAt);
         assertThat(order.getUpdatedAt()).isEqualTo(updatedAt);
     }
 
     @Test
-    @DisplayName("of() 메서드에 null ID 전달 시 null로 설정되어야 한다")
+    @DisplayName("of() 메서드에 null ID 전달 시 null로 설정되어야 한다 (신규 생성)")
     void of_WhenIdIsNull_ShouldAllowNullId() {
         // Given
+        String orderNumber = "ORD-2025-001";
         Long userId = 100L;
         LocalDateTime now = LocalDateTime.now();
 
         // When
-        OrderJpaEntity order = OrderJpaEntity.of(null, userId, now, now);
+        OrderJpaEntity order = OrderJpaEntity.of(
+            null, orderNumber, OrderStatus.PENDING, userId, now, now
+        );
 
         // Then
-        assertThat(order.getId()).isNull();
+        assertThat(order.getId()).isNull();  // 신규 생성 시 ID는 null
+        assertThat(order.getOrderNumber()).isEqualTo(orderNumber);
         assertThat(order.getUserId()).isEqualTo(userId);
     }
 
@@ -85,7 +95,9 @@ class OrderJpaEntityTest {
         LocalDateTime updatedAt = LocalDateTime.of(2025, 1, 2, 0, 0);
 
         // When
-        OrderJpaEntity order = OrderJpaEntity.of(1L, 100L, createdAt, updatedAt);
+        OrderJpaEntity order = OrderJpaEntity.of(
+            1L, "ORD-2025-001", OrderStatus.PENDING, 100L, createdAt, updatedAt
+        );
 
         // Then
         assertThat(order.getCreatedAt()).isEqualTo(createdAt);
@@ -245,5 +257,5 @@ JPA Entity 테스트 작성 시:
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-12
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-04
+**버전**: 1.1.0

@@ -96,7 +96,7 @@ class JwtAuthenticationFilterUnitTest {
                             .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
+            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, organizationId, permissionHash 제공
             JwtClaims claims =
                     JwtClaims.of(
                             "user-123",
@@ -105,7 +105,9 @@ class JwtAuthenticationFilterUnitTest {
                             Instant.now(),
                             List.of("ROLE_USER"),
                             "tenant-123",
-                            "hash-456");
+                            "org-789",
+                            "hash-456",
+                            false);
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
             // Filter가 mutatedExchange로 chain을 호출하므로 any()로 매칭
@@ -160,7 +162,7 @@ class JwtAuthenticationFilterUnitTest {
                             .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
+            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, organizationId, permissionHash 제공
             JwtClaims claims =
                     JwtClaims.of(
                             expectedUserId,
@@ -169,7 +171,9 @@ class JwtAuthenticationFilterUnitTest {
                             Instant.now(),
                             List.of(),
                             "tenant-123",
-                            "hash-456");
+                            "org-789",
+                            "hash-456",
+                            false);
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
             // Filter가 mutatedExchange로 chain을 호출하므로 any()로 매칭
@@ -195,7 +199,7 @@ class JwtAuthenticationFilterUnitTest {
                             .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
+            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, organizationId, permissionHash 제공
             JwtClaims claims =
                     JwtClaims.of(
                             "user-123",
@@ -204,7 +208,9 @@ class JwtAuthenticationFilterUnitTest {
                             Instant.now(),
                             expectedRoles,
                             "tenant-123",
-                            "hash-456");
+                            "org-789",
+                            "hash-456",
+                            false);
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
             // Filter가 mutatedExchange로 chain을 호출하므로 any()로 매칭
@@ -236,7 +242,7 @@ class JwtAuthenticationFilterUnitTest {
                             .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
+            // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, organizationId, permissionHash 제공
             JwtClaims claims =
                     JwtClaims.of(
                             "user-123",
@@ -245,7 +251,9 @@ class JwtAuthenticationFilterUnitTest {
                             Instant.now(),
                             List.of(),
                             "tenant-123",
-                            "hash-456");
+                            "org-789",
+                            "hash-456",
+                            false);
             when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                     .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
             when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());

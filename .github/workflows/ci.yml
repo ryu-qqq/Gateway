@@ -1,0 +1,180 @@
+# ============================================================================
+# Spring Hexagonal Template - CI Pipeline
+# ============================================================================
+# Phase 1: 기본 CI (테스트 + 품질 검증)
+#
+# 이 워크플로우는 템플릿 프로젝트의 기본 CI 파이프라인입니다.
+# 프로젝트 확장 시 github-workflows-guide.md를 참조하여
+# Phase 2-4로 점진적으로 확장하세요.
+# ============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  # ==========================================================================
+  # 테스트 및 품질 검증
+  # ==========================================================================
+  test:
+    name: Test & Quality Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # ----------------------------------------------------------------------
+      # 코드 품질 검증 (QA Tools)
+      # ----------------------------------------------------------------------
+      - name: Run Checkstyle
+        run: ./gradlew checkstyleMain checkstyleTest --no-daemon
+        continue-on-error: false
+
+      - name: Run SpotBugs
+        run: ./gradlew spotbugsMain --no-daemon
+        continue-on-error: false
+
+      - name: Run PMD (Law of Demeter)
+        run: ./gradlew pmdMain --no-daemon
+        continue-on-error: false
+
+      - name: Check Code Formatting (Spotless)
+        run: ./gradlew spotlessCheck --no-daemon
+        continue-on-error: false
+
+      # ----------------------------------------------------------------------
+      # Zero-Tolerance 검증
+      # ----------------------------------------------------------------------
+      - name: Verify No Lombok
+        run: ./gradlew checkNoLombok --no-daemon
+
+      # TODO: verifyVersionCatalog 태스크 구현 후 활성화
+      # - name: Verify Version Catalog Consistency
+      #   run: ./gradlew verifyVersionCatalog --no-daemon
+
+      # ----------------------------------------------------------------------
+      # 테스트 실행 (단위 + ArchUnit)
+      # ----------------------------------------------------------------------
+      - name: Run Tests
+        run: ./gradlew test --no-daemon
+
+      # ----------------------------------------------------------------------
+      # JaCoCo 커버리지 검증
+      # ----------------------------------------------------------------------
+      - name: Verify Code Coverage
+        run: ./gradlew jacocoTestCoverageVerification --no-daemon
+
+      # ----------------------------------------------------------------------
+      # 테스트 리포트 업로드
+      # ----------------------------------------------------------------------
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: |
+            **/build/reports/tests/
+            **/build/reports/jacoco/
+            **/build/reports/checkstyle/
+            **/build/reports/spotbugs/
+            **/build/reports/pmd/
+          retention-days: 7
+
+      # ----------------------------------------------------------------------
+      # PR에 커버리지 코멘트 (PR인 경우만)
+      # ----------------------------------------------------------------------
+      - name: Add Coverage Comment to PR
+        uses: madrapps/jacoco-report@v1.6.1
+        if: github.event_name == 'pull_request'
+        with:
+          paths: |
+            ${{ github.workspace }}/**/build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 70
+          min-coverage-changed-files: 80
+          title: "📊 Code Coverage Report"
+
+  # ==========================================================================
+  # 빌드 검증 (JAR 생성 가능 여부)
+  # ==========================================================================
+  build:
+    name: Build Verification
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Build JAR
+        run: |
+          chmod +x gradlew
+          ./gradlew :bootstrap:bootstrap-gateway:bootJar --no-daemon -x test
+
+      - name: Upload JAR Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-jar
+          path: bootstrap/bootstrap-gateway/build/libs/*.jar
+          retention-days: 1
+
+  # ==========================================================================
+  # 빌드 요약 (GitHub Summary)
+  # ==========================================================================
+  summary:
+    name: Build Summary
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Create Summary
+        run: |
+          echo "## 🏗️ CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Test & Quality | ${{ needs.test.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 검증 항목" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Checkstyle (코드 스타일)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ SpotBugs (버그 패턴)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ PMD (Law of Demeter)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Spotless (코드 포맷)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Lombok 금지 검증" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Version Catalog 일관성" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ 단위 테스트 + ArchUnit" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ JaCoCo 커버리지" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Actor**: @${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

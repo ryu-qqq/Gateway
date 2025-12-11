@@ -24,7 +24,7 @@
 - **자동화된 아키텍처 검증**: 빌드 시 예외 설계 규칙 자동 검증
 - **Zero-Tolerance 강제**: Lombok, JPA, Spring 어노테이션 사용 방지
 - **일관된 예외 구조**: ErrorCode Enum + Concrete Exception 패턴 강제
-- **레이어 의존성 보호**: Domain Layer의 독립성 유지
+- **레이어 의존성 보호**: Domain Layer의 독립성 유지 (Spring HttpStatus 금지)
 
 ### 대상
 
@@ -41,6 +41,7 @@
 │ 1. ErrorCode Enum                                            │
 │    - ErrorCode 인터페이스 구현                               │
 │    - getCode(), getHttpStatus(), getMessage() 필수           │
+│    - int httpStatus 사용 (Spring HttpStatus 금지!)          │
 │    - Lombok, JPA, Spring 금지                               │
 │                                                              │
 │ 2. Concrete Exception 클래스                                 │
@@ -50,10 +51,12 @@
 │                                                              │
 │ 3. 레이어 의존성                                             │
 │    - Application/Adapter 레이어 의존 금지                   │
+│    - Spring Framework 의존 금지 (HttpStatus 포함)           │
 │    - Domain → Domain만 허용                                  │
 │                                                              │
 │ 4. 네이밍 규칙                                               │
-│    - 명확한 의미 전달 (NotFound, Invalid, Cannot 등)        │
+│    - 명확한 의미 전달                                        │
+│    - NotFound, Invalid, Cannot, Duplicate, Conflict 등      │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -61,16 +64,15 @@
 
 ## ArchUnit 규칙 카테고리
 
-### 1. ErrorCode Enum 규칙 (8개)
+### 1. ErrorCode Enum 규칙 (7개)
 
 - ✅ ErrorCode 인터페이스 구현
 - ✅ domain.[bc].exception 패키지 위치
 - ✅ Lombok 금지
 - ✅ public 접근 제어자
 - ✅ getCode() 메서드 필수
-- ✅ getHttpStatus() 메서드 필수
+- ✅ getHttpStatus() 메서드 필수 (int 반환)
 - ✅ getMessage() 메서드 필수
-- ✅ HttpStatus 의존성
 
 ### 2. Concrete Exception 클래스 규칙 (7개)
 
@@ -87,14 +89,15 @@
 - ✅ RuntimeException 상속
 - ✅ domain.common.exception 패키지 위치
 
-### 4. 레이어 의존성 규칙 (2개)
+### 4. 레이어 의존성 규칙 (3개)
 
 - ✅ Application/Adapter 레이어 의존 금지
+- ✅ Spring Framework 의존 금지 (HttpStatus 포함)
 - ✅ Domain/Adapter만 Exception 접근 허용
 
 ### 5. 네이밍 규칙 (1개)
 
-- ✅ 명확한 의미 전달 (NotFound, Invalid, Cannot 등)
+- ✅ 명확한 의미 전달 (NotFound, Invalid, Cannot, Duplicate, Conflict, Forbidden, Unauthorized, Expired, Denied, Mismatch 등)
 
 ---
 
@@ -120,14 +123,15 @@ void errorCodeEnums_ShouldImplementErrorCodeInterface() {
 **✅ 올바른 예시**:
 ```java
 public enum OrderErrorCode implements ErrorCode {
-    ORDER_NOT_FOUND("ORDER-001", HttpStatus.NOT_FOUND, "Order not found"),
-    INVALID_ORDER_STATUS("ORDER-002", HttpStatus.BAD_REQUEST, "Invalid order status");
+    ORDER_NOT_FOUND("ORDER-001", 404, "Order not found"),
+    INVALID_ORDER_STATUS("ORDER-010", 400, "Invalid order status"),
+    ORDER_ALREADY_SHIPPED("ORDER-020", 409, "Order already shipped");
 
     private final String code;
-    private final HttpStatus httpStatus;
+    private final int httpStatus;  // int 사용 (Spring HttpStatus 금지!)
     private final String message;
 
-    OrderErrorCode(String code, HttpStatus httpStatus, String message) {
+    OrderErrorCode(String code, int httpStatus, String message) {
         this.code = code;
         this.httpStatus = httpStatus;
         this.message = message;
@@ -137,7 +141,7 @@ public enum OrderErrorCode implements ErrorCode {
     public String getCode() { return code; }
 
     @Override
-    public HttpStatus getHttpStatus() { return httpStatus; }
+    public int getHttpStatus() { return httpStatus; }  // int 반환
 
     @Override
     public String getMessage() { return message; }
@@ -150,6 +154,12 @@ public enum OrderErrorCode implements ErrorCode {
 public enum OrderErrorCode {
     ORDER_NOT_FOUND("ORDER-001", "Order not found");
     // ArchUnit 검증 실패
+}
+
+// Spring HttpStatus 사용 (Domain Layer 순수성 위반!)
+public enum OrderErrorCode implements ErrorCode {
+    ORDER_NOT_FOUND("ORDER-001", HttpStatus.NOT_FOUND, "Order not found");
+    // ❌ Domain Layer는 Spring에 의존하면 안 됨!
 }
 ```
 
@@ -213,13 +223,13 @@ void errorCodeEnums_ShouldNotUseLombok() {
 **✅ 올바른 예시 (Pure Java)**:
 ```java
 public enum OrderErrorCode implements ErrorCode {
-    ORDER_NOT_FOUND("ORDER-001", HttpStatus.NOT_FOUND, "Order not found");
+    ORDER_NOT_FOUND("ORDER-001", 404, "Order not found");
 
     private final String code;
-    private final HttpStatus httpStatus;
+    private final int httpStatus;
     private final String message;
 
-    OrderErrorCode(String code, HttpStatus httpStatus, String message) {
+    OrderErrorCode(String code, int httpStatus, String message) {
         this.code = code;
         this.httpStatus = httpStatus;
         this.message = message;
@@ -229,7 +239,7 @@ public enum OrderErrorCode implements ErrorCode {
     public String getCode() { return code; }
 
     @Override
-    public HttpStatus getHttpStatus() { return httpStatus; }
+    public int getHttpStatus() { return httpStatus; }
 
     @Override
     public String getMessage() { return message; }
@@ -241,7 +251,7 @@ public enum OrderErrorCode implements ErrorCode {
 @Getter
 @AllArgsConstructor
 public enum OrderErrorCode implements ErrorCode {
-    ORDER_NOT_FOUND("ORDER-001", HttpStatus.NOT_FOUND, "Order not found");
+    ORDER_NOT_FOUND("ORDER-001", 404, "Order not found");
     // ArchUnit 검증 실패
 }
 ```
@@ -262,7 +272,7 @@ void errorCodeEnums_ShouldHaveGetCodeMethod() {
 
 @Test
 void errorCodeEnums_ShouldHaveGetHttpStatusMethod() {
-    // getHttpStatus() 메서드 필수
+    // getHttpStatus() 메서드 필수 (int 반환)
 }
 
 @Test
@@ -274,43 +284,16 @@ void errorCodeEnums_ShouldHaveGetMessageMethod() {
 **✅ 올바른 예시**:
 ```java
 public enum OrderErrorCode implements ErrorCode {
-    ORDER_NOT_FOUND("ORDER-001", HttpStatus.NOT_FOUND, "Order not found");
+    ORDER_NOT_FOUND("ORDER-001", 404, "Order not found");
 
     @Override
     public String getCode() { return code; }  // ✅
 
     @Override
-    public HttpStatus getHttpStatus() { return httpStatus; }  // ✅
+    public int getHttpStatus() { return httpStatus; }  // ✅ int 반환
 
     @Override
     public String getMessage() { return message; }  // ✅
-}
-```
-
----
-
-### 규칙 8: HttpStatus 의존성
-
-**검증 내용**:
-```java
-@Test
-void errorCodeEnums_ShouldDependOnHttpStatus() {
-    ArchRule rule = classes()
-        .that().haveSimpleNameEndingWith("ErrorCode")
-        .should().dependOnClassesThat().areAssignableTo(HttpStatus.class)
-        .because("ErrorCode Enum은 HttpStatus를 사용해야 합니다");
-}
-```
-
-**✅ 올바른 예시**:
-```java
-import org.springframework.http.HttpStatus;
-
-public enum OrderErrorCode implements ErrorCode {
-    ORDER_NOT_FOUND("ORDER-001", HttpStatus.NOT_FOUND, "Order not found"),
-    INVALID_ORDER_STATUS("ORDER-002", HttpStatus.BAD_REQUEST, "Invalid order status");
-
-    private final HttpStatus httpStatus;  // ✅ HttpStatus 사용
 }
 ```
 
@@ -563,7 +546,7 @@ domain/
 
 ## 레이어 의존성 규칙
 
-### 규칙 18: Application/Adapter 레이어 의존 금지
+### 규칙 17: Application/Adapter 레이어 의존 금지
 
 **검증 내용**:
 ```java
@@ -576,6 +559,63 @@ void exceptions_ShouldNotDependOnOuterLayers() {
             "..adapter.."
         )
         .because("Domain Exception은 Application/Adapter에 의존하지 않아야 합니다");
+}
+```
+
+---
+
+### 규칙 18: Spring Framework 의존 금지 (HttpStatus 포함)
+
+**검증 내용**:
+```java
+@Test
+void exceptions_ShouldNotDependOnSpringFramework() {
+    ArchRule rule = noClasses()
+        .that().resideInAPackage("..domain..exception..")
+        .should().dependOnClassesThat().resideInAnyPackage(
+            "org.springframework.."
+        )
+        .because("Domain Layer는 Spring Framework에 의존하지 않아야 합니다 (HttpStatus 포함)");
+}
+```
+
+**💡 핵심 원칙**: Domain Layer는 순수 Java로 유지해야 합니다.
+
+**✅ 올바른 예시**:
+```java
+// Domain Layer - Pure Java
+public enum OrderErrorCode implements ErrorCode {
+    ORDER_NOT_FOUND("ORDER-001", 404, "Order not found");  // ✅ int 사용
+
+    private final int httpStatus;  // ✅ Pure Java
+}
+```
+
+**❌ 잘못된 예시**:
+```java
+// Domain Layer - Spring 의존 (위반!)
+import org.springframework.http.HttpStatus;  // ❌ Spring 의존
+
+public enum OrderErrorCode implements ErrorCode {
+    ORDER_NOT_FOUND("ORDER-001", HttpStatus.NOT_FOUND, "Order not found");  // ❌
+
+    private final HttpStatus httpStatus;  // ❌ Spring 타입
+}
+```
+
+**📍 HttpStatus 변환은 Adapter Layer에서**:
+```java
+// Adapter Layer - GlobalExceptionHandler
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(DomainException.class)
+    public ResponseEntity<ErrorResponse> handle(DomainException ex) {
+        // ✅ Adapter Layer에서 int → HttpStatus 변환
+        return ResponseEntity
+            .status(HttpStatus.valueOf(ex.httpStatus()))
+            .body(ErrorResponse.from(ex));
+    }
 }
 ```
 
@@ -673,21 +713,59 @@ void concreteExceptions_ShouldHaveMeaningfulNames() {
     ArchRule rule = classes()
         .that().resideInAPackage("..domain..exception..")
         .and().haveSimpleNameEndingWith("Exception")
-        .should().haveSimpleNameMatching(".*(?:NotFound|Invalid|Already|Cannot|Failed|Exceeded|Unsupported).*Exception")
+        .should().haveSimpleNameMatching(
+            ".*(?:NotFound|Invalid|Already|Cannot|Failed|Exceeded|Unsupported|" +
+            "Duplicate|Conflict|Forbidden|Unauthorized|Expired|Denied|Mismatch).*Exception"
+        )
         .because("Exception 이름은 명확한 의미를 가져야 합니다");
 }
 ```
 
+**✅ 허용되는 네이밍 패턴**:
+
+| 패턴 | HTTP Status | 설명 | 예시 |
+|------|-------------|------|------|
+| `NotFound` | 404 | 리소스가 존재하지 않음 | `OrderNotFoundException` |
+| `Invalid` | 400 | 유효하지 않은 입력 | `InvalidOrderStatusException` |
+| `Already` | 409 | 이미 수행된 상태 | `OrderAlreadyShippedException` |
+| `Cannot` | 400 | 수행할 수 없는 작업 | `CannotCancelOrderException` |
+| `Failed` | 500 | 내부 처리 실패 | `OrderProcessingFailedException` |
+| `Exceeded` | 400 | 한도 초과 | `OrderLimitExceededException` |
+| `Unsupported` | 400 | 지원하지 않는 작업 | `UnsupportedPaymentException` |
+| `Duplicate` | 409 | 중복 존재 | `DuplicateOrderException` |
+| `Conflict` | 409 | 상태 충돌 | `OrderStateConflictException` |
+| `Forbidden` | 403 | 권한 없음 | `OrderAccessForbiddenException` |
+| `Unauthorized` | 401 | 인증 필요 | `OrderUnauthorizedException` |
+| `Expired` | 400 | 만료됨 | `OrderExpiredException` |
+| `Denied` | 403 | 거부됨 | `OrderDeniedException` |
+| `Mismatch` | 400 | 불일치 | `OrderAmountMismatchException` |
+
 **✅ 올바른 네이밍 예시**:
 ```java
-// 명확한 의미 전달
-OrderNotFoundException          // 404 Not Found
-InvalidOrderStatusException     // 400 Bad Request
-OrderAlreadyShippedException    // 409 Conflict
-CannotCancelOrderException      // 400 Bad Request
-OrderProcessingFailedException  // 500 Internal Error
-OrderLimitExceededException     // 400 Bad Request
-UnsupportedPaymentException     // 400 Bad Request
+// 404 Not Found (리소스 부재)
+OrderNotFoundException
+CustomerNotFoundException
+
+// 400 Bad Request (유효성 검사 실패)
+InvalidOrderStatusException
+OrderAmountMismatchException
+OrderLimitExceededException
+OrderExpiredException
+
+// 409 Conflict (상태 충돌)
+OrderAlreadyShippedException
+DuplicateOrderException
+OrderStateConflictException
+
+// 403 Forbidden (권한 없음)
+OrderAccessForbiddenException
+OrderDeniedException
+
+// 401 Unauthorized (인증 필요)
+OrderUnauthorizedException
+
+// 500 Internal Error (내부 오류)
+OrderProcessingFailedException
 ```
 
 **❌ 잘못된 네이밍 예시**:
@@ -695,6 +773,8 @@ UnsupportedPaymentException     // 400 Bad Request
 OrderException                  // ❌ 너무 일반적 (의미 불명확)
 OrderError                      // ❌ Error 접미사 금지 (Exception 사용)
 OrderProblem                    // ❌ Problem 접미사 금지
+BadOrderException               // ❌ 패턴에 맞지 않음
+WrongOrderException             // ❌ 패턴에 맞지 않음
 ```
 
 ---
@@ -759,13 +839,13 @@ public enum OrderErrorCode {
 
 // After (수정)
 public enum OrderErrorCode implements ErrorCode {  // ✅ ErrorCode 인터페이스 구현
-    ORDER_NOT_FOUND("ORDER-001", HttpStatus.NOT_FOUND, "Order not found");
+    ORDER_NOT_FOUND("ORDER-001", 404, "Order not found");
 
     private final String code;
-    private final HttpStatus httpStatus;
+    private final int httpStatus;  // ✅ int 사용 (Spring HttpStatus 금지)
     private final String message;
 
-    OrderErrorCode(String code, HttpStatus httpStatus, String message) {
+    OrderErrorCode(String code, int httpStatus, String message) {
         this.code = code;
         this.httpStatus = httpStatus;
         this.message = message;
@@ -775,7 +855,7 @@ public enum OrderErrorCode implements ErrorCode {  // ✅ ErrorCode 인터페이
     public String getCode() { return code; }
 
     @Override
-    public HttpStatus getHttpStatus() { return httpStatus; }
+    public int getHttpStatus() { return httpStatus; }  // ✅ int 반환
 
     @Override
     public String getMessage() { return message; }
@@ -899,11 +979,11 @@ public class OrderNotFoundException extends DomainException {
 - [ ] domain.[bc].exception 패키지에 위치하는가?
 - [ ] Lombok 어노테이션을 사용하지 않았는가?
 - [ ] public enum으로 선언했는가?
-- [ ] getCode() 메서드를 구현했는가?
-- [ ] getHttpStatus() 메서드를 구현했는가?
-- [ ] getMessage() 메서드를 구현했는가?
-- [ ] HttpStatus를 필드로 가지고 있는가?
-- [ ] 에러 코드 형식이 {BC}-{3자리 숫자}인가?
+- [ ] getCode() 메서드를 구현했는가? (String 반환)
+- [ ] getHttpStatus() 메서드를 구현했는가? (int 반환)
+- [ ] getMessage() 메서드를 구현했는가? (String 반환)
+- [ ] int httpStatus 필드를 사용하는가? (Spring HttpStatus 금지!)
+- [ ] 에러 코드 형식이 {BC}-{3자리 숫자}인가? (예: ORDER-001)
 ```
 
 ### Concrete Exception 체크리스트
@@ -916,10 +996,11 @@ public class OrderNotFoundException extends DomainException {
 - [ ] Lombok 어노테이션을 사용하지 않았는가?
 - [ ] JPA 어노테이션을 사용하지 않았는가?
 - [ ] Spring 어노테이션을 사용하지 않았는가?
+- [ ] Spring Framework 클래스에 의존하지 않는가? (HttpStatus 포함)
 - [ ] public class로 선언했는가?
 - [ ] RuntimeException 계층인가? (Checked Exception이 아닌가?)
 - [ ] Application/Adapter 레이어에 의존하지 않는가?
-- [ ] 네이밍이 명확한 의미를 전달하는가? (NotFound, Invalid 등)
+- [ ] 네이밍이 명확한 의미를 전달하는가? (NotFound, Invalid, Duplicate, Conflict, Forbidden 등)
 - [ ] 생성자에서 ErrorCode를 전달하는가?
 ```
 
@@ -932,7 +1013,10 @@ public class OrderNotFoundException extends DomainException {
 - [ ] domain.common.exception 패키지에 위치하는가?
 - [ ] ErrorCode를 필드로 가지고 있는가?
 - [ ] protected 생성자로 ErrorCode를 받는가?
-- [ ] getErrorCode() 메서드를 제공하는가?
+- [ ] code() 메서드를 제공하는가? (String 반환)
+- [ ] httpStatus() 메서드를 제공하는가? (int 반환)
+- [ ] args() 메서드를 제공하는가? (Map<String, Object> 반환)
+- [ ] Spring Framework에 의존하지 않는가?
 ```
 
 ### ArchUnit 테스트 실행 체크리스트

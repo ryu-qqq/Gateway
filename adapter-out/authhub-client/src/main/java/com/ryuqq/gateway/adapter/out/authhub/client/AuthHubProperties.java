@@ -7,6 +7,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *
  * <p>AuthHub 외부 시스템 연동 설정 (authhub-client.yml 기반)
  *
+ * <p><strong>설정 구조</strong>:
+ *
+ * <ul>
+ *   <li>endpoints: 모든 API 엔드포인트 경로
+ *   <li>webclient: WebClient 연결 설정
+ *   <li>retry: Resilience4j Retry 설정
+ *   <li>circuitBreaker: Resilience4j Circuit Breaker 설정
+ * </ul>
+ *
  * <p><strong>환경별 설정</strong>:
  *
  * <ul>
@@ -22,10 +31,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class AuthHubProperties {
 
     private String baseUrl;
-    private String jwksEndpoint = "/api/v1/auth/jwks";
-    private String refreshEndpoint = "/api/v1/auth/refresh";
-    private String extractExpiredInfoEndpoint = "/api/v1/auth/extract-expired-info";
-    private Timeout timeout = new Timeout();
+    private Endpoints endpoints = new Endpoints();
+    private WebClientConfig webclient = new WebClientConfig();
     private Retry retry = new Retry();
     private CircuitBreaker circuitBreaker = new CircuitBreaker();
 
@@ -37,36 +44,20 @@ public class AuthHubProperties {
         this.baseUrl = baseUrl;
     }
 
-    public String getJwksEndpoint() {
-        return jwksEndpoint;
+    public Endpoints getEndpoints() {
+        return endpoints;
     }
 
-    public void setJwksEndpoint(String jwksEndpoint) {
-        this.jwksEndpoint = jwksEndpoint;
+    public void setEndpoints(Endpoints endpoints) {
+        this.endpoints = endpoints;
     }
 
-    public String getRefreshEndpoint() {
-        return refreshEndpoint;
+    public WebClientConfig getWebclient() {
+        return webclient;
     }
 
-    public void setRefreshEndpoint(String refreshEndpoint) {
-        this.refreshEndpoint = refreshEndpoint;
-    }
-
-    public String getExtractExpiredInfoEndpoint() {
-        return extractExpiredInfoEndpoint;
-    }
-
-    public void setExtractExpiredInfoEndpoint(String extractExpiredInfoEndpoint) {
-        this.extractExpiredInfoEndpoint = extractExpiredInfoEndpoint;
-    }
-
-    public Timeout getTimeout() {
-        return timeout;
-    }
-
-    public void setTimeout(Timeout timeout) {
-        this.timeout = timeout;
+    public void setWebclient(WebClientConfig webclient) {
+        this.webclient = webclient;
     }
 
     public Retry getRetry() {
@@ -85,29 +76,197 @@ public class AuthHubProperties {
         this.circuitBreaker = circuitBreaker;
     }
 
-    /** Timeout Configuration */
-    public static class Timeout {
-        private long connection = 3000;
-        private long response = 3000;
+    // ===============================================
+    // Convenience Methods for Endpoints
+    // ===============================================
 
-        public long getConnection() {
-            return connection;
+    /**
+     * JWKS 엔드포인트 조회
+     *
+     * @return JWKS endpoint path
+     */
+    public String getJwksEndpoint() {
+        return endpoints.getJwks();
+    }
+
+    /**
+     * Token Refresh 엔드포인트 조회
+     *
+     * @return Refresh endpoint path
+     */
+    public String getRefreshEndpoint() {
+        return endpoints.getRefresh();
+    }
+
+    /**
+     * 만료 토큰 정보 추출 엔드포인트 조회
+     *
+     * @return Extract expired info endpoint path
+     */
+    public String getExtractExpiredInfoEndpoint() {
+        return endpoints.getExtractExpiredInfo();
+    }
+
+    /**
+     * Tenant Config 엔드포인트 조회
+     *
+     * @return Tenant config endpoint path
+     */
+    public String getTenantConfigEndpoint() {
+        return endpoints.getTenantConfig();
+    }
+
+    /**
+     * Permission Spec 엔드포인트 조회
+     *
+     * @return Permission spec endpoint path
+     */
+    public String getPermissionSpecEndpoint() {
+        return endpoints.getPermissionSpec();
+    }
+
+    /**
+     * User Permissions 엔드포인트 조회
+     *
+     * @return User permissions endpoint path
+     */
+    public String getUserPermissionsEndpoint() {
+        return endpoints.getUserPermissions();
+    }
+
+    // ===============================================
+    // Nested Configuration Classes
+    // ===============================================
+
+    /** Endpoints Configuration - 모든 API 엔드포인트 경로 */
+    public static class Endpoints {
+
+        // Authentication endpoints
+        private String jwks = "/api/v1/auth/jwks";
+        private String refresh = "/api/v1/auth/refresh";
+        private String extractExpiredInfo = "/api/v1/auth/extract-expired-info";
+
+        // Tenant endpoints
+        private String tenantConfig = "/api/v1/tenants/{tenantId}/config";
+
+        // Permission endpoints
+        private String permissionSpec = "/api/v1/permissions/spec";
+        private String userPermissions = "/api/v1/permissions/users/{userId}";
+
+        public String getJwks() {
+            return jwks;
         }
 
-        public void setConnection(long connection) {
-            this.connection = connection;
+        public void setJwks(String jwks) {
+            this.jwks = jwks;
         }
 
-        public long getResponse() {
-            return response;
+        public String getRefresh() {
+            return refresh;
         }
 
-        public void setResponse(long response) {
-            this.response = response;
+        public void setRefresh(String refresh) {
+            this.refresh = refresh;
+        }
+
+        public String getExtractExpiredInfo() {
+            return extractExpiredInfo;
+        }
+
+        public void setExtractExpiredInfo(String extractExpiredInfo) {
+            this.extractExpiredInfo = extractExpiredInfo;
+        }
+
+        public String getTenantConfig() {
+            return tenantConfig;
+        }
+
+        public void setTenantConfig(String tenantConfig) {
+            this.tenantConfig = tenantConfig;
+        }
+
+        public String getPermissionSpec() {
+            return permissionSpec;
+        }
+
+        public void setPermissionSpec(String permissionSpec) {
+            this.permissionSpec = permissionSpec;
+        }
+
+        public String getUserPermissions() {
+            return userPermissions;
+        }
+
+        public void setUserPermissions(String userPermissions) {
+            this.userPermissions = userPermissions;
         }
     }
 
-    /** Retry Configuration */
+    /** WebClient Configuration - 연결 및 타임아웃 설정 */
+    public static class WebClientConfig {
+
+        // Connection pool settings
+        private int maxConnections = 500;
+        private long pendingAcquireTimeout = 45000;
+        private long maxIdleTime = 20000;
+
+        // Timeout settings
+        private long connectionTimeout = 3000;
+        private long responseTimeout = 3000;
+
+        // Logging
+        private boolean wireLoggingEnabled = false;
+
+        public int getMaxConnections() {
+            return maxConnections;
+        }
+
+        public void setMaxConnections(int maxConnections) {
+            this.maxConnections = maxConnections;
+        }
+
+        public long getPendingAcquireTimeout() {
+            return pendingAcquireTimeout;
+        }
+
+        public void setPendingAcquireTimeout(long pendingAcquireTimeout) {
+            this.pendingAcquireTimeout = pendingAcquireTimeout;
+        }
+
+        public long getMaxIdleTime() {
+            return maxIdleTime;
+        }
+
+        public void setMaxIdleTime(long maxIdleTime) {
+            this.maxIdleTime = maxIdleTime;
+        }
+
+        public long getConnectionTimeout() {
+            return connectionTimeout;
+        }
+
+        public void setConnectionTimeout(long connectionTimeout) {
+            this.connectionTimeout = connectionTimeout;
+        }
+
+        public long getResponseTimeout() {
+            return responseTimeout;
+        }
+
+        public void setResponseTimeout(long responseTimeout) {
+            this.responseTimeout = responseTimeout;
+        }
+
+        public boolean isWireLoggingEnabled() {
+            return wireLoggingEnabled;
+        }
+
+        public void setWireLoggingEnabled(boolean wireLoggingEnabled) {
+            this.wireLoggingEnabled = wireLoggingEnabled;
+        }
+    }
+
+    /** Retry Configuration - Resilience4j Retry 설정 */
     public static class Retry {
         private int maxAttempts = 3;
         private long waitDuration = 100;
@@ -129,12 +288,13 @@ public class AuthHubProperties {
         }
     }
 
-    /** Circuit Breaker Configuration */
+    /** Circuit Breaker Configuration - Resilience4j Circuit Breaker 설정 */
     public static class CircuitBreaker {
         private float failureRateThreshold = 50;
         private long waitDurationInOpenState = 10000;
         private int slidingWindowSize = 10;
         private int minimumNumberOfCalls = 5;
+        private int permittedCallsInHalfOpen = 3;
 
         public float getFailureRateThreshold() {
             return failureRateThreshold;
@@ -166,6 +326,14 @@ public class AuthHubProperties {
 
         public void setMinimumNumberOfCalls(int minimumNumberOfCalls) {
             this.minimumNumberOfCalls = minimumNumberOfCalls;
+        }
+
+        public int getPermittedCallsInHalfOpen() {
+            return permittedCallsInHalfOpen;
+        }
+
+        public void setPermittedCallsInHalfOpen(int permittedCallsInHalfOpen) {
+            this.permittedCallsInHalfOpen = permittedCallsInHalfOpen;
         }
     }
 }

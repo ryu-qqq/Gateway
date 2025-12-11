@@ -112,7 +112,7 @@ public class CheckRateLimitService implements CheckRateLimitUseCase {
         RateLimitKey key = buildKey(command);
 
         return rateLimitCounterCommandPort
-                .incrementAndGet(key, policy.getWindow())
+                .incrementAndGet(key, policy.window())
                 .map(currentCount -> buildResponse(currentCount, policy));
     }
 
@@ -181,26 +181,26 @@ public class CheckRateLimitService implements CheckRateLimitUseCase {
         if (policy.isExceeded(currentCount)) {
             return buildDeniedResponse(currentCount, policy);
         }
-        return CheckRateLimitResponse.allowed(currentCount, policy.getMaxRequests());
+        return CheckRateLimitResponse.allowed(currentCount, policy.maxRequests());
     }
 
     /** 거부 Response 생성 */
     private CheckRateLimitResponse buildDeniedResponse(long currentCount, RateLimitPolicy policy) {
         int retryAfterSeconds = calculateRetryAfterSeconds(policy);
-        RateLimitAction action = policy.getAction();
+        RateLimitAction action = policy.action();
 
         // 예외 발생 (Filter에서 처리)
         if (action == RateLimitAction.BLOCK_IP || action == RateLimitAction.LOCK_ACCOUNT) {
-            throw new RateLimitExceededException(policy.getMaxRequests(), 0, retryAfterSeconds);
+            throw new RateLimitExceededException(policy.maxRequests(), 0, retryAfterSeconds);
         }
 
         return CheckRateLimitResponse.denied(
-                currentCount, policy.getMaxRequests(), retryAfterSeconds, action);
+                currentCount, policy.maxRequests(), retryAfterSeconds, action);
     }
 
     /** 재시도 가능 시간 계산 */
     private int calculateRetryAfterSeconds(RateLimitPolicy policy) {
-        long windowSeconds = policy.getWindow().getSeconds();
+        long windowSeconds = policy.windowSeconds();
         return windowSeconds > 0 ? (int) windowSeconds : DEFAULT_RETRY_AFTER_SECONDS;
     }
 }

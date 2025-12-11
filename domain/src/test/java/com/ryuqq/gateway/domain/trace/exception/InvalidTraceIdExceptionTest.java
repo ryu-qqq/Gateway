@@ -21,7 +21,7 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException();
 
             // then
-            assertThat(exception.code()).isEqualTo("TRACE-001");
+            assertThat(exception.getCode()).isEqualTo("TRACE-001");
             assertThat(exception.getMessage()).isEqualTo("Invalid Trace-ID format");
         }
 
@@ -35,9 +35,10 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException(invalidTraceId);
 
             // then
-            assertThat(exception.code()).isEqualTo("TRACE-001");
+            assertThat(exception.getCode()).isEqualTo("TRACE-001");
+            // DomainException 형식: ErrorCode.getMessage() + ": " + buildDetail()
             assertThat(exception.getMessage())
-                    .isEqualTo("Invalid Trace-ID format: " + invalidTraceId);
+                    .isEqualTo("Invalid Trace-ID format: traceId=" + invalidTraceId);
         }
 
         @Test
@@ -50,8 +51,8 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException(emptyTraceId);
 
             // then
-            assertThat(exception.code()).isEqualTo("TRACE-001");
-            assertThat(exception.getMessage()).isEqualTo("Invalid Trace-ID format: ");
+            assertThat(exception.getCode()).isEqualTo("TRACE-001");
+            assertThat(exception.getMessage()).isEqualTo("Invalid Trace-ID format: traceId=");
         }
 
         @Test
@@ -64,8 +65,8 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException(nullTraceId);
 
             // then
-            assertThat(exception.code()).isEqualTo("TRACE-001");
-            assertThat(exception.getMessage()).isEqualTo("Invalid Trace-ID format: null");
+            assertThat(exception.getCode()).isEqualTo("TRACE-001");
+            assertThat(exception.getMessage()).isEqualTo("Invalid Trace-ID format: traceId=null");
         }
     }
 
@@ -80,8 +81,8 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException("test");
 
             // when & then
-            assertThat(exception.code()).isEqualTo(TraceErrorCode.INVALID_TRACE_ID.getCode());
-            assertThat(exception.code()).isEqualTo("TRACE-001");
+            assertThat(exception.getCode()).isEqualTo(TraceErrorCode.INVALID_TRACE_ID.getCode());
+            assertThat(exception.getCode()).isEqualTo("TRACE-001");
         }
 
         @Test
@@ -91,7 +92,7 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException();
 
             // when & then
-            assertThat(exception.code()).isEqualTo(TraceErrorCode.INVALID_TRACE_ID.getCode());
+            assertThat(exception.getCode()).isEqualTo(TraceErrorCode.INVALID_TRACE_ID.getCode());
         }
     }
 
@@ -162,7 +163,7 @@ class InvalidTraceIdExceptionTest {
             try {
                 throw new InvalidTraceIdException("bad-trace-id");
             } catch (InvalidTraceIdException e) {
-                assertThat(e.code()).isEqualTo("TRACE-001");
+                assertThat(e.getCode()).isEqualTo("TRACE-001");
                 assertThat(e.getMessage()).contains("bad-trace-id");
             }
         }
@@ -179,7 +180,7 @@ class InvalidTraceIdExceptionTest {
                 throw new InvalidTraceIdException("test");
             } catch (DomainException e) {
                 caught = true;
-                caughtCode = e.code();
+                caughtCode = e.getCode();
             }
 
             // then
@@ -202,7 +203,7 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException(invalidFormat);
 
             // then
-            assertThat(exception.code()).isEqualTo("TRACE-001");
+            assertThat(exception.getCode()).isEqualTo("TRACE-001");
             assertThat(exception.getMessage()).contains(invalidFormat);
         }
 
@@ -216,7 +217,7 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException(shortTraceId);
 
             // then
-            assertThat(exception.code()).isEqualTo("TRACE-001");
+            assertThat(exception.getCode()).isEqualTo("TRACE-001");
             assertThat(exception.getMessage()).contains(shortTraceId);
         }
 
@@ -230,7 +231,7 @@ class InvalidTraceIdExceptionTest {
             InvalidTraceIdException exception = new InvalidTraceIdException(invalidUuid);
 
             // then
-            assertThat(exception.code()).isEqualTo("TRACE-001");
+            assertThat(exception.getCode()).isEqualTo("TRACE-001");
             assertThat(exception.getMessage()).contains(invalidUuid);
         }
     }

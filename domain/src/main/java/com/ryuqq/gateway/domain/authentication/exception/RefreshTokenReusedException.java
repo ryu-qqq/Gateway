@@ -24,23 +24,19 @@ import com.ryuqq.gateway.domain.common.exception.DomainException;
  * @author development-team
  * @since 1.0.0
  */
-public class RefreshTokenReusedException extends DomainException {
+public final class RefreshTokenReusedException extends DomainException {
 
     /**
-     * Constructor - 메시지로 예외 생성
+     * Constructor - 상세 정보로 예외 생성
      *
-     * @param message 상세 에러 메시지
+     * @param detail 상세 정보
      */
-    public RefreshTokenReusedException(String message) {
-        super(AuthenticationErrorCode.REFRESH_TOKEN_REUSED.getCode(), message);
+    public RefreshTokenReusedException(String detail) {
+        super(AuthenticationErrorCode.REFRESH_TOKEN_REUSED, detail);
     }
 
-    /**
-     * 에러 코드 조회
-     *
-     * @return AuthenticationErrorCode.REFRESH_TOKEN_REUSED
-     */
-    public AuthenticationErrorCode getErrorCode() {
-        return AuthenticationErrorCode.REFRESH_TOKEN_REUSED;
+    /** Constructor - 기본 예외 생성 */
+    public RefreshTokenReusedException() {
+        super(AuthenticationErrorCode.REFRESH_TOKEN_REUSED);
     }
 }

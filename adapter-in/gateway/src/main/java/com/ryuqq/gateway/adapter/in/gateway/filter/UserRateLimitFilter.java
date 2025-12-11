@@ -90,7 +90,7 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
                         })
                 .onErrorResume(
                         RateLimitExceededException.class,
-                        e -> tooManyRequests(exchange, e.getLimit(), e.getRetryAfterSeconds()))
+                        e -> tooManyRequests(exchange, e.limit(), e.retryAfterSeconds()))
                 .onErrorResume(
                         e -> {
                             // Redis 장애 등 예외 상황에서는 요청을 통과시킴 (fail-open)

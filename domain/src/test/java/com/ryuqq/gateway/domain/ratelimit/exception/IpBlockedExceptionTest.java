@@ -22,7 +22,7 @@ class IpBlockedExceptionTest {
 
             // then
             assertThat(exception).isNotNull();
-            assertThat(exception.code()).isEqualTo("RATE-002");
+            assertThat(exception.getCode()).isEqualTo("RATE-002");
             assertThat(exception.getMessage())
                     .isEqualTo("IP blocked due to abuse. Please try again later.");
         }
@@ -35,8 +35,8 @@ class IpBlockedExceptionTest {
 
             // then
             assertThat(exception).isNotNull();
-            assertThat(exception.code()).isEqualTo("RATE-002");
-            assertThat(exception.getIpAddress()).isEqualTo("192.168.1.1");
+            assertThat(exception.getCode()).isEqualTo("RATE-002");
+            assertThat(exception.ipAddress()).isEqualTo("192.168.1.1");
         }
 
         @Test
@@ -46,19 +46,19 @@ class IpBlockedExceptionTest {
             IpBlockedException exception = new IpBlockedException("192.168.1.1", 1800);
 
             // then
-            assertThat(exception.getIpAddress()).isEqualTo("192.168.1.1");
-            assertThat(exception.getRetryAfterSeconds()).isEqualTo(1800);
+            assertThat(exception.ipAddress()).isEqualTo("192.168.1.1");
+            assertThat(exception.retryAfterSeconds()).isEqualTo(1800);
         }
 
         @Test
-        @DisplayName("args에 ipAddress, retryAfterSeconds 포함")
-        void shouldIncludeArgsInException() {
+        @DisplayName("개별 필드 접근자를 통해 ipAddress, retryAfterSeconds 확인")
+        void shouldAccessFieldsThroughGetters() {
             // when
             IpBlockedException exception = new IpBlockedException("192.168.1.1", 1800);
 
             // then
-            assertThat(exception.args()).containsEntry("ipAddress", "192.168.1.1");
-            assertThat(exception.args()).containsEntry("retryAfterSeconds", 1800);
+            assertThat(exception.ipAddress()).isEqualTo("192.168.1.1");
+            assertThat(exception.retryAfterSeconds()).isEqualTo(1800);
         }
     }
 
@@ -98,7 +98,7 @@ class IpBlockedExceptionTest {
             IpBlockedException exception = new IpBlockedException();
 
             // when & then
-            assertThat(exception.code()).isEqualTo(RateLimitErrorCode.IP_BLOCKED.getCode());
+            assertThat(exception.getCode()).isEqualTo(RateLimitErrorCode.IP_BLOCKED.getCode());
             assertThat(exception.getMessage())
                     .isEqualTo(RateLimitErrorCode.IP_BLOCKED.getMessage());
         }

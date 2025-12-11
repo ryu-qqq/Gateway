@@ -1,148 +1,147 @@
 #!/bin/bash
 
 # =====================================================
-# User Prompt Submit Hook + LangFuse Integration
-# Trigger: 사용자 프롬프트 제출 시
-# Purpose: TDD 워크플로우 추적 및 메트릭 수집
+# User Prompt Submit Hook (Enhanced)
+# Purpose:
+#   1. 진행 중인 작업 표시 (세션 시작 시)
+#   2. 커맨드 없이 구현 요청 시 가이드 주입
+#
+# Note: stdout 출력은 Claude에게 system-reminder로 전달됨
 # =====================================================
+
+# 프로젝트 루트로 이동 (어느 디렉토리에서 실행해도 동작)
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)"
+if [ -n "$PROJECT_ROOT" ]; then
+    cd "$PROJECT_ROOT"
+fi
 
 USER_PROMPT="$1"
 
-# LangFuse 로거 경로
-LANGFUSE_LOGGER=".claude/scripts/log-to-langfuse.py"
-
-# 프로젝트 정보
-PROJECT_NAME=$(basename "$(pwd)")
-TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-
-# LangFuse 로깅 함수
-log_to_langfuse() {
-    local event_type="$1"
-    local data="$2"
-
-    if [[ -f "$LANGFUSE_LOGGER" ]]; then
-        python3 "$LANGFUSE_LOGGER" \
-            --event-type "$event_type" \
-            --data "$data" 2>/dev/null
-    fi
-}
-
-# ==================== TDD 키워드 감지 ====================
-
-# TDD Phase 감지
-TDD_PHASE="none"
-TDD_LAYER="none"
-
-# Red Phase (테스트 작성)
-if echo "$USER_PROMPT" | grep -qiE "(write.*test|create.*test|add.*test|red phase|failing test|/kb.*red)"; then
-    TDD_PHASE="red"
+# 프롬프트가 비어있으면 종료
+if [ -z "$USER_PROMPT" ]; then
+    exit 0
 fi
 
-# Green Phase (구현)
-if echo "$USER_PROMPT" | grep -qiE "(implement|구현|green phase|pass.*test|make.*pass|/kb.*green)"; then
-    TDD_PHASE="green"
-fi
+# ==================== 진행 중 작업 표시 ====================
 
-# Refactor Phase (리팩토링)
-if echo "$USER_PROMPT" | grep -qiE "(refactor|리팩토링|clean.*up|improve|optimize|/kb.*refactor)"; then
-    TDD_PHASE="refactor"
-fi
+# 세션 첫 메시지인지 확인 (간단한 인사 또는 짧은 메시지)
+PROMPT_LENGTH=${#USER_PROMPT}
+if [ "$PROMPT_LENGTH" -lt 50 ]; then
+    # 진행 중인 작업 확인
+    if ls .serena/memories/plan-*.md 1>/dev/null 2>&1; then
+        echo ""
+        echo "🔄 진행 중인 작업:"
 
-# Tidy Phase (정리)
-if echo "$USER_PROMPT" | grep -qiE "(tidy|정리|cleanup|fixture|/kb.*tidy)"; then
-    TDD_PHASE="tidy"
-fi
+        for f in .serena/memories/plan-*.md; do
+            [ -f "$f" ] || continue
+            FEATURE=$(basename "$f" | sed 's/plan-//' | sed 's/.md$//')
 
-# Layer 감지
-if echo "$USER_PROMPT" | grep -qiE "(domain|aggregate|entity|vo|value object)"; then
-    TDD_LAYER="domain"
-elif echo "$USER_PROMPT" | grep -qiE "(application|usecase|use case|service|facade)"; then
-    TDD_LAYER="application"
-elif echo "$USER_PROMPT" | grep -qiE "(persistence|repository|adapter|jpa|querydsl)"; then
-    TDD_LAYER="persistence"
-elif echo "$USER_PROMPT" | grep -qiE "(rest.*api|controller|endpoint|dto)"; then
-    TDD_LAYER="rest-api"
-elif echo "$USER_PROMPT" | grep -qiE "(integration|e2e|end.*to.*end)"; then
-    TDD_LAYER="integration"
-fi
+            # design 존재 여부 확인
+            if [ -f ".serena/memories/design-${FEATURE}.md" ]; then
+                echo "  ✅ ${FEATURE} (설계 완료, 구현 대기)"
+            else
+                echo "  📝 ${FEATURE} (분석 완료, 설계 대기)"
+            fi
+        done
 
-# KB 명령어 감지
-KB_COMMAND="none"
-if echo "$USER_PROMPT" | grep -qE "/kb"; then
-    if echo "$USER_PROMPT" | grep -qE "/kb/domain"; then
-        KB_COMMAND="kb-domain"
-        TDD_LAYER="domain"
-    elif echo "$USER_PROMPT" | grep -qE "/kb/application"; then
-        KB_COMMAND="kb-application"
-        TDD_LAYER="application"
-    elif echo "$USER_PROMPT" | grep -qE "/kb/persistence"; then
-        KB_COMMAND="kb-persistence"
-        TDD_LAYER="persistence"
-    elif echo "$USER_PROMPT" | grep -qE "/kb/rest-api"; then
-        KB_COMMAND="kb-rest-api"
-        TDD_LAYER="rest-api"
-    elif echo "$USER_PROMPT" | grep -qE "/kb/integration"; then
-        KB_COMMAND="kb-integration"
-        TDD_LAYER="integration"
+        echo ""
+        echo "💡 이어서 작업하려면: \"{feature} 작업 이어서 해줘\""
     fi
 fi
 
-# ==================== LangFuse 로깅 ====================
+# ==================== 커맨드 감지 ====================
 
-# TDD 관련 프롬프트일 경우에만 로깅
-if [[ "$TDD_PHASE" != "none" ]] || [[ "$TDD_LAYER" != "none" ]] || [[ "$KB_COMMAND" != "none" ]]; then
-    # 프롬프트 요약 (처음 100자만)
-    PROMPT_SUMMARY=$(echo "$USER_PROMPT" | head -c 100)
-
-    log_to_langfuse "tdd_prompt" "{
-        \"project\": \"$PROJECT_NAME\",
-        \"tdd_phase\": \"$TDD_PHASE\",
-        \"tdd_layer\": \"$TDD_LAYER\",
-        \"kb_command\": \"$KB_COMMAND\",
-        \"prompt_summary\": \"$PROMPT_SUMMARY\",
-        \"timestamp\": \"$TIMESTAMP\"
-    }"
+# 정식 워크플로우 커맨드 사용 중이면 조용히 통과
+if echo "$USER_PROMPT" | grep -qE "^/(plan|impl|design|verify|status|complete|jira-task|jira-register|jira-status|kb-|refactor-plan)"; then
+    exit 0
 fi
 
-# ==================== Git Commit 체크 (자동 감지) ====================
+# ==================== 위험 키워드 감지 ====================
 
-# 최근 커밋 정보 (프롬프트 제출 시점 기준)
-RECENT_COMMIT=$(git log -1 --pretty=%h 2>/dev/null || echo "")
-if [[ -n "$RECENT_COMMIT" ]]; then
-    COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null || echo "")
+# 구현/수정 관련 키워드 (커맨드 없이 직접 요청)
+NEEDS_GUIDANCE=false
+DETECTED_LAYER=""
 
-    # 커밋 메시지에서 TDD Phase 재감지 (Kent Beck + Tidy First)
-    COMMIT_PHASE="unknown"
-    if echo "$COMMIT_MSG" | grep -qiE "^struct:"; then
-        COMMIT_PHASE="structural"
-    elif echo "$COMMIT_MSG" | grep -qiE "^test:|(test|red|failing)"; then
-        COMMIT_PHASE="red"
-    elif echo "$COMMIT_MSG" | grep -qiE "^feat:|^impl:|(implement|green|pass)"; then
-        COMMIT_PHASE="green"
-    elif echo "$COMMIT_MSG" | grep -qiE "^refactor:|(refactor|clean|improve)"; then
-        COMMIT_PHASE="refactor"
-    fi
+# Domain Layer 키워드
+if echo "$USER_PROMPT" | grep -qiE "(aggregate|domain|vo|value.?object|entity 만|domain.?event|domain.?exception)"; then
+    NEEDS_GUIDANCE=true
+    DETECTED_LAYER="domain"
+fi
 
-    # 최근 5분 이내 커밋이면 로깅
-    COMMIT_TIME=$(git log -1 --pretty=%ct 2>/dev/null || echo "0")
-    CURRENT_TIME=$(date +%s)
-    TIME_DIFF=$((CURRENT_TIME - COMMIT_TIME))
+# Application Layer 키워드
+if echo "$USER_PROMPT" | grep -qiE "(usecase|use.?case|service 만|facade|manager|assembler|factory)"; then
+    NEEDS_GUIDANCE=true
+    DETECTED_LAYER="application"
+fi
 
-    if [[ $TIME_DIFF -lt 300 ]]; then  # 5분 = 300초
-        FILES_CHANGED=$(git diff --stat HEAD~1 HEAD 2>/dev/null | tail -1 | grep -oE '[0-9]+ files? changed' || echo "0 files changed")
-        LINES_CHANGED=$(git diff --stat HEAD~1 HEAD 2>/dev/null | tail -1 | grep -oE '[0-9]+ insertions?' || echo "0 insertions")
+# Persistence Layer 키워드
+if echo "$USER_PROMPT" | grep -qiE "(repository|jpa.?entity|querydsl|adapter|mapper 만)"; then
+    NEEDS_GUIDANCE=true
+    DETECTED_LAYER="persistence"
+fi
 
-        log_to_langfuse "tdd_commit" "{
-            \"project\": \"$PROJECT_NAME\",
-            \"commit_hash\": \"$RECENT_COMMIT\",
-            \"commit_msg\": \"$COMMIT_MSG\",
-            \"tdd_phase\": \"$COMMIT_PHASE\",
-            \"files_changed\": \"$FILES_CHANGED\",
-            \"lines_changed\": \"$LINES_CHANGED\",
-            \"timestamp\": \"$TIMESTAMP\"
-        }"
+# REST API Layer 키워드
+if echo "$USER_PROMPT" | grep -qiE "(controller|rest.?api|endpoint|request.?dto|response.?dto)"; then
+    NEEDS_GUIDANCE=true
+    DETECTED_LAYER="rest-api"
+fi
+
+# ==================== 가이드 주입 ====================
+
+if [ "$NEEDS_GUIDANCE" = true ]; then
+    cat << 'EOF'
+
+⚠️ [WORKFLOW GUIDE]
+커맨드 없이 직접 구현을 요청하셨습니다.
+
+권장 워크플로우:
+1. /plan "{기능}" - 먼저 계획 수립
+2. /impl {layer} {feature} - 문서 기반 구현
+
+또는 기존 코드 수정 시:
+- /kb/{layer}/go - TDD 기반 수정
+
+EOF
+
+    # 감지된 레이어별 핵심 컨벤션 주입
+    if [ "$DETECTED_LAYER" = "domain" ]; then
+        cat << 'EOF'
+[Domain Layer 핵심 규칙]
+- Lombok 금지 (Pure Java)
+- Law of Demeter (Getter 체이닝 금지)
+- Tell Don't Ask (상태 묻지 말고 행동 요청)
+- VO는 record 사용
+- 참조: docs/coding_convention/02-domain-layer/
+EOF
+    elif [ "$DETECTED_LAYER" = "application" ]; then
+        cat << 'EOF'
+[Application Layer 핵심 규칙]
+- @Transactional 내 외부 API 호출 금지
+- CQRS 분리 (Command/Query UseCase)
+- DTO는 record 사용
+- Assembler로 변환
+- 참조: docs/coding_convention/03-application-layer/
+EOF
+    elif [ "$DETECTED_LAYER" = "persistence" ]; then
+        cat << 'EOF'
+[Persistence Layer 핵심 규칙]
+- Long FK 전략 (JPA 관계 어노테이션 금지)
+- QueryDSL DTO Projection 필수
+- Lombok 금지
+- Mapper 분리
+- 참조: docs/coding_convention/04-persistence-layer/
+EOF
+    elif [ "$DETECTED_LAYER" = "rest-api" ]; then
+        cat << 'EOF'
+[REST API Layer 핵심 규칙]
+- RESTful 설계
+- Request/Response DTO 분리
+- @Valid 필수
+- TestRestTemplate 사용 (MockMvc 금지)
+- 참조: docs/coding_convention/01-adapter-in-layer/
+EOF
     fi
 fi
 
-# 원본 USER_PROMPT 그대로 출력 (파이프라인 유지)
-echo "$USER_PROMPT"
+# 성공 종료 (출력 없이)
+exit 0

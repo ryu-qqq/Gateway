@@ -75,7 +75,9 @@ class ValidateJwtServiceTest {
                             Instant.now().minusSeconds(60),
                             List.of("ROLE_USER"),
                             "tenant-123",
-                            "hash-456");
+                            "org-789",
+                            "hash-456",
+                            false);
             ValidateJwtResponse expectedResponse = new ValidateJwtResponse(claims, true);
 
             given(jwtAssembler.toAccessToken(command)).willReturn(accessToken);
@@ -149,7 +151,9 @@ class ValidateJwtServiceTest {
                             Instant.now().minusSeconds(7200),
                             List.of("ROLE_USER"),
                             "tenant-123",
-                            "hash-456");
+                            "org-789",
+                            "hash-456",
+                            false);
             ValidateJwtResponse failedResponse = new ValidateJwtResponse(null, false);
 
             given(jwtAssembler.toAccessToken(command)).willReturn(accessToken);

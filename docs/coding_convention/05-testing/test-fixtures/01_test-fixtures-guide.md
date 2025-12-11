@@ -1,6 +1,6 @@
-# Test Fixtures Guide — **헥사고날 멀티모듈 테스트 픽스쳐 전략**
+# Test Fixtures Guide — **Gradle testFixtures 기반 테스트 픽스쳐 전략**
 
-> **목적**: 테스트 픽스쳐 중복을 제거하고, 헥사고날 아키텍처 의존성 규칙을 준수하는 테스트 픽스쳐 모듈 구조
+> **목적**: Gradle `java-test-fixtures` 플러그인을 활용한 테스트 픽스쳐 공유 전략
 
 ---
 
@@ -12,14 +12,14 @@
 domain/
 └── src/test/java/
     └── fixture/
-        └── OrderFixture.java   ❌ Domain에만 존재
+        └── OrderFixture.java   ❌ Domain 테스트에서만 사용 가능
 
 application/
 └── src/test/java/
     └── fixture/
         └── OrderFixture.java   ❌ 중복! (Domain과 동일)
 
-adapter-in-rest/
+adapter-in/rest-api/
 └── src/test/java/
     └── fixture/
         └── OrderFixture.java   ❌ 중복! (Domain과 동일)
@@ -27,48 +27,58 @@ adapter-in-rest/
 
 **문제**:
 - Domain 객체 Fixture가 **여러 레이어에서 중복 작성**
-- 테스트 코드 간 공유 불가능 (각 모듈의 `src/test/java/`는 격리됨)
+- `src/test/java/`는 다른 모듈에서 접근 불가 (Gradle 모듈 격리)
 - Fixture 변경 시 모든 레이어에서 수정 필요
 - 유지보수 비용 증가
 
 ---
 
-## 2️⃣ 해결 방안: 명시적 Test Fixtures 모듈
+## 2️⃣ 해결 방안: Gradle testFixtures 플러그인
 
-### 전략
+### Gradle `java-test-fixtures` 플러그인
 
 **핵심 원칙**:
-1. **명시적 모듈 이름**: `domain-test-fixtures`, `application-test-fixtures` (testFixtures 대신)
-2. **src/main/java 위치**: 다른 모듈에서 import 가능하도록 `main` 소스셋 사용
+1. **Gradle 내장 기능**: 별도 모듈 생성 없이 `src/testFixtures/java/` 디렉토리 사용
+2. **자동 의존성 전파**: `testFixtures(project(':domain'))` 문법으로 간편 참조
 3. **의존성 흐름 준수**: 헥사고날 아키텍처 의존성 규칙 유지
-4. **최소 구성**: `domain-test-fixtures` + `application-test-fixtures`만 필수
+4. **최소 설정**: `java-test-fixtures` 플러그인만 추가하면 동작
 
 ### 디렉터리 구조
 
 ```
 project/
-├── domain/                          (Production 코드)
-├── domain-test-fixtures/            ⭐ Domain 객체 Fixture
-│   └── src/main/java/              (⚠️ main! test 아님)
+├── domain/
+│   ├── src/main/java/              (Production 코드)
+│   ├── src/test/java/              (단위 테스트)
+│   └── src/testFixtures/java/      ⭐ Domain Fixture
 │       └── com/ryuqq/fixture/domain/
 │           ├── OrderFixture.java
 │           ├── ProductFixture.java
 │           └── CustomerFixture.java
 │
-├── application/                     (Production 코드)
-├── application-test-fixtures/       ⭐ Application DTO Fixture
-│   └── src/main/java/
+├── application/
+│   ├── src/main/java/              (Production 코드)
+│   ├── src/test/java/              (단위 테스트)
+│   └── src/testFixtures/java/      ⭐ Application Fixture
 │       └── com/ryuqq/fixture/application/
 │           ├── command/
 │           │   └── PlaceOrderCommandFixture.java
 │           └── response/
 │               └── OrderResponseFixture.java
 │
-├── adapter-in-rest/                 (Production 코드)
-└── adapter-in-rest-test-fixtures/   ⭐ Optional (REST Request Fixture)
-    └── src/main/java/
-        └── com/ryuqq/fixture/adapter/rest/
-            └── OrderRequestFixture.java
+├── adapter-in/rest-api/
+│   ├── src/main/java/              (Production 코드)
+│   ├── src/test/java/              (단위 테스트)
+│   └── src/testFixtures/java/      ⭐ REST API Fixture (Optional)
+│       └── com/ryuqq/fixture/adapter/rest/
+│           └── OrderRequestFixture.java
+│
+└── adapter-out/persistence-mysql/
+    ├── src/main/java/              (Production 코드)
+    ├── src/test/java/              (단위 테스트)
+    └── src/testFixtures/java/      ⭐ Persistence Fixture (Optional)
+        └── com/ryuqq/fixture/adapter/persistence/
+            └── OrderEntityFixture.java
 ```
 
 ---
@@ -78,122 +88,146 @@ project/
 ### 허용되는 의존성 (✅)
 
 ```
-domain-test-fixtures
-    ↓ api
-  domain
-```
+domain testFixtures
+    ↓ 의존
+  domain (Production)
 
-```
-application-test-fixtures
-    ↓ api                    ↓ api
-  application         domain-test-fixtures
-```
+application testFixtures
+    ↓ 의존              ↓ 의존
+  application      domain testFixtures
 
-```
-adapter-in-rest-test-fixtures
-    ↓ api                    ↓ api
-  adapter-in-rest    application-test-fixtures
+adapter-in testFixtures
+    ↓ 의존                    ↓ 의존
+  adapter-in         application testFixtures
+
+adapter-out testFixtures
+    ↓ 의존              ↓ 의존
+  adapter-out       domain testFixtures
 ```
 
 ### 금지된 의존성 (❌)
 
 ```
-domain-test-fixtures → application-test-fixtures   ❌
-application-test-fixtures → adapter-*-test-fixtures   ❌
-adapter-in-test-fixtures → adapter-out-test-fixtures   ❌
+domain testFixtures → application testFixtures   ❌
+application testFixtures → adapter-* testFixtures   ❌
+adapter-in testFixtures → adapter-out testFixtures   ❌
 ```
 
 ---
 
 ## 4️⃣ Gradle 설정
 
-### domain-test-fixtures/build.gradle
+### domain/build.gradle
 
 ```gradle
 plugins {
     id 'java-library'
+    id 'java-test-fixtures'  // ⭐ testFixtures 활성화
 }
 
 dependencies {
-    // ✅ Domain 모듈 의존 (api로 전파)
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation libs.junit.jupiter
+    testImplementation libs.archunit.junit5
+
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    // Domain TestFixtures는 순수 Java만 사용 (Domain Purity 유지)
+    // NO external dependencies
+}
+```
+
+### application/build.gradle
+
+```gradle
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'  // ⭐ testFixtures 활성화
+}
+
+dependencies {
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':domain')
+    implementation libs.spring.context
+    implementation libs.spring.tx
+
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation libs.spring.boot.starter.test
+    testImplementation project(':domain')
+    testImplementation testFixtures(project(':domain'))  // ⭐ Domain Fixture 사용
+
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    // Application TestFixtures는 Domain Fixtures 재사용 가능
+    testFixturesApi project(':domain')
+    testFixturesApi testFixtures(project(':domain'))  // ⭐ Domain Fixture 전파
+    testFixturesImplementation libs.spring.context
+}
+```
+
+### adapter-in/rest-api/build.gradle
+
+```gradle
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'  // ⭐ testFixtures 활성화
+}
+
+dependencies {
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':application')
     api project(':domain')
 
-    // ✅ 테스트 라이브러리
-    implementation 'org.junit.jupiter:junit-jupiter:5.10.0'
-    implementation 'org.assertj:assertj-core:3.24.2'
-}
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation libs.spring.boot.starter.test
+    testImplementation testFixtures(project(':domain'))       // ⭐ Domain Fixture
+    testImplementation testFixtures(project(':application'))  // ⭐ Application Fixture
 
-java {
-    sourceCompatibility = '21'
-    targetCompatibility = '21'
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    testFixturesApi project(':application')
+    testFixturesApi testFixtures(project(':application'))
 }
 ```
 
-### application-test-fixtures/build.gradle
+### adapter-out/persistence-mysql/build.gradle
 
 ```gradle
 plugins {
     id 'java-library'
+    id 'java-test-fixtures'  // ⭐ testFixtures 활성화
 }
 
 dependencies {
-    // ✅ Application 모듈 의존
-    api project(':application')
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':domain')
 
-    // ✅ Domain Test Fixtures 의존 (Domain 객체 재사용)
-    api project(':domain-test-fixtures')
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation libs.spring.boot.starter.test
+    testImplementation testFixtures(project(':domain'))  // ⭐ Domain Fixture
 
-    // ✅ 테스트 라이브러리
-    implementation 'org.junit.jupiter:junit-jupiter:5.10.0'
-    implementation 'org.assertj:assertj-core:3.24.2'
-}
-
-java {
-    sourceCompatibility = '21'
-    targetCompatibility = '21'
-}
-```
-
-### adapter-in-rest-test-fixtures/build.gradle (Optional)
-
-```gradle
-plugins {
-    id 'java-library'
-}
-
-dependencies {
-    // ✅ Adapter 모듈 의존
-    api project(':adapter-in-rest')
-
-    // ✅ Application Test Fixtures 의존
-    api project(':application-test-fixtures')
-
-    // ✅ 테스트 라이브러리
-    implementation 'org.junit.jupiter:junit-jupiter:5.10.0'
-    implementation 'org.assertj:assertj-core:3.24.2'
-    implementation 'org.springframework.boot:spring-boot-starter-test'
-}
-
-java {
-    sourceCompatibility = '21'
-    targetCompatibility = '21'
-}
-```
-
-### 실제 테스트 모듈에서 사용 (application/build.gradle)
-
-```gradle
-dependencies {
-    // Production 의존성
-    implementation project(':domain')
-
-    // ✅ Test Fixtures 의존 (testImplementation)
-    testImplementation project(':domain-test-fixtures')
-    testImplementation project(':application-test-fixtures')
-
-    // 테스트 라이브러리
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation 'org.mockito:mockito-junit-jupiter'
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    testFixturesApi project(':domain')
+    testFixturesApi testFixtures(project(':domain'))
 }
 ```
 
@@ -201,7 +235,7 @@ dependencies {
 
 ## 5️⃣ 코드 예시
 
-### domain-test-fixtures/OrderFixture.java
+### domain/src/testFixtures/java/.../OrderFixture.java
 
 ```java
 package com.ryuqq.fixture.domain;
@@ -216,10 +250,16 @@ import java.math.BigDecimal;
 /**
  * Order Domain 객체 Test Fixture
  *
+ * <p>모든 레이어에서 재사용 가능한 Domain 객체 생성 유틸리티</p>
+ *
  * @author development-team
  * @since 1.0.0
  */
-public class OrderFixture {
+public final class OrderFixture {
+
+    private OrderFixture() {
+        throw new AssertionError("Utility class - do not instantiate");
+    }
 
     /**
      * 기본 Order Fixture (신규)
@@ -264,7 +304,7 @@ public class OrderFixture {
 }
 ```
 
-### application-test-fixtures/PlaceOrderCommandFixture.java
+### application/src/testFixtures/java/.../PlaceOrderCommandFixture.java
 
 ```java
 package com.ryuqq.fixture.application.command;
@@ -279,7 +319,11 @@ import java.math.BigDecimal;
  * @author development-team
  * @since 1.0.0
  */
-public class PlaceOrderCommandFixture {
+public final class PlaceOrderCommandFixture {
+
+    private PlaceOrderCommandFixture() {
+        throw new AssertionError("Utility class - do not instantiate");
+    }
 
     /**
      * 기본 PlaceOrderCommand Fixture
@@ -306,8 +350,8 @@ package com.ryuqq.application.order.service;
 
 import com.ryuqq.application.order.port.out.OrderPersistencePort;
 import com.ryuqq.domain.order.Order;
-import com.ryuqq.fixture.domain.OrderFixture;  // ✅ Domain Fixture 사용
-import com.ryuqq.fixture.application.command.PlaceOrderCommandFixture;  // ✅ Application Fixture 사용
+import com.ryuqq.fixture.domain.OrderFixture;  // ⭐ Domain Fixture 사용
+import com.ryuqq.fixture.application.command.PlaceOrderCommandFixture;  // ⭐ Application Fixture 사용
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -329,8 +373,8 @@ class PlaceOrderServiceTest {
     @Test
     void execute_ShouldPlaceOrder() {
         // Given
-        var command = PlaceOrderCommandFixture.defaultCommand();  // ✅ Fixture 사용
-        var order = OrderFixture.defaultNewOrder();  // ✅ Fixture 사용
+        var command = PlaceOrderCommandFixture.defaultCommand();  // ⭐ Fixture 사용
+        var order = OrderFixture.defaultNewOrder();  // ⭐ Fixture 사용
 
         given(persistencePort.save(any(Order.class)))
             .willReturn(order);
@@ -351,229 +395,75 @@ class PlaceOrderServiceTest {
 
 ### 허용/금지 의존성 규칙
 
-| From ↓ / To → | domain-test-fixtures | application-test-fixtures | adapter-*-test-fixtures |
-|---------------|----------------------|---------------------------|-------------------------|
+| From (테스트 코드) ↓ / To → | domain testFixtures | application testFixtures | adapter-* testFixtures |
+|----------------------------|---------------------|--------------------------|------------------------|
 | **domain tests** | ✅ | ❌ | ❌ |
 | **application tests** | ✅ | ✅ | ❌ |
-| **adapter-in tests** | ✅ | ✅ | ✅ (adapter-in) |
-| **adapter-out tests** | ✅ | ❌ | ✅ (adapter-out) |
+| **adapter-in tests** | ✅ | ✅ | ✅ (adapter-in만) |
+| **adapter-out tests** | ✅ | ❌ | ✅ (adapter-out만) |
 
 ---
 
-## 7️⃣ 최소 구성 (Recommended)
+## 7️⃣ 기존 testFixtures 방식 vs 별도 모듈 방식 비교
 
-### 필수 모듈 (2개)
-
-```
-project/
-├── domain-test-fixtures/        ⭐ 필수 (Domain 객체 Fixture)
-└── application-test-fixtures/   ⭐ 필수 (DTO Fixture)
-```
-
-**이유**:
-- Domain 객체는 **모든 레이어**에서 사용 → Domain Test Fixtures 필수
-- Application DTO는 **Adapter에서 변환**에 사용 → Application Test Fixtures 필수
-- Adapter 전용 Fixture는 선택적 (필요 시 추가)
-
-### settings.gradle 설정
-
-```gradle
-rootProject.name = 'spring-standards'
-
-// Production 모듈
-include 'domain'
-include 'application'
-include 'adapter-in-rest'
-include 'adapter-out-persistence'
-
-// ⭐ Test Fixtures 모듈 추가
-include 'domain-test-fixtures'
-include 'application-test-fixtures'
-```
+| 항목 | Gradle testFixtures (✅ 권장) | 별도 모듈 방식 |
+|------|-------------------------------|---------------|
+| **설정 복잡도** | 낮음 (`java-test-fixtures` 플러그인만) | 높음 (별도 build.gradle 필요) |
+| **의존성 선언** | `testFixtures(project(':domain'))` | `project(':domain-test-fixtures')` |
+| **디렉토리** | `src/testFixtures/java/` | `domain-test-fixtures/src/main/java/` |
+| **settings.gradle** | 변경 불필요 | 모듈 추가 필요 |
+| **IDE 인식** | 자동 | 수동 설정 필요할 수 있음 |
+| **Gradle 지원** | 공식 기능 | 커스텀 구조 |
 
 ---
 
-## 8️⃣ ArchUnit 검증
+## 8️⃣ Fixture 클래스 작성 규칙
 
-### Test Fixtures 의존성 규칙 자동 검증
-
-**위치**: `application/src/test/java/architecture/TestFixturesArchTest.java`
+### 필수 규칙
 
 ```java
-package com.ryuqq.application.architecture;
+// ✅ 1. final 클래스
+public final class OrderFixture {
 
-import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.lang.ArchRule;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
-
-/**
- * Test Fixtures 의존성 규칙 ArchUnit 검증
- *
- * @author development-team
- * @since 1.0.0
- */
-@Tag("architecture")
-@DisplayName("Test Fixtures Dependency ArchUnit Tests")
-class TestFixturesArchTest {
-
-    private static JavaClasses classes;
-
-    @BeforeAll
-    static void setUp() {
-        classes = new ClassFileImporter()
-            .importPackages("com.ryuqq");
+    // ✅ 2. private 생성자 (인스턴스 생성 방지)
+    private OrderFixture() {
+        throw new AssertionError("Utility class - do not instantiate");
     }
 
-    /**
-     * 규칙 1: domain-test-fixtures는 domain만 의존
-     */
-    @Test
-    @DisplayName("[필수] domain-test-fixtures는 domain만 의존해야 한다")
-    void domainTestFixtures_ShouldOnlyDependOnDomain() {
-        ArchRule rule = classes()
-            .that().resideInAPackage("..fixture.domain..")
-            .should().onlyDependOnClassesThat()
-            .resideInAnyPackage("..domain..", "java..", "org.junit..", "org.assertj..")
-            .because("domain-test-fixtures는 domain만 의존해야 합니다");
-
-        rule.check(classes);
+    // ✅ 3. static 메서드만 사용
+    public static Order defaultOrder() {
+        return Order.forNew(...);
     }
 
-    /**
-     * 규칙 2: application-test-fixtures는 application + domain-test-fixtures 의존
-     */
-    @Test
-    @DisplayName("[필수] application-test-fixtures는 application과 domain-test-fixtures만 의존해야 한다")
-    void applicationTestFixtures_ShouldOnlyDependOnApplicationAndDomainFixtures() {
-        ArchRule rule = classes()
-            .that().resideInAPackage("..fixture.application..")
-            .should().onlyDependOnClassesThat()
-            .resideInAnyPackage(
-                "..application..",
-                "..domain..",
-                "..fixture.domain..",
-                "java..",
-                "org.junit..",
-                "org.assertj.."
-            )
-            .because("application-test-fixtures는 application과 domain-test-fixtures만 의존해야 합니다");
-
-        rule.check(classes);
-    }
-
-    /**
-     * 규칙 3: domain-test-fixtures는 application-test-fixtures 의존 금지
-     */
-    @Test
-    @DisplayName("[금지] domain-test-fixtures는 application-test-fixtures를 의존할 수 없다")
-    void domainTestFixtures_MustNotDependOnApplicationTestFixtures() {
-        ArchRule rule = noClasses()
-            .that().resideInAPackage("..fixture.domain..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..fixture.application..")
-            .because("domain-test-fixtures는 application-test-fixtures를 의존할 수 없습니다");
-
-        rule.check(classes);
-    }
-
-    /**
-     * 규칙 4: application-test-fixtures는 adapter-test-fixtures 의존 금지
-     */
-    @Test
-    @DisplayName("[금지] application-test-fixtures는 adapter-test-fixtures를 의존할 수 없다")
-    void applicationTestFixtures_MustNotDependOnAdapterTestFixtures() {
-        ArchRule rule = noClasses()
-            .that().resideInAPackage("..fixture.application..")
-            .should().dependOnClassesThat()
-            .resideInAPackage("..fixture.adapter..")
-            .because("application-test-fixtures는 adapter-test-fixtures를 의존할 수 없습니다");
-
-        rule.check(classes);
-    }
+    // ✅ 4. 명확한 메서드 네이밍
+    public static Order defaultNewOrder() { ... }     // 신규 객체
+    public static Order defaultExistingOrder() { ... } // 기존 객체
+    public static Order canceledOrder() { ... }        // 특정 상태
+    public static Order customOrder(...) { ... }       // 커스텀 빌더
 }
 ```
 
----
+### 네이밍 컨벤션
 
-## 9️⃣ 마이그레이션 가이드
-
-### 기존 testFixtures 패키지에서 마이그레이션
-
-**Step 1**: 새 Test Fixtures 모듈 생성
-
-```bash
-# 디렉터리 생성
-mkdir -p domain-test-fixtures/src/main/java/com/ryuqq/fixture/domain
-mkdir -p application-test-fixtures/src/main/java/com/ryuqq/fixture/application
-```
-
-**Step 2**: build.gradle 생성
-
-(위 4️⃣ Gradle 설정 참고)
-
-**Step 3**: settings.gradle에 추가
-
-```gradle
-include 'domain-test-fixtures'
-include 'application-test-fixtures'
-```
-
-**Step 4**: 기존 Fixture 코드 이동
-
-```bash
-# Domain Fixture 이동
-mv domain/src/test/java/.../fixture/OrderFixture.java \
-   domain-test-fixtures/src/main/java/com/ryuqq/fixture/domain/
-
-# Application Fixture 이동
-mv application/src/test/java/.../fixture/PlaceOrderCommandFixture.java \
-   application-test-fixtures/src/main/java/com/ryuqq/fixture/application/command/
-```
-
-**Step 5**: 테스트 코드에서 import 변경
-
-```java
-// Before
-import com.ryuqq.domain.fixture.OrderFixture;
-
-// After
-import com.ryuqq.fixture.domain.OrderFixture;
-```
-
-**Step 6**: build.gradle에 testImplementation 추가
-
-```gradle
-dependencies {
-    testImplementation project(':domain-test-fixtures')
-    testImplementation project(':application-test-fixtures')
-}
-```
-
-**Step 7**: 빌드 및 테스트
-
-```bash
-./gradlew clean build
-./gradlew test
-```
+| 패턴 | 용도 | 예시 |
+|------|------|------|
+| `default*()` | 기본 테스트 객체 | `defaultOrder()`, `defaultNewOrder()` |
+| `*WithStatus()` | 특정 상태 객체 | `orderWithPendingStatus()` |
+| `custom*()` | 커스텀 빌더 | `customOrder(Long id, BigDecimal amount)` |
+| `invalid*()` | 유효하지 않은 객체 | `invalidOrder()` (예외 테스트용) |
 
 ---
 
-## 🔟 체크리스트
+## 9️⃣ 체크리스트
 
-Test Fixtures 모듈 생성 시:
-- [ ] `domain-test-fixtures`, `application-test-fixtures` 모듈 생성
-- [ ] `src/main/java` 위치에 Fixture 코드 작성 (test 아님!)
-- [ ] build.gradle에 `api` 의존성 설정
-- [ ] settings.gradle에 모듈 등록
+Test Fixtures 구현 시:
+- [ ] `java-test-fixtures` 플러그인 추가 (`build.gradle`)
+- [ ] `src/testFixtures/java/` 디렉토리 생성
+- [ ] 패키지 구조: `com.ryuqq.fixture.{layer}/`
+- [ ] 의존성 설정: `testFixturesApi`, `testFixtures(project(':...'))`
+- [ ] Fixture 클래스: `final` + `private 생성자` + `static 메서드`
 - [ ] 헥사고날 의존성 규칙 준수
 - [ ] ArchUnit 검증 테스트 작성
-- [ ] 기존 테스트 코드에서 import 변경
 - [ ] 빌드 및 테스트 통과 확인
 
 ---
@@ -581,11 +471,11 @@ Test Fixtures 모듈 생성 시:
 ## 📖 관련 문서
 
 - **[Test Fixtures ArchUnit](./02_test-fixtures-archunit.md)** - ArchUnit 검증 규칙 상세
-- **[Test Fixtures Migration](./03_test-fixtures-migration.md)** - 기존 코드 마이그레이션 가이드
+- **[Integration Testing Overview](../integration-testing/01_integration-testing-overview.md)** - 통합 테스트 가이드
 - **[Multi-Module Structure](../../00-project-setup/multi-module-structure.md)** - 멀티모듈 구조 전체 가이드
 
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-13
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-05
+**버전**: 2.0.0

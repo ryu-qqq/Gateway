@@ -31,6 +31,7 @@ public final class JwtTestFixture {
     private static final String DEFAULT_KID = "test-key-2025";
     private static final String DEFAULT_ISSUER = "auth-hub";
     private static final String DEFAULT_TENANT_ID = "tenant-001";
+    private static final String DEFAULT_ORGANIZATION_ID = "org-001";
     private static final String DEFAULT_PERMISSION_HASH = "abc123hash";
 
     private JwtTestFixture() {
@@ -147,6 +148,7 @@ public final class JwtTestFixture {
                             .issuer(DEFAULT_ISSUER)
                             .claim("roles", List.of("USER"))
                             .claim("tenantId", DEFAULT_TENANT_ID)
+                            .claim("organizationId", DEFAULT_ORGANIZATION_ID)
                             .claim("permissionHash", DEFAULT_PERMISSION_HASH)
                             .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                             .issueTime(Date.from(Instant.now()))
@@ -230,6 +232,24 @@ public final class JwtTestFixture {
             String tenantId,
             String permissionHash,
             boolean mfaVerified) {
+        return createJwt(
+                subject,
+                roles,
+                expiresAt,
+                tenantId,
+                DEFAULT_ORGANIZATION_ID,
+                permissionHash,
+                mfaVerified);
+    }
+
+    private static String createJwt(
+            String subject,
+            List<String> roles,
+            Instant expiresAt,
+            String tenantId,
+            String organizationId,
+            String permissionHash,
+            boolean mfaVerified) {
         try {
             JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(DEFAULT_KID).build();
 
@@ -239,6 +259,7 @@ public final class JwtTestFixture {
                             .issuer(DEFAULT_ISSUER)
                             .claim("roles", roles)
                             .claim("tenantId", tenantId)
+                            .claim("organizationId", organizationId)
                             .claim("permissionHash", permissionHash)
                             .claim("mfaVerified", mfaVerified)
                             .expirationTime(Date.from(expiresAt))

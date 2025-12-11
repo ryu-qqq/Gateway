@@ -4,8 +4,6 @@ import com.ryuqq.gateway.application.authentication.port.out.command.RedisLockCo
 import java.util.concurrent.TimeUnit;
 import org.redisson.api.RLockReactive;
 import org.redisson.api.RedissonReactiveClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -33,8 +31,6 @@ import reactor.core.publisher.Mono;
 @Component
 public class RedisLockCommandAdapter implements RedisLockCommandPort {
 
-    private static final Logger log = LoggerFactory.getLogger(RedisLockCommandAdapter.class);
-
     private static final String KEY_PREFIX = "tenant";
     private static final String KEY_SUFFIX = "refresh:lock";
     private static final long WAIT_TIME_SECONDS = 0L;
@@ -61,22 +57,7 @@ public class RedisLockCommandAdapter implements RedisLockCommandPort {
         RLockReactive lock = redissonReactiveClient.getLock(lockKey);
 
         return lock.tryLock(WAIT_TIME_SECONDS, LEASE_TIME_SECONDS, TimeUnit.SECONDS)
-                .doOnNext(
-                        acquired -> {
-                            if (acquired) {
-                                log.debug("Lock acquired: {}", lockKey);
-                            } else {
-                                log.debug("Lock acquisition failed: {}", lockKey);
-                            }
-                        })
-                .onErrorResume(
-                        e -> {
-                            log.error(
-                                    "Lock acquisition error for key {}: {}",
-                                    lockKey,
-                                    e.getMessage());
-                            return Mono.just(false);
-                        });
+                .onErrorResume(e -> Mono.just(false));
     }
 
     /**
@@ -91,19 +72,7 @@ public class RedisLockCommandAdapter implements RedisLockCommandPort {
         String lockKey = buildKey(tenantId, userId);
         RLockReactive lock = redissonReactiveClient.getLock(lockKey);
 
-        return lock.forceUnlock()
-                .doOnSuccess(
-                        released -> {
-                            if (released) {
-                                log.debug("Lock released: {}", lockKey);
-                            }
-                        })
-                .then()
-                .onErrorResume(
-                        e -> {
-                            log.warn("Lock release error for key {}: {}", lockKey, e.getMessage());
-                            return Mono.empty();
-                        });
+        return lock.forceUnlock().then().onErrorResume(e -> Mono.empty());
     }
 
     /**

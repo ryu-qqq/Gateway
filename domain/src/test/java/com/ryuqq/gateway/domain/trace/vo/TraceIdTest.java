@@ -41,8 +41,8 @@ class TraceIdTest {
 
             // then
             assertThat(traceId).isNotNull();
-            assertThat(traceId.getValue()).isNotNull();
-            assertThat(traceId.getValue()).hasSize(54);
+            assertThat(traceId.value()).isNotNull();
+            assertThat(traceId.value()).hasSize(54);
         }
 
         @Test
@@ -55,7 +55,7 @@ class TraceIdTest {
             TraceId traceId = TraceId.generate(clockHolder);
 
             // then
-            assertThat(traceId.getValue()).matches(TRACE_ID_PATTERN);
+            assertThat(traceId.value()).matches(TRACE_ID_PATTERN);
         }
 
         @Test
@@ -68,7 +68,7 @@ class TraceIdTest {
             TraceId traceId = TraceId.generate(clockHolder);
 
             // then
-            assertThat(traceId.getTimestamp()).isEqualTo("20250124123456789");
+            assertThat(traceId.timestamp()).isEqualTo("20250124123456789");
         }
 
         @Test
@@ -90,8 +90,8 @@ class TraceIdTest {
             TraceId traceId2 = TraceId.generate(clockHolder);
 
             // then
-            assertThat(traceId1.getUuid()).isNotEqualTo(traceId2.getUuid());
-            assertThat(traceId1.getValue()).isNotEqualTo(traceId2.getValue());
+            assertThat(traceId1.uuid()).isNotEqualTo(traceId2.uuid());
+            assertThat(traceId1.value()).isNotEqualTo(traceId2.value());
         }
 
         @Test
@@ -104,7 +104,7 @@ class TraceIdTest {
             // when
             for (int i = 0; i < 1000; i++) {
                 TraceId traceId = TraceId.generate(clockHolder);
-                traceIds.add(traceId.getValue());
+                traceIds.add(traceId.value());
             }
 
             // then
@@ -127,7 +127,7 @@ class TraceIdTest {
 
             // then
             assertThat(traceId).isNotNull();
-            assertThat(traceId.getValue()).isEqualTo(validTraceId);
+            assertThat(traceId.value()).isEqualTo(validTraceId);
         }
 
         @Test
@@ -193,38 +193,38 @@ class TraceIdTest {
     class GetterTest {
 
         @Test
-        @DisplayName("getValue()가 전체 TraceId 반환")
+        @DisplayName("value()가 전체 TraceId 반환")
         void shouldReturnFullValue() {
             // given
             String validTraceId = "20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789";
             TraceId traceId = TraceId.from(validTraceId);
 
             // when & then
-            assertThat(traceId.getValue()).isEqualTo(validTraceId);
+            assertThat(traceId.value()).isEqualTo(validTraceId);
         }
 
         @Test
-        @DisplayName("getTimestamp()가 17자리 Timestamp 반환")
+        @DisplayName("timestamp()가 17자리 Timestamp 반환")
         void shouldReturnTimestamp() {
             // given
             String validTraceId = "20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789";
             TraceId traceId = TraceId.from(validTraceId);
 
             // when & then
-            assertThat(traceId.getTimestamp()).isEqualTo("20250124123456789");
-            assertThat(traceId.getTimestamp()).hasSize(17);
+            assertThat(traceId.timestamp()).isEqualTo("20250124123456789");
+            assertThat(traceId.timestamp()).hasSize(17);
         }
 
         @Test
-        @DisplayName("getUuid()가 UUID 부분 반환")
+        @DisplayName("uuid()가 UUID 부분 반환")
         void shouldReturnUuid() {
             // given
             String validTraceId = "20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789";
             TraceId traceId = TraceId.from(validTraceId);
 
             // when & then
-            assertThat(traceId.getUuid()).isEqualTo("a1b2c3d4-e5f6-4789-abcd-ef0123456789");
-            assertThat(traceId.getUuid()).hasSize(36);
+            assertThat(traceId.uuid()).isEqualTo("a1b2c3d4-e5f6-4789-abcd-ef0123456789");
+            assertThat(traceId.uuid()).hasSize(36);
         }
     }
 
@@ -352,7 +352,7 @@ class TraceIdTest {
             TraceId traceId = TraceId.generate(clockHolder);
 
             // then
-            assertThat(traceId.getTimestamp()).isEqualTo("20250615083045123");
+            assertThat(traceId.timestamp()).isEqualTo("20250615083045123");
         }
 
         @Test
@@ -369,7 +369,7 @@ class TraceIdTest {
             TraceId traceId = TraceId.generate(clockHolder);
 
             // then - UTC 08:30 -> Seoul 17:30
-            assertThat(traceId.getTimestamp()).isEqualTo("20250615173045123");
+            assertThat(traceId.timestamp()).isEqualTo("20250615173045123");
         }
     }
 
@@ -387,7 +387,7 @@ class TraceIdTest {
             TraceId traceId = TraceId.generate(clockHolder);
 
             // then
-            assertThat(traceId.getTimestamp()).isEqualTo("20250124123456000");
+            assertThat(traceId.timestamp()).isEqualTo("20250124123456000");
         }
 
         @Test
@@ -400,7 +400,7 @@ class TraceIdTest {
             TraceId traceId = TraceId.generate(clockHolder);
 
             // then
-            assertThat(traceId.getTimestamp()).isEqualTo("20250124123456999");
+            assertThat(traceId.timestamp()).isEqualTo("20250124123456999");
         }
 
         @Test
@@ -413,7 +413,7 @@ class TraceIdTest {
             TraceId traceId = TraceId.generate(clockHolder);
 
             // then
-            assertThat(traceId.getTimestamp()).isEqualTo("20301231235959999");
+            assertThat(traceId.timestamp()).isEqualTo("20301231235959999");
         }
     }
 }

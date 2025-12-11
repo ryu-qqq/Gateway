@@ -1,9 +1,7 @@
 package com.ryuqq.gateway.domain.authorization.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,7 +25,7 @@ class PermissionSpecNotFoundExceptionTest {
                     new PermissionSpecNotFoundException(path, method);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-002");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-002");
             assertThat(exception.getMessage())
                     .isEqualTo(
                             "Permission spec not found for endpoint: GET /api/v1/users (Default"
@@ -48,7 +46,7 @@ class PermissionSpecNotFoundExceptionTest {
                     new PermissionSpecNotFoundException(path, method);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-002");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-002");
             assertThat(exception.getMessage())
                     .isEqualTo(
                             "Permission spec not found for endpoint: POST /api/v1/orders (Default"
@@ -69,7 +67,7 @@ class PermissionSpecNotFoundExceptionTest {
                     new PermissionSpecNotFoundException(path, method);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-002");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-002");
             assertThat(exception.getMessage())
                     .contains("PUT /api/v1/users/{userId}/orders/{orderId}");
             assertThat(exception.path()).isEqualTo(path);
@@ -88,7 +86,7 @@ class PermissionSpecNotFoundExceptionTest {
                     new PermissionSpecNotFoundException(path, method);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-002");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-002");
             assertThat(exception.getMessage())
                     .isEqualTo("Permission spec not found for endpoint: GET / (Default Deny)");
             assertThat(exception.path()).isEqualTo(path);
@@ -107,7 +105,7 @@ class PermissionSpecNotFoundExceptionTest {
                     new PermissionSpecNotFoundException(path, method);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-002");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-002");
             assertThat(exception.getMessage()).contains("DELETE");
             assertThat(exception.getMessage()).contains(path);
             assertThat(exception.path()).isEqualTo(path);
@@ -250,19 +248,19 @@ class PermissionSpecNotFoundExceptionTest {
                     new PermissionSpecNotFoundException("/api/v1/test", "GET");
 
             // when & then
-            assertThat(exception.code())
+            assertThat(exception.getCode())
                     .isEqualTo(AuthorizationErrorCode.PERMISSION_SPEC_NOT_FOUND.getCode());
-            assertThat(exception.code()).isEqualTo("AUTHZ-002");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-002");
         }
     }
 
     @Nested
-    @DisplayName("메타데이터 테스트")
-    class MetadataTest {
+    @DisplayName("필드 접근자 테스트")
+    class FieldAccessorTest {
 
         @Test
-        @DisplayName("경로와 메서드가 메타데이터에 포함됨")
-        void shouldIncludePathAndMethodInMetadata() {
+        @DisplayName("경로와 메서드를 개별 필드 접근자로 확인")
+        void shouldAccessPathAndMethodThroughGetters() {
             // given
             String path = "/api/v1/webhooks";
             String method = "POST";
@@ -272,26 +270,19 @@ class PermissionSpecNotFoundExceptionTest {
                     new PermissionSpecNotFoundException(path, method);
 
             // then
-            Map<String, Object> metadata = exception.args();
-            assertThat(metadata).containsKey("path");
-            assertThat(metadata).containsKey("method");
-            assertThat(metadata.get("path")).isEqualTo(path);
-            assertThat(metadata.get("method")).isEqualTo(method);
+            assertThat(exception.path()).isEqualTo(path);
+            assertThat(exception.method()).isEqualTo(method);
         }
 
         @Test
-        @DisplayName("메타데이터가 불변임")
-        void shouldHaveImmutableMetadata() {
+        @DisplayName("기본 생성자는 null 값 반환")
+        void shouldReturnNullForDefaultConstructor() {
             // given
-            PermissionSpecNotFoundException exception =
-                    new PermissionSpecNotFoundException("/api/v1/test", "GET");
+            PermissionSpecNotFoundException exception = new PermissionSpecNotFoundException();
 
-            // when
-            Map<String, Object> metadata = exception.args();
-
-            // then
-            assertThat(metadata).hasSize(2);
-            assertThat(metadata).containsOnlyKeys("path", "method");
+            // when & then
+            assertThat(exception.path()).isNull();
+            assertThat(exception.method()).isNull();
         }
     }
 
@@ -317,27 +308,37 @@ class PermissionSpecNotFoundExceptionTest {
     class EdgeCaseTest {
 
         @Test
-        @DisplayName("null 경로로 예외 생성 시 NullPointerException 발생")
-        void shouldThrowNpeWhenPathIsNull() {
+        @DisplayName("null 경로로 예외 생성")
+        void shouldCreateExceptionWithNullPath() {
             // given
             String path = null;
             String method = "GET";
 
-            // when & then
-            assertThatThrownBy(() -> new PermissionSpecNotFoundException(path, method))
-                    .isInstanceOf(NullPointerException.class);
+            // when
+            PermissionSpecNotFoundException exception =
+                    new PermissionSpecNotFoundException(path, method);
+
+            // then - null이 문자열로 처리됨
+            assertThat(exception.path()).isNull();
+            assertThat(exception.method()).isEqualTo(method);
+            assertThat(exception.getMessage()).contains("GET null");
         }
 
         @Test
-        @DisplayName("null 메서드로 예외 생성 시 NullPointerException 발생")
-        void shouldThrowNpeWhenMethodIsNull() {
+        @DisplayName("null 메서드로 예외 생성")
+        void shouldCreateExceptionWithNullMethod() {
             // given
             String path = "/api/v1/test";
             String method = null;
 
-            // when & then
-            assertThatThrownBy(() -> new PermissionSpecNotFoundException(path, method))
-                    .isInstanceOf(NullPointerException.class);
+            // when
+            PermissionSpecNotFoundException exception =
+                    new PermissionSpecNotFoundException(path, method);
+
+            // then - null이 문자열로 처리됨
+            assertThat(exception.path()).isEqualTo(path);
+            assertThat(exception.method()).isNull();
+            assertThat(exception.getMessage()).contains("null /api/v1/test");
         }
 
         @Test

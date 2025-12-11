@@ -288,12 +288,14 @@ class OrderJpaEntityMapperComplexTest {
     @DisplayName("toEntity() 호출 시 Value Object가 Primitive로 정확히 변환되어야 한다")
     void toEntity_WhenComplexValueObject_ShouldMapToPrimitive() {
         // Given
-        Order domain = Order.builder()
-            .id(1L)
-            .orderNumber(OrderNumber.of("ORD-001"))        // Value Object → String
-            .customer(Customer.of(CustomerId.of(100L)))   // Value Object → Long
-            .totalAmount(Money.of(BigDecimal.valueOf(50000)))  // Value Object → BigDecimal
-            .build();
+        Order domain = Order.reconstitute(
+            OrderId.of(1L),
+            OrderNumber.of("ORD-001"),           // Value Object → String
+            CustomerId.of(100L),                 // Value Object → Long
+            Money.of(BigDecimal.valueOf(50000)), // Value Object → BigDecimal
+            OrderStatus.PLACED,
+            OrderAudit.of(LocalDateTime.now(), LocalDateTime.now())
+        );
 
         // When
         OrderJpaEntity entity = mapper.toEntity(domain);
@@ -322,12 +324,12 @@ class OrderJpaEntityMapperComplexTest {
         Order domain = mapper.toDomain(entity);
 
         // Then
-        assertThat(domain.getOrderNumber()).isInstanceOf(OrderNumber.class);
-        assertThat(domain.getOrderNumber().getValue()).isEqualTo("ORD-001");
-        assertThat(domain.getCustomer().getId()).isInstanceOf(CustomerId.class);
-        assertThat(domain.getCustomer().getIdValue()).isEqualTo(100L);
-        assertThat(domain.getTotalAmount()).isInstanceOf(Money.class);
-        assertThat(domain.getTotalAmountValue()).isEqualTo(BigDecimal.valueOf(50000));
+        assertThat(domain.orderNumber()).isInstanceOf(OrderNumber.class);
+        assertThat(domain.orderNumberValue()).isEqualTo("ORD-001");
+        assertThat(domain.customerId()).isInstanceOf(CustomerId.class);
+        assertThat(domain.customerIdValue()).isEqualTo(100L);
+        assertThat(domain.totalAmount()).isInstanceOf(Money.class);
+        assertThat(domain.totalAmountValue()).isEqualTo(BigDecimal.valueOf(50000));
     }
 }
 ```
@@ -419,5 +421,5 @@ Mapper 테스트 작성 시:
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-12
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-04
+**버전**: 1.1.0

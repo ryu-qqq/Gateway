@@ -26,8 +26,8 @@ import reactor.core.publisher.Mono;
  *
  * <ul>
  *   <li>AuthHub 외부 시스템
- *   <li>Permission Spec: {@code GET /api/v1/permissions/spec}
- *   <li>User Permissions: {@code GET /api/v1/permissions/users/{userId}}
+ *   <li>Permission Spec: {@code GET /api/v1/permissions/spec} (authhub-client.yml 설정)
+ *   <li>User Permissions: {@code GET /api/v1/permissions/users/{userId}} (authhub-client.yml 설정)
  * </ul>
  *
  * <p><strong>Resilience 전략</strong>:
@@ -44,13 +44,13 @@ import reactor.core.publisher.Mono;
 @Component
 public class AuthHubPermissionAdapter implements AuthHubPermissionClient {
 
-    private static final String PERMISSION_SPEC_ENDPOINT = "/api/v1/permissions/spec";
-    private static final String USER_PERMISSIONS_ENDPOINT = "/api/v1/permissions/users/{userId}";
-
     private final WebClient webClient;
+    private final AuthHubProperties properties;
 
-    public AuthHubPermissionAdapter(@Qualifier("authHubWebClient") WebClient webClient) {
+    public AuthHubPermissionAdapter(
+            @Qualifier("authHubWebClient") WebClient webClient, AuthHubProperties properties) {
         this.webClient = webClient;
+        this.properties = properties;
     }
 
     /**
@@ -64,7 +64,7 @@ public class AuthHubPermissionAdapter implements AuthHubPermissionClient {
     public Mono<PermissionSpec> fetchPermissionSpec() {
         return webClient
                 .get()
-                .uri(PERMISSION_SPEC_ENDPOINT)
+                .uri(properties.getPermissionSpecEndpoint())
                 .retrieve()
                 .bodyToMono(PermissionSpecResponse.class)
                 .map(this::toPermissionSpec)
@@ -86,7 +86,7 @@ public class AuthHubPermissionAdapter implements AuthHubPermissionClient {
     public Mono<PermissionHash> fetchUserPermissions(String tenantId, String userId) {
         return webClient
                 .get()
-                .uri(USER_PERMISSIONS_ENDPOINT, userId)
+                .uri(properties.getUserPermissionsEndpoint(), userId)
                 .header("X-Tenant-Id", tenantId)
                 .retrieve()
                 .bodyToMono(PermissionHashResponse.class)

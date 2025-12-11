@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono;
  *
  * <ul>
  *   <li>AuthHub 외부 시스템
- *   <li>엔드포인트: {@code GET /api/v1/tenants/{tenantId}/config}
+ *   <li>엔드포인트: {@code GET /api/v1/tenants/{tenantId}/config} (authhub-client.yml 설정)
  * </ul>
  *
  * <p><strong>Resilience 전략</strong>:
@@ -43,12 +43,13 @@ import reactor.core.publisher.Mono;
 @Component
 public class AuthHubTenantAdapter implements AuthHubTenantClient {
 
-    private static final String TENANT_CONFIG_ENDPOINT = "/api/v1/tenants/{tenantId}/config";
-
     private final WebClient webClient;
+    private final AuthHubProperties properties;
 
-    public AuthHubTenantAdapter(@Qualifier("authHubWebClient") WebClient webClient) {
+    public AuthHubTenantAdapter(
+            @Qualifier("authHubWebClient") WebClient webClient, AuthHubProperties properties) {
         this.webClient = webClient;
+        this.properties = properties;
     }
 
     /**
@@ -63,7 +64,7 @@ public class AuthHubTenantAdapter implements AuthHubTenantClient {
     public Mono<TenantConfig> fetchTenantConfig(String tenantId) {
         return webClient
                 .get()
-                .uri(TENANT_CONFIG_ENDPOINT, tenantId)
+                .uri(properties.getTenantConfigEndpoint(), tenantId)
                 .retrieve()
                 .bodyToMono(TenantConfigResponse.class)
                 .map(this::toTenantConfig)

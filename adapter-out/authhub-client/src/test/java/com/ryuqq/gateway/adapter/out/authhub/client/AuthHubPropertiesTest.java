@@ -56,7 +56,7 @@ class AuthHubPropertiesTest {
             String endpoint = "/custom/jwks";
 
             // when
-            properties.setJwksEndpoint(endpoint);
+            properties.getEndpoints().setJwks(endpoint);
 
             // then
             assertThat(properties.getJwksEndpoint()).isEqualTo(endpoint);
@@ -64,64 +64,126 @@ class AuthHubPropertiesTest {
     }
 
     @Nested
-    @DisplayName("Timeout 설정")
-    class TimeoutTest {
+    @DisplayName("Endpoints 설정")
+    class EndpointsTest {
 
         @Test
-        @DisplayName("기본 Timeout 객체가 생성되어 있다")
-        void shouldHaveDefaultTimeout() {
+        @DisplayName("기본 Endpoints 객체가 생성되어 있다")
+        void shouldHaveDefaultEndpoints() {
             // then
-            assertThat(properties.getTimeout()).isNotNull();
+            assertThat(properties.getEndpoints()).isNotNull();
         }
 
         @Test
-        @DisplayName("connection timeout 기본값은 3000ms 이다")
+        @DisplayName("모든 엔드포인트 기본값이 설정되어 있다")
+        void shouldHaveDefaultEndpointValues() {
+            // then
+            assertThat(properties.getJwksEndpoint()).isEqualTo("/api/v1/auth/jwks");
+            assertThat(properties.getRefreshEndpoint()).isEqualTo("/api/v1/auth/refresh");
+            assertThat(properties.getExtractExpiredInfoEndpoint())
+                    .isEqualTo("/api/v1/auth/extract-expired-info");
+            assertThat(properties.getTenantConfigEndpoint())
+                    .isEqualTo("/api/v1/tenants/{tenantId}/config");
+            assertThat(properties.getPermissionSpecEndpoint())
+                    .isEqualTo("/api/v1/permissions/spec");
+            assertThat(properties.getUserPermissionsEndpoint())
+                    .isEqualTo("/api/v1/permissions/users/{userId}");
+        }
+
+        @Test
+        @DisplayName("Endpoints 객체 전체를 교체한다")
+        void shouldSetEndpoints() {
+            // given
+            AuthHubProperties.Endpoints newEndpoints = new AuthHubProperties.Endpoints();
+            newEndpoints.setJwks("/custom/jwks");
+            newEndpoints.setRefresh("/custom/refresh");
+
+            // when
+            properties.setEndpoints(newEndpoints);
+
+            // then
+            assertThat(properties.getJwksEndpoint()).isEqualTo("/custom/jwks");
+            assertThat(properties.getRefreshEndpoint()).isEqualTo("/custom/refresh");
+        }
+    }
+
+    @Nested
+    @DisplayName("WebClient 설정")
+    class WebClientConfigTest {
+
+        @Test
+        @DisplayName("기본 WebClient 객체가 생성되어 있다")
+        void shouldHaveDefaultWebclient() {
+            // then
+            assertThat(properties.getWebclient()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("connectionTimeout 기본값은 3000ms 이다")
         void shouldHaveDefaultConnectionTimeout() {
             // then
-            assertThat(properties.getTimeout().getConnection()).isEqualTo(3000);
+            assertThat(properties.getWebclient().getConnectionTimeout()).isEqualTo(3000);
         }
 
         @Test
-        @DisplayName("response timeout 기본값은 3000ms 이다")
+        @DisplayName("responseTimeout 기본값은 3000ms 이다")
         void shouldHaveDefaultResponseTimeout() {
             // then
-            assertThat(properties.getTimeout().getResponse()).isEqualTo(3000);
+            assertThat(properties.getWebclient().getResponseTimeout()).isEqualTo(3000);
         }
 
         @Test
-        @DisplayName("connection timeout을 설정하고 조회한다")
+        @DisplayName("maxConnections 기본값은 500이다")
+        void shouldHaveDefaultMaxConnections() {
+            // then
+            assertThat(properties.getWebclient().getMaxConnections()).isEqualTo(500);
+        }
+
+        @Test
+        @DisplayName("wireLoggingEnabled 기본값은 false이다")
+        void shouldHaveDefaultWireLoggingEnabled() {
+            // then
+            assertThat(properties.getWebclient().isWireLoggingEnabled()).isFalse();
+        }
+
+        @Test
+        @DisplayName("connectionTimeout을 설정하고 조회한다")
         void shouldSetAndGetConnectionTimeout() {
             // when
-            properties.getTimeout().setConnection(5000);
+            properties.getWebclient().setConnectionTimeout(5000);
 
             // then
-            assertThat(properties.getTimeout().getConnection()).isEqualTo(5000);
+            assertThat(properties.getWebclient().getConnectionTimeout()).isEqualTo(5000);
         }
 
         @Test
-        @DisplayName("response timeout을 설정하고 조회한다")
+        @DisplayName("responseTimeout을 설정하고 조회한다")
         void shouldSetAndGetResponseTimeout() {
             // when
-            properties.getTimeout().setResponse(5000);
+            properties.getWebclient().setResponseTimeout(5000);
 
             // then
-            assertThat(properties.getTimeout().getResponse()).isEqualTo(5000);
+            assertThat(properties.getWebclient().getResponseTimeout()).isEqualTo(5000);
         }
 
         @Test
-        @DisplayName("Timeout 객체 전체를 교체한다")
-        void shouldSetTimeout() {
+        @DisplayName("WebClient 객체 전체를 교체한다")
+        void shouldSetWebclient() {
             // given
-            AuthHubProperties.Timeout newTimeout = new AuthHubProperties.Timeout();
-            newTimeout.setConnection(10000);
-            newTimeout.setResponse(10000);
+            AuthHubProperties.WebClientConfig newConfig = new AuthHubProperties.WebClientConfig();
+            newConfig.setConnectionTimeout(10000);
+            newConfig.setResponseTimeout(10000);
+            newConfig.setMaxConnections(1000);
+            newConfig.setWireLoggingEnabled(true);
 
             // when
-            properties.setTimeout(newTimeout);
+            properties.setWebclient(newConfig);
 
             // then
-            assertThat(properties.getTimeout().getConnection()).isEqualTo(10000);
-            assertThat(properties.getTimeout().getResponse()).isEqualTo(10000);
+            assertThat(properties.getWebclient().getConnectionTimeout()).isEqualTo(10000);
+            assertThat(properties.getWebclient().getResponseTimeout()).isEqualTo(10000);
+            assertThat(properties.getWebclient().getMaxConnections()).isEqualTo(1000);
+            assertThat(properties.getWebclient().isWireLoggingEnabled()).isTrue();
         }
     }
 
@@ -228,6 +290,13 @@ class AuthHubPropertiesTest {
         }
 
         @Test
+        @DisplayName("permittedCallsInHalfOpen 기본값은 3이다")
+        void shouldHaveDefaultPermittedCallsInHalfOpen() {
+            // then
+            assertThat(properties.getCircuitBreaker().getPermittedCallsInHalfOpen()).isEqualTo(3);
+        }
+
+        @Test
         @DisplayName("failureRateThreshold를 설정하고 조회한다")
         void shouldSetAndGetFailureRateThreshold() {
             // when
@@ -277,6 +346,7 @@ class AuthHubPropertiesTest {
             newCb.setWaitDurationInOpenState(30000);
             newCb.setSlidingWindowSize(30);
             newCb.setMinimumNumberOfCalls(15);
+            newCb.setPermittedCallsInHalfOpen(5);
 
             // when
             properties.setCircuitBreaker(newCb);
@@ -287,6 +357,7 @@ class AuthHubPropertiesTest {
                     .isEqualTo(30000);
             assertThat(properties.getCircuitBreaker().getSlidingWindowSize()).isEqualTo(30);
             assertThat(properties.getCircuitBreaker().getMinimumNumberOfCalls()).isEqualTo(15);
+            assertThat(properties.getCircuitBreaker().getPermittedCallsInHalfOpen()).isEqualTo(5);
         }
     }
 
@@ -295,15 +366,27 @@ class AuthHubPropertiesTest {
     class NestedClassInstantiationTest {
 
         @Test
-        @DisplayName("Timeout 클래스를 직접 생성할 수 있다")
-        void shouldCreateTimeoutInstance() {
+        @DisplayName("Endpoints 클래스를 직접 생성할 수 있다")
+        void shouldCreateEndpointsInstance() {
             // when
-            AuthHubProperties.Timeout timeout = new AuthHubProperties.Timeout();
+            AuthHubProperties.Endpoints endpoints = new AuthHubProperties.Endpoints();
 
             // then
-            assertThat(timeout).isNotNull();
-            assertThat(timeout.getConnection()).isEqualTo(3000);
-            assertThat(timeout.getResponse()).isEqualTo(3000);
+            assertThat(endpoints).isNotNull();
+            assertThat(endpoints.getJwks()).isEqualTo("/api/v1/auth/jwks");
+        }
+
+        @Test
+        @DisplayName("WebClientConfig 클래스를 직접 생성할 수 있다")
+        void shouldCreateWebClientConfigInstance() {
+            // when
+            AuthHubProperties.WebClientConfig webclient = new AuthHubProperties.WebClientConfig();
+
+            // then
+            assertThat(webclient).isNotNull();
+            assertThat(webclient.getConnectionTimeout()).isEqualTo(3000);
+            assertThat(webclient.getResponseTimeout()).isEqualTo(3000);
+            assertThat(webclient.getMaxConnections()).isEqualTo(500);
         }
 
         @Test
@@ -330,6 +413,7 @@ class AuthHubPropertiesTest {
             assertThat(cb.getWaitDurationInOpenState()).isEqualTo(10000);
             assertThat(cb.getSlidingWindowSize()).isEqualTo(10);
             assertThat(cb.getMinimumNumberOfCalls()).isEqualTo(5);
+            assertThat(cb.getPermittedCallsInHalfOpen()).isEqualTo(3);
         }
     }
 }

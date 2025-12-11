@@ -61,3 +61,6 @@ langfuse/tests/__pycache__/
 .pipeline-metrics/metrics.jsonl
 .pipeline-metrics/report.md
 .env
+# Terraform
+**/.terraform/
+**/terraform.tfstate* git add .gitignore git add -A git status --short

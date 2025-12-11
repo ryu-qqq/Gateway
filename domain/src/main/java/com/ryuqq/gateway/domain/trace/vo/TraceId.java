@@ -25,10 +25,11 @@ import java.util.regex.Pattern;
  *
  * <p><strong>유일성 보장:</strong> Timestamp(밀리초) + UUID로 충돌 방지
  *
+ * @param value Trace-ID 문자열
  * @author development-team
  * @since 1.0.0
  */
-public final class TraceId {
+public record TraceId(String value) {
 
     private static final String TIMESTAMP_FORMAT = "yyyyMMddHHmmssSSS";
     private static final DateTimeFormatter TIMESTAMP_FORMATTER =
@@ -45,10 +46,9 @@ public final class TraceId {
 
     private static final int EXPECTED_LENGTH = 54;
 
-    private final String value;
-
-    private TraceId(String value) {
-        this.value = value;
+    /** Compact Constructor (기본 검증) */
+    public TraceId {
+        Objects.requireNonNull(value, "TraceId value cannot be null");
     }
 
     /**
@@ -111,20 +111,11 @@ public final class TraceId {
     }
 
     /**
-     * Trace-ID 문자열 값 반환
-     *
-     * @return Trace-ID 문자열
-     */
-    public String getValue() {
-        return value;
-    }
-
-    /**
      * Timestamp 부분 추출
      *
      * @return Timestamp 문자열 (17자)
      */
-    public String getTimestamp() {
+    public String timestamp() {
         return value.substring(0, 17);
     }
 
@@ -133,25 +124,8 @@ public final class TraceId {
      *
      * @return UUID 문자열 (36자)
      */
-    public String getUuid() {
+    public String uuid() {
         return value.substring(18);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        TraceId traceId = (TraceId) o;
-        return Objects.equals(value, traceId.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
     }
 
     @Override

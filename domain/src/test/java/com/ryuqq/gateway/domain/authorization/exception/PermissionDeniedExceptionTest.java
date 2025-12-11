@@ -2,7 +2,6 @@ package com.ryuqq.gateway.domain.authorization.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -27,11 +26,11 @@ class PermissionDeniedExceptionTest {
                     new PermissionDeniedException(requiredPermissions, userPermissions);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-001");
-            assertThat(exception.getMessage())
-                    .isEqualTo(
-                            "Permission denied. Required: [user:read, user:write], User has:"
-                                    + " [user:read]");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-001");
+            // Set 순서는 보장되지 않으므로 contains로 검증
+            assertThat(exception.getMessage()).startsWith("Permission denied: Required:");
+            assertThat(exception.getMessage()).contains("user:read");
+            assertThat(exception.getMessage()).contains("user:write");
             assertThat(exception.requiredPermissions()).isEqualTo(requiredPermissions);
             assertThat(exception.userPermissions()).isEqualTo(userPermissions);
         }
@@ -48,9 +47,9 @@ class PermissionDeniedExceptionTest {
                     new PermissionDeniedException(requiredPermissions, userPermissions);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-001");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-001");
             assertThat(exception.getMessage())
-                    .isEqualTo("Permission denied. Required: [], User has: []");
+                    .isEqualTo("Permission denied: Required: [], User has: []");
             assertThat(exception.requiredPermissions()).isEmpty();
             assertThat(exception.userPermissions()).isEmpty();
         }
@@ -67,7 +66,7 @@ class PermissionDeniedExceptionTest {
                     new PermissionDeniedException(requiredPermissions, userPermissions);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-001");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-001");
             assertThat(exception.getMessage()).contains("admin:delete");
             assertThat(exception.getMessage()).contains("user:read");
             assertThat(exception.requiredPermissions()).containsExactly("admin:delete");
@@ -78,14 +77,15 @@ class PermissionDeniedExceptionTest {
         @DisplayName("메시지만으로 예외 생성")
         void shouldCreateExceptionWithMessageOnly() {
             // given
-            String message = "Custom permission denied message";
+            String detail = "Custom permission denied message";
 
             // when
-            PermissionDeniedException exception = new PermissionDeniedException(message);
+            PermissionDeniedException exception = new PermissionDeniedException(detail);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTHZ-001");
-            assertThat(exception.getMessage()).isEqualTo(message);
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-001");
+            // DomainException 형식: ErrorCode.getMessage() + ": " + detail
+            assertThat(exception.getMessage()).isEqualTo("Permission denied: " + detail);
             assertThat(exception.requiredPermissions()).isEmpty();
             assertThat(exception.userPermissions()).isEmpty();
         }
@@ -165,7 +165,7 @@ class PermissionDeniedExceptionTest {
 
             // then
             String message = exception.getMessage();
-            assertThat(message).startsWith("Permission denied. Required:");
+            assertThat(message).startsWith("Permission denied: Required:");
             assertThat(message).contains("inventory:read");
             assertThat(message).contains("inventory:write");
             assertThat(message).contains("inventory:delete");
@@ -221,9 +221,9 @@ class PermissionDeniedExceptionTest {
                     new PermissionDeniedException(Set.of("test:permission"), Set.of());
 
             // when & then
-            assertThat(exception.code())
+            assertThat(exception.getCode())
                     .isEqualTo(AuthorizationErrorCode.PERMISSION_DENIED.getCode());
-            assertThat(exception.code()).isEqualTo("AUTHZ-001");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-001");
         }
 
         @Test
@@ -233,19 +233,19 @@ class PermissionDeniedExceptionTest {
             PermissionDeniedException exception = new PermissionDeniedException("Custom message");
 
             // when & then
-            assertThat(exception.code())
+            assertThat(exception.getCode())
                     .isEqualTo(AuthorizationErrorCode.PERMISSION_DENIED.getCode());
-            assertThat(exception.code()).isEqualTo("AUTHZ-001");
+            assertThat(exception.getCode()).isEqualTo("AUTHZ-001");
         }
     }
 
     @Nested
-    @DisplayName("메타데이터 테스트")
-    class MetadataTest {
+    @DisplayName("필드 접근자 테스트")
+    class FieldAccessorTest {
 
         @Test
-        @DisplayName("권한 정보가 메타데이터에 포함됨")
-        void shouldIncludePermissionInfoInMetadata() {
+        @DisplayName("권한 정보를 개별 필드 접근자로 확인")
+        void shouldAccessPermissionInfoThroughGetters() {
             // given
             Set<String> requiredPermissions = Set.of("notification:send");
             Set<String> userPermissions = Set.of("notification:read");
@@ -255,22 +255,19 @@ class PermissionDeniedExceptionTest {
                     new PermissionDeniedException(requiredPermissions, userPermissions);
 
             // then
-            Map<String, Object> metadata = exception.args();
-            assertThat(metadata).containsKey("requiredPermissions");
-            assertThat(metadata).containsKey("userPermissions");
-            assertThat(metadata.get("requiredPermissions")).isEqualTo(requiredPermissions);
-            assertThat(metadata.get("userPermissions")).isEqualTo(userPermissions);
+            assertThat(exception.requiredPermissions()).isEqualTo(requiredPermissions);
+            assertThat(exception.userPermissions()).isEqualTo(userPermissions);
         }
 
         @Test
-        @DisplayName("메시지 생성자는 메타데이터가 없음")
-        void shouldHaveNoMetadataForMessageConstructor() {
+        @DisplayName("메시지 생성자는 빈 권한 목록 반환")
+        void shouldReturnEmptyPermissionsForMessageConstructor() {
             // given
             PermissionDeniedException exception = new PermissionDeniedException("Test message");
 
             // when & then
-            Map<String, Object> metadata = exception.args();
-            assertThat(metadata).isEmpty();
+            assertThat(exception.requiredPermissions()).isEmpty();
+            assertThat(exception.userPermissions()).isEmpty();
         }
     }
 

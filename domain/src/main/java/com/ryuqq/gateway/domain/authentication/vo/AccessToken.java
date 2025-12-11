@@ -25,21 +25,24 @@ import java.util.Base64;
  *   <li>JWT 원본 값 제공 (서명 검증용)
  * </ul>
  *
+ * @param value JWT Access Token 문자열
+ * @param kid JWT Header의 Key ID
  * @author development-team
  * @since 1.0.0
  */
-public final class AccessToken {
+public record AccessToken(String value, String kid) {
 
     private static final int JWT_PARTS_COUNT = 3;
     private static final int HEADER_INDEX = 0;
 
-    private final String value;
-    private final String kid;
-
-    /** Private Constructor (정적 팩토리 메서드 사용) */
-    private AccessToken(String value, String kid) {
-        this.value = value;
-        this.kid = kid;
+    /** Compact Constructor (기본 검증) */
+    public AccessToken {
+        if (value == null || value.isBlank()) {
+            throw new JwtInvalidException("Access token cannot be null or blank");
+        }
+        if (kid == null || kid.isBlank()) {
+            throw new JwtInvalidException("kid cannot be null or blank");
+        }
     }
 
     /**
@@ -94,43 +97,6 @@ public final class AccessToken {
         } catch (Exception e) {
             throw new JwtInvalidException("Failed to decode JWT Header: " + e.getMessage());
         }
-    }
-
-    /**
-     * Key ID 조회
-     *
-     * @return kid (JWT Header의 Key ID)
-     */
-    public String getKid() {
-        return kid;
-    }
-
-    /**
-     * JWT 원본 값 조회
-     *
-     * <p>서명 검증 시 사용됩니다.
-     *
-     * @return JWT Access Token 원본 문자열
-     */
-    public String getValue() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        AccessToken that = (AccessToken) o;
-        return value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return value.hashCode();
     }
 
     @Override

@@ -40,7 +40,7 @@ public class GenerateTraceIdService implements GenerateTraceIdUseCase {
         return Mono.fromCallable(
                 () -> {
                     TraceId traceId = TraceId.generate(clockHolder);
-                    return new GenerateTraceIdResponse(traceId.getValue());
+                    return new GenerateTraceIdResponse(traceId.value());
                 });
     }
 }

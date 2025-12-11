@@ -50,8 +50,8 @@ class AccessTokenTest {
 
             // then
             assertThat(accessToken).isNotNull();
-            assertThat(accessToken.getValue()).isEqualTo(validJwt);
-            assertThat(accessToken.getKid()).isEqualTo(VALID_KID);
+            assertThat(accessToken.value()).isEqualTo(validJwt);
+            assertThat(accessToken.kid()).isEqualTo(VALID_KID);
         }
 
         @Test
@@ -68,9 +68,9 @@ class AccessTokenTest {
             AccessToken token3 = AccessToken.of(createValidJwt(kid3));
 
             // then
-            assertThat(token1.getKid()).isEqualTo(kid1);
-            assertThat(token2.getKid()).isEqualTo(kid2);
-            assertThat(token3.getKid()).isEqualTo(kid3);
+            assertThat(token1.kid()).isEqualTo(kid1);
+            assertThat(token2.kid()).isEqualTo(kid2);
+            assertThat(token3.kid()).isEqualTo(kid3);
         }
     }
 
@@ -189,7 +189,7 @@ class AccessTokenTest {
             AccessToken accessToken = AccessToken.of(jwt);
 
             // when
-            String value = accessToken.getValue();
+            String value = accessToken.value();
 
             // then
             assertThat(value).isEqualTo(jwt);
@@ -204,7 +204,7 @@ class AccessTokenTest {
             AccessToken accessToken = AccessToken.of(jwt);
 
             // when
-            String kid = accessToken.getKid();
+            String kid = accessToken.kid();
 
             // then
             assertThat(kid).isEqualTo(expectedKid);
@@ -352,8 +352,8 @@ class AccessTokenTest {
             AccessToken token = AccessToken.of(jwt);
 
             // then
-            assertThat(token.getKid()).isEqualTo("real-production-key");
-            assertThat(token.getValue()).isEqualTo(jwt);
+            assertThat(token.kid()).isEqualTo("real-production-key");
+            assertThat(token.value()).isEqualTo(jwt);
         }
 
         @Test
@@ -367,7 +367,7 @@ class AccessTokenTest {
             AccessToken token = AccessToken.of(jwt);
 
             // then
-            assertThat(token.getKid()).isEqualTo(specialKid);
+            assertThat(token.kid()).isEqualTo(specialKid);
         }
 
         @Test
@@ -381,7 +381,7 @@ class AccessTokenTest {
             AccessToken token = AccessToken.of(jwt);
 
             // then
-            assertThat(token.getKid()).isEqualTo(uuidKid);
+            assertThat(token.kid()).isEqualTo(uuidKid);
         }
     }
 

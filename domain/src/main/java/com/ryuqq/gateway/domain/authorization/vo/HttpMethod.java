@@ -9,11 +9,28 @@ package com.ryuqq.gateway.domain.authorization.vo;
  * @since 1.0.0
  */
 public enum HttpMethod {
-    GET,
-    POST,
-    PUT,
-    PATCH,
-    DELETE;
+    GET("GET"),
+    POST("POST"),
+    PUT("PUT"),
+    PATCH("PATCH"),
+    DELETE("DELETE");
+
+    private final String displayName;
+
+    HttpMethod(String displayName) {
+        this.displayName = displayName;
+    }
+
+    /**
+     * 표시용 이름 반환
+     *
+     * @return 표시용 이름
+     * @author development-team
+     * @since 1.0.0
+     */
+    public String displayName() {
+        return displayName;
+    }
 
     /**
      * 문자열을 HttpMethod로 변환
