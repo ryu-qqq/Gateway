@@ -202,6 +202,13 @@ Policy: All modules must use pure Java without Lombok.
             '-parameters'
         ])
     }
+
+    // ========================================
+    // Spotless 자동 적용 (컴파일 전)
+    // ========================================
+    tasks.withType(JavaCompile).configureEach {
+        dependsOn 'spotlessApply'
+    }
 }
 
 // ========================================
