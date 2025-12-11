@@ -21,8 +21,7 @@ import reactor.test.StepVerifier;
 @DisplayName("RateLimitRedisRepository 통합 테스트")
 class RateLimitRedisRepositoryIntegrationTest extends RedisTestSupport {
 
-    @Autowired
-    private RateLimitRedisRepository rateLimitRedisRepository;
+    @Autowired private RateLimitRedisRepository rateLimitRedisRepository;
 
     @Nested
     @DisplayName("incrementAndExpire 메서드")

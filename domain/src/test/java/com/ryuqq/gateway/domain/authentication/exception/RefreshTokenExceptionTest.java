@@ -93,8 +93,7 @@ class RefreshTokenExceptionTest {
 
             // then
             // DomainException 형식: ErrorCode.getMessage() + ": " + detail
-            assertThat(exception.getMessage())
-                    .isEqualTo("Refresh token reuse detected: " + detail);
+            assertThat(exception.getMessage()).isEqualTo("Refresh token reuse detected: " + detail);
             assertThat(exception.getCode()).isEqualTo("AUTH-006");
             assertThat(exception.getErrorCode())
                     .isEqualTo(AuthenticationErrorCode.REFRESH_TOKEN_REUSED);

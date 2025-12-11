@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,8 +160,7 @@ class RefreshTokenBlacklistRedisRepositoryTest {
             String tenantId = "tenant-1";
             String tokenValue = "blacklisted-token";
 
-            given(reactiveStringRedisTemplate.hasKey(anyString()))
-                    .willReturn(Mono.just(true));
+            given(reactiveStringRedisTemplate.hasKey(anyString())).willReturn(Mono.just(true));
 
             // when & then
             StepVerifier.create(repository.isBlacklisted(tenantId, tokenValue))
@@ -177,8 +175,7 @@ class RefreshTokenBlacklistRedisRepositoryTest {
             String tenantId = "tenant-2";
             String tokenValue = "valid-token";
 
-            given(reactiveStringRedisTemplate.hasKey(anyString()))
-                    .willReturn(Mono.just(false));
+            given(reactiveStringRedisTemplate.hasKey(anyString())).willReturn(Mono.just(false));
 
             // when & then
             StepVerifier.create(repository.isBlacklisted(tenantId, tokenValue))

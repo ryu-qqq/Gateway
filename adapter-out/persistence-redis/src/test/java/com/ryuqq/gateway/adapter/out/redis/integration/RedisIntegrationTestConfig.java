@@ -25,6 +25,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * Redis Integration Test용 Spring Configuration
  *
  * <p>TestContainers Redis와 연결하기 위한 최소 설정
+ *
  * <p>필요한 Repository만 Bean으로 명시적으로 등록 (ComponentScan 사용하지 않음)
  *
  * @author development-team
@@ -51,7 +52,8 @@ public class RedisIntegrationTestConfig {
     @Bean
     @Primary
     public LettuceConnectionFactory lettuceConnectionFactory() {
-        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
+        RedisStandaloneConfiguration config =
+                new RedisStandaloneConfiguration(redisHost, redisPort);
         return new LettuceConnectionFactory(config);
     }
 

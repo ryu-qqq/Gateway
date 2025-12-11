@@ -1,18 +1,17 @@
 package com.ryuqq.gateway.domain.architecture;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import static com.ryuqq.gateway.domain.architecture.ArchUnitPackageConstants.*;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
-
-import static com.ryuqq.gateway.domain.architecture.ArchUnitPackageConstants.*;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Package Structure ArchUnit 아키텍처 검증 테스트

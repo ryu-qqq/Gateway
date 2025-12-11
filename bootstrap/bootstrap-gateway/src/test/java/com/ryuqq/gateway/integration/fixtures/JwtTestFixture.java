@@ -233,7 +233,13 @@ public final class JwtTestFixture {
             String permissionHash,
             boolean mfaVerified) {
         return createJwt(
-                subject, roles, expiresAt, tenantId, DEFAULT_ORGANIZATION_ID, permissionHash, mfaVerified);
+                subject,
+                roles,
+                expiresAt,
+                tenantId,
+                DEFAULT_ORGANIZATION_ID,
+                permissionHash,
+                mfaVerified);
     }
 
     private static String createJwt(

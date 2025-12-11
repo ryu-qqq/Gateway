@@ -45,11 +45,9 @@ class PermissionWebhookControllerRestDocsTest {
 
     private WebTestClient webTestClient;
 
-    @Mock
-    private SyncPermissionSpecUseCase syncPermissionSpecUseCase;
+    @Mock private SyncPermissionSpecUseCase syncPermissionSpecUseCase;
 
-    @Mock
-    private InvalidateUserPermissionUseCase invalidateUserPermissionUseCase;
+    @Mock private InvalidateUserPermissionUseCase invalidateUserPermissionUseCase;
 
     @BeforeEach
     void setUp(RestDocumentationContextProvider restDocumentation) {

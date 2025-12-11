@@ -22,7 +22,8 @@ class TenantRateLimitConfigTest {
             int otpRequestsPerHour = 5;
 
             // when
-            TenantRateLimitConfig config = TenantRateLimitConfig.of(loginAttemptsPerHour, otpRequestsPerHour);
+            TenantRateLimitConfig config =
+                    TenantRateLimitConfig.of(loginAttemptsPerHour, otpRequestsPerHour);
 
             // then
             assertThat(config).isNotNull();
@@ -343,7 +344,9 @@ class TenantRateLimitConfigTest {
         @Test
         @DisplayName("record 클래스는 final임")
         void shouldBeFinalClass() {
-            assertThat(java.lang.reflect.Modifier.isFinal(TenantRateLimitConfig.class.getModifiers()))
+            assertThat(
+                            java.lang.reflect.Modifier.isFinal(
+                                    TenantRateLimitConfig.class.getModifiers()))
                     .isTrue();
         }
     }

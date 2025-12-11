@@ -39,9 +39,7 @@ public final class TenantMismatchException extends DomainException {
      * @since 1.0.0
      */
     public TenantMismatchException(String expectedTenantId, String actualTenantId) {
-        super(
-                TenantErrorCode.TENANT_MISMATCH,
-                buildDetail(expectedTenantId, actualTenantId));
+        super(TenantErrorCode.TENANT_MISMATCH, buildDetail(expectedTenantId, actualTenantId));
         this.expectedTenantId = expectedTenantId;
         this.actualTenantId = actualTenantId;
     }
@@ -59,9 +57,7 @@ public final class TenantMismatchException extends DomainException {
         this.actualTenantId = null;
     }
 
-    /**
-     * 기본 예외 생성
-     */
+    /** 기본 예외 생성 */
     public TenantMismatchException() {
         super(TenantErrorCode.TENANT_MISMATCH);
         this.expectedTenantId = null;

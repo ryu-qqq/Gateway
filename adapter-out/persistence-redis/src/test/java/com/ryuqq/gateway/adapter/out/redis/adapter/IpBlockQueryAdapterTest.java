@@ -25,8 +25,7 @@ import reactor.test.StepVerifier;
 @DisplayName("IpBlockQueryAdapter 단위 테스트")
 class IpBlockQueryAdapterTest {
 
-    @Mock
-    private IpBlockRedisRepository ipBlockRedisRepository;
+    @Mock private IpBlockRedisRepository ipBlockRedisRepository;
 
     private IpBlockQueryAdapter ipBlockQueryAdapter;
 
@@ -45,16 +44,13 @@ class IpBlockQueryAdapterTest {
             // given
             String ipAddress = "192.168.1.100";
 
-            given(ipBlockRedisRepository.isBlocked(eq(ipAddress)))
-                    .willReturn(Mono.just(true));
+            given(ipBlockRedisRepository.isBlocked(eq(ipAddress))).willReturn(Mono.just(true));
 
             // when
             Mono<Boolean> result = ipBlockQueryAdapter.isBlocked(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
 
             then(ipBlockRedisRepository).should().isBlocked(ipAddress);
         }
@@ -65,16 +61,13 @@ class IpBlockQueryAdapterTest {
             // given
             String ipAddress = "192.168.1.200";
 
-            given(ipBlockRedisRepository.isBlocked(eq(ipAddress)))
-                    .willReturn(Mono.just(false));
+            given(ipBlockRedisRepository.isBlocked(eq(ipAddress))).willReturn(Mono.just(false));
 
             // when
             Mono<Boolean> result = ipBlockQueryAdapter.isBlocked(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -83,16 +76,13 @@ class IpBlockQueryAdapterTest {
             // given
             String ipAddress = "2001:0db8:85a3::8a2e:0370:7334";
 
-            given(ipBlockRedisRepository.isBlocked(eq(ipAddress)))
-                    .willReturn(Mono.just(true));
+            given(ipBlockRedisRepository.isBlocked(eq(ipAddress))).willReturn(Mono.just(true));
 
             // when
             Mono<Boolean> result = ipBlockQueryAdapter.isBlocked(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
         }
 
         @Test
@@ -101,16 +91,13 @@ class IpBlockQueryAdapterTest {
             // given
             String ipAddress = "127.0.0.1";
 
-            given(ipBlockRedisRepository.isBlocked(eq(ipAddress)))
-                    .willReturn(Mono.just(false));
+            given(ipBlockRedisRepository.isBlocked(eq(ipAddress))).willReturn(Mono.just(false));
 
             // when
             Mono<Boolean> result = ipBlockQueryAdapter.isBlocked(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -126,9 +113,7 @@ class IpBlockQueryAdapterTest {
             Mono<Boolean> result = ipBlockQueryAdapter.isBlocked(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 
@@ -149,9 +134,7 @@ class IpBlockQueryAdapterTest {
             Mono<Long> result = ipBlockQueryAdapter.getBlockTtlSeconds(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(3600L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(3600L).verifyComplete();
 
             then(ipBlockRedisRepository).should().getBlockTtl(ipAddress);
         }
@@ -169,9 +152,7 @@ class IpBlockQueryAdapterTest {
             Mono<Long> result = ipBlockQueryAdapter.getBlockTtlSeconds(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(-2L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(-2L).verifyComplete();
         }
 
         @Test
@@ -187,9 +168,7 @@ class IpBlockQueryAdapterTest {
             Mono<Long> result = ipBlockQueryAdapter.getBlockTtlSeconds(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(-1L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(-1L).verifyComplete();
         }
 
         @Test
@@ -199,16 +178,13 @@ class IpBlockQueryAdapterTest {
             String ipAddress = "10.0.0.1";
             long longTtl = 2592000L; // 30일
 
-            given(ipBlockRedisRepository.getBlockTtl(eq(ipAddress)))
-                    .willReturn(Mono.just(longTtl));
+            given(ipBlockRedisRepository.getBlockTtl(eq(ipAddress))).willReturn(Mono.just(longTtl));
 
             // when
             Mono<Long> result = ipBlockQueryAdapter.getBlockTtlSeconds(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(longTtl)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(longTtl).verifyComplete();
         }
 
         @Test
@@ -224,9 +200,7 @@ class IpBlockQueryAdapterTest {
             Mono<Long> result = ipBlockQueryAdapter.getBlockTtlSeconds(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(30L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(30L).verifyComplete();
         }
 
         @Test
@@ -242,9 +216,7 @@ class IpBlockQueryAdapterTest {
             Mono<Long> result = ipBlockQueryAdapter.getBlockTtlSeconds(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 }

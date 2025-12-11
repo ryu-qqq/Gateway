@@ -28,8 +28,7 @@ public class RestDocsConfiguration {
     @Bean
     public OperationRequestPreprocessor operationRequestPreprocessor() {
         return Preprocessors.preprocessRequest(
-                modifyHeaders().remove("Host").remove("Content-Length"),
-                prettyPrint());
+                modifyHeaders().remove("Host").remove("Content-Length"), prettyPrint());
     }
 
     /**

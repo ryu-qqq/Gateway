@@ -39,11 +39,9 @@ import reactor.test.StepVerifier;
 @DisplayName("UserRateLimitFilter 테스트")
 class UserRateLimitFilterTest {
 
-    @Mock
-    private CheckRateLimitUseCase checkRateLimitUseCase;
+    @Mock private CheckRateLimitUseCase checkRateLimitUseCase;
 
-    @Mock
-    private GatewayFilterChain filterChain;
+    @Mock private GatewayFilterChain filterChain;
 
     private UserRateLimitFilter userRateLimitFilter;
 
@@ -84,8 +82,7 @@ class UserRateLimitFilterTest {
             when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain))
-                    .verifyComplete();
+            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain)).verifyComplete();
 
             verify(filterChain).filter(exchange);
             verify(checkRateLimitUseCase, never()).execute(any());
@@ -102,8 +99,7 @@ class UserRateLimitFilterTest {
             when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain))
-                    .verifyComplete();
+            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain)).verifyComplete();
 
             verify(filterChain).filter(exchange);
             verify(checkRateLimitUseCase, never()).execute(any());
@@ -120,8 +116,7 @@ class UserRateLimitFilterTest {
             when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain))
-                    .verifyComplete();
+            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain)).verifyComplete();
 
             verify(filterChain).filter(exchange);
             verify(checkRateLimitUseCase, never()).execute(any());
@@ -142,15 +137,17 @@ class UserRateLimitFilterTest {
 
             CheckRateLimitResponse allowedResponse = CheckRateLimitResponse.allowed(50, 100);
 
-            when(checkRateLimitUseCase.execute(argThat(cmd ->
-                    cmd != null && cmd.limitType() == LimitType.USER
-                            && "user-123".equals(cmd.identifier()))))
+            when(checkRateLimitUseCase.execute(
+                            argThat(
+                                    cmd ->
+                                            cmd != null
+                                                    && cmd.limitType() == LimitType.USER
+                                                    && "user-123".equals(cmd.identifier()))))
                     .thenReturn(Mono.just(allowedResponse));
             when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain))
-                    .verifyComplete();
+            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain)).verifyComplete();
 
             verify(filterChain).filter(exchange);
         }
@@ -163,8 +160,8 @@ class UserRateLimitFilterTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
             exchange.getAttributes().put("userId", "user-123");
 
-            CheckRateLimitResponse deniedResponse = CheckRateLimitResponse.denied(
-                    100, 100, 60, RateLimitAction.REJECT);
+            CheckRateLimitResponse deniedResponse =
+                    CheckRateLimitResponse.denied(100, 100, 60, RateLimitAction.REJECT);
 
             when(checkRateLimitUseCase.execute(any(CheckRateLimitCommand.class)))
                     .thenReturn(Mono.just(deniedResponse));
@@ -175,9 +172,12 @@ class UserRateLimitFilterTest {
             // then
             StepVerifier.create(result).verifyComplete();
 
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo("100");
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Remaining")).isEqualTo("0");
+            assertThat(exchange.getResponse().getStatusCode())
+                    .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit"))
+                    .isEqualTo("100");
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Remaining"))
+                    .isEqualTo("0");
             assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("60");
             verify(filterChain, never()).filter(any());
         }
@@ -206,12 +206,13 @@ class UserRateLimitFilterTest {
             when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
             // when
-            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain))
-                    .verifyComplete();
+            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain)).verifyComplete();
 
             // then - User Rate Limit 값으로 덮어쓰기됨
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo("100");
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Remaining")).isEqualTo("50");
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit"))
+                    .isEqualTo("100");
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Remaining"))
+                    .isEqualTo("50");
         }
     }
 
@@ -236,9 +237,12 @@ class UserRateLimitFilterTest {
             // then
             StepVerifier.create(result).verifyComplete();
 
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo("100");
-            assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("120");
+            assertThat(exchange.getResponse().getStatusCode())
+                    .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit"))
+                    .isEqualTo("100");
+            assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After"))
+                    .isEqualTo("120");
             verify(filterChain, never()).filter(any());
         }
 
@@ -255,8 +259,7 @@ class UserRateLimitFilterTest {
             when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain))
-                    .verifyComplete();
+            StepVerifier.create(userRateLimitFilter.filter(exchange, filterChain)).verifyComplete();
 
             // fail-open: 요청 통과
             verify(filterChain).filter(exchange);

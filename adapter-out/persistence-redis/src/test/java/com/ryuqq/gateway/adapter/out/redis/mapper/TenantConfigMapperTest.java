@@ -55,7 +55,12 @@ class TenantConfigMapperTest {
 
             TenantConfigEntity entity =
                     new TenantConfigEntity(
-                            tenantId, true, socialLogins, roleHierarchy, sessionEntity, rateLimitEntity);
+                            tenantId,
+                            true,
+                            socialLogins,
+                            roleHierarchy,
+                            sessionEntity,
+                            rateLimitEntity);
 
             // when
             TenantConfig result = mapper.toTenantConfig(entity);
@@ -81,8 +86,7 @@ class TenantConfigMapperTest {
         void shouldUseDefaultSessionConfigWhenEntityIsNull() {
             // given
             TenantConfigEntity entity =
-                    new TenantConfigEntity(
-                            "tenant-2", false, Set.of(), Map.of(), null, null);
+                    new TenantConfigEntity("tenant-2", false, Set.of(), Map.of(), null, null);
 
             // when
             TenantConfig result = mapper.toTenantConfig(entity);
@@ -101,8 +105,7 @@ class TenantConfigMapperTest {
         void shouldUseDefaultRateLimitConfigWhenEntityIsNull() {
             // given
             TenantConfigEntity entity =
-                    new TenantConfigEntity(
-                            "tenant-3", false, Set.of(), Map.of(), null, null);
+                    new TenantConfigEntity("tenant-3", false, Set.of(), Map.of(), null, null);
 
             // when
             TenantConfig result = mapper.toTenantConfig(entity);
@@ -121,8 +124,7 @@ class TenantConfigMapperTest {
         void shouldConvertEmptySocialLogins() {
             // given
             TenantConfigEntity entity =
-                    new TenantConfigEntity(
-                            "tenant-4", false, Set.of(), Map.of(), null, null);
+                    new TenantConfigEntity("tenant-4", false, Set.of(), Map.of(), null, null);
 
             // when
             TenantConfig result = mapper.toTenantConfig(entity);
@@ -169,8 +171,7 @@ class TenantConfigMapperTest {
             // given
             String tenantId = "tenant-10";
             Set<SocialProvider> socialLogins = Set.of(SocialProvider.KAKAO, SocialProvider.GOOGLE);
-            Map<String, Set<String>> roleHierarchy =
-                    Map.of("USER", Set.of("READ"));
+            Map<String, Set<String>> roleHierarchy = Map.of("USER", Set.of("READ"));
             SessionConfig sessionConfig = SessionConfig.ofSeconds(3, 1800L, 43200L);
             TenantRateLimitConfig rateLimitConfig = TenantRateLimitConfig.of(200, 100);
 
@@ -230,12 +231,7 @@ class TenantConfigMapperTest {
                     Set.of(SocialProvider.KAKAO, SocialProvider.NAVER, SocialProvider.GOOGLE);
             TenantConfig tenantConfig =
                     TenantConfig.of(
-                            TenantId.of("tenant-12"),
-                            false,
-                            allProviders,
-                            Map.of(),
-                            null,
-                            null);
+                            TenantId.of("tenant-12"), false, allProviders, Map.of(), null, null);
 
             // when
             TenantConfigEntity result = mapper.toTenantConfigEntity(tenantConfig);

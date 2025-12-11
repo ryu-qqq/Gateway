@@ -39,9 +39,7 @@ public final class SocialLoginNotAllowedException extends DomainException {
      * @since 1.0.0
      */
     public SocialLoginNotAllowedException(String tenantId, String provider) {
-        super(
-                TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED,
-                buildDetail(tenantId, provider));
+        super(TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED, buildDetail(tenantId, provider));
         this.tenantId = tenantId;
         this.provider = provider;
     }

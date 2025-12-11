@@ -93,8 +93,7 @@ public record JwtClaims(
             Instant expiresAt,
             Instant issuedAt,
             List<String> roles) {
-        return new JwtClaims(
-                subject, issuer, expiresAt, issuedAt, roles, null, null, null, false);
+        return new JwtClaims(subject, issuer, expiresAt, issuedAt, roles, null, null, null, false);
     }
 
     /**

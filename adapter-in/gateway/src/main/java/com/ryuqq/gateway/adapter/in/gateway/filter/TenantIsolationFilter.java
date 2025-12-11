@@ -97,7 +97,8 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
                                     .put(MFA_REQUIRED_ATTRIBUTE, tenantConfig.isMfaRequired());
 
                             log.debug(
-                                    "Tenant context loaded: tenantId={}, organizationId={}, mfaRequired={}, userId={}",
+                                    "Tenant context loaded: tenantId={}, organizationId={},"
+                                            + " mfaRequired={}, userId={}",
                                     tenantId,
                                     organizationId,
                                     tenantConfig.isMfaRequired(),

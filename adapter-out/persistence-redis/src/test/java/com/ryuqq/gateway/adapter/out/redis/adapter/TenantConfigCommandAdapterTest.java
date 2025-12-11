@@ -39,11 +39,9 @@ import reactor.test.StepVerifier;
 @DisplayName("TenantConfigCommandAdapter 단위 테스트")
 class TenantConfigCommandAdapterTest {
 
-    @Mock
-    private TenantConfigRedisRepository tenantConfigRedisRepository;
+    @Mock private TenantConfigRedisRepository tenantConfigRedisRepository;
 
-    @Mock
-    private TenantConfigMapper tenantConfigMapper;
+    @Mock private TenantConfigMapper tenantConfigMapper;
 
     private TenantConfigCommandAdapter tenantConfigCommandAdapter;
 
@@ -55,20 +53,18 @@ class TenantConfigCommandAdapterTest {
 
     private TenantConfig createTestTenantConfig(String tenantIdStr) {
         TenantId tenantId = TenantId.from(tenantIdStr);
-        SessionConfig sessionConfig = SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(7));
+        SessionConfig sessionConfig =
+                SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(7));
         TenantRateLimitConfig rateLimitConfig = TenantRateLimitConfig.of(10, 5);
-        Set<SocialProvider> allowedSocialLogins = Set.of(SocialProvider.KAKAO, SocialProvider.GOOGLE);
-        Map<String, Set<String>> roleHierarchy = Map.of(
-                "ADMIN", Set.of("READ", "WRITE", "DELETE"),
-                "USER", Set.of("READ"));
+        Set<SocialProvider> allowedSocialLogins =
+                Set.of(SocialProvider.KAKAO, SocialProvider.GOOGLE);
+        Map<String, Set<String>> roleHierarchy =
+                Map.of(
+                        "ADMIN", Set.of("READ", "WRITE", "DELETE"),
+                        "USER", Set.of("READ"));
 
         return TenantConfig.of(
-                tenantId,
-                true,
-                allowedSocialLogins,
-                roleHierarchy,
-                sessionConfig,
-                rateLimitConfig);
+                tenantId, true, allowedSocialLogins, roleHierarchy, sessionConfig, rateLimitConfig);
     }
 
     private TenantConfigEntity createTestTenantConfigEntity(String tenantIdStr) {
@@ -124,10 +120,11 @@ class TenantConfigCommandAdapterTest {
 
             // then
             StepVerifier.create(result)
-                    .expectErrorMatches(throwable ->
-                            throwable instanceof TenantConfigPersistenceException
-                                    && throwable.getMessage().contains("tenant-456")
-                                    && throwable.getMessage().contains("save"))
+                    .expectErrorMatches(
+                            throwable ->
+                                    throwable instanceof TenantConfigPersistenceException
+                                            && throwable.getMessage().contains("tenant-456")
+                                            && throwable.getMessage().contains("save"))
                     .verify();
         }
     }
@@ -184,10 +181,11 @@ class TenantConfigCommandAdapterTest {
 
             // then
             StepVerifier.create(result)
-                    .expectErrorMatches(throwable ->
-                            throwable instanceof TenantConfigPersistenceException
-                                    && throwable.getMessage().contains(tenantId)
-                                    && throwable.getMessage().contains("delete"))
+                    .expectErrorMatches(
+                            throwable ->
+                                    throwable instanceof TenantConfigPersistenceException
+                                            && throwable.getMessage().contains(tenantId)
+                                            && throwable.getMessage().contains("delete"))
                     .verify();
         }
     }

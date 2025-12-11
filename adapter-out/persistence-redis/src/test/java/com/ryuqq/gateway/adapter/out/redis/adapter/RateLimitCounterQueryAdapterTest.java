@@ -26,15 +26,13 @@ import reactor.test.StepVerifier;
 @DisplayName("RateLimitCounterQueryAdapter 단위 테스트")
 class RateLimitCounterQueryAdapterTest {
 
-    @Mock
-    private RateLimitRedisRepository rateLimitRedisRepository;
+    @Mock private RateLimitRedisRepository rateLimitRedisRepository;
 
     private RateLimitCounterQueryAdapter rateLimitCounterQueryAdapter;
 
     @BeforeEach
     void setUp() {
-        rateLimitCounterQueryAdapter =
-                new RateLimitCounterQueryAdapter(rateLimitRedisRepository);
+        rateLimitCounterQueryAdapter = new RateLimitCounterQueryAdapter(rateLimitRedisRepository);
     }
 
     @Nested
@@ -47,16 +45,13 @@ class RateLimitCounterQueryAdapterTest {
             // given
             RateLimitKey key = RateLimitKey.of("gateway:rate_limit:ip:192.168.1.1");
 
-            given(rateLimitRedisRepository.getCount(eq(key.value())))
-                    .willReturn(Mono.just(5L));
+            given(rateLimitRedisRepository.getCount(eq(key.value()))).willReturn(Mono.just(5L));
 
             // when
             Mono<Long> result = rateLimitCounterQueryAdapter.getCurrentCount(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(5L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(5L).verifyComplete();
 
             then(rateLimitRedisRepository).should().getCount(key.value());
         }
@@ -67,16 +62,13 @@ class RateLimitCounterQueryAdapterTest {
             // given
             RateLimitKey key = RateLimitKey.of("gateway:rate_limit:ip:non-existent");
 
-            given(rateLimitRedisRepository.getCount(eq(key.value())))
-                    .willReturn(Mono.just(0L));
+            given(rateLimitRedisRepository.getCount(eq(key.value()))).willReturn(Mono.just(0L));
 
             // when
             Mono<Long> result = rateLimitCounterQueryAdapter.getCurrentCount(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(0L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(0L).verifyComplete();
         }
 
         @Test
@@ -92,9 +84,7 @@ class RateLimitCounterQueryAdapterTest {
             Mono<Long> result = rateLimitCounterQueryAdapter.getCurrentCount(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(1000000L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(1000000L).verifyComplete();
         }
 
         @Test
@@ -110,9 +100,7 @@ class RateLimitCounterQueryAdapterTest {
             Mono<Long> result = rateLimitCounterQueryAdapter.getCurrentCount(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 
@@ -126,16 +114,13 @@ class RateLimitCounterQueryAdapterTest {
             // given
             RateLimitKey key = RateLimitKey.of("gateway:rate_limit:ip:192.168.1.1");
 
-            given(rateLimitRedisRepository.getTtl(eq(key.value())))
-                    .willReturn(Mono.just(45L));
+            given(rateLimitRedisRepository.getTtl(eq(key.value()))).willReturn(Mono.just(45L));
 
             // when
             Mono<Long> result = rateLimitCounterQueryAdapter.getTtlSeconds(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(45L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(45L).verifyComplete();
 
             then(rateLimitRedisRepository).should().getTtl(key.value());
         }
@@ -153,9 +138,7 @@ class RateLimitCounterQueryAdapterTest {
             Mono<Long> result = rateLimitCounterQueryAdapter.getTtlSeconds(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(-1L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(-1L).verifyComplete();
         }
 
         @Test
@@ -165,16 +148,13 @@ class RateLimitCounterQueryAdapterTest {
             RateLimitKey key = RateLimitKey.of("gateway:rate_limit:user:user-123");
             long longTtl = 86400L; // 24시간
 
-            given(rateLimitRedisRepository.getTtl(eq(key.value())))
-                    .willReturn(Mono.just(longTtl));
+            given(rateLimitRedisRepository.getTtl(eq(key.value()))).willReturn(Mono.just(longTtl));
 
             // when
             Mono<Long> result = rateLimitCounterQueryAdapter.getTtlSeconds(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(longTtl)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(longTtl).verifyComplete();
         }
 
         @Test
@@ -190,9 +170,7 @@ class RateLimitCounterQueryAdapterTest {
             Mono<Long> result = rateLimitCounterQueryAdapter.getTtlSeconds(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 }

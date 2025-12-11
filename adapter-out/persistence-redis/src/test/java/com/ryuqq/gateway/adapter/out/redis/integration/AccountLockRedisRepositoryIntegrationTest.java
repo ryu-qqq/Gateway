@@ -21,8 +21,7 @@ import reactor.test.StepVerifier;
 @DisplayName("AccountLockRedisRepository 통합 테스트")
 class AccountLockRedisRepositoryIntegrationTest extends RedisTestSupport {
 
-    @Autowired
-    private AccountLockRedisRepository accountLockRedisRepository;
+    @Autowired private AccountLockRedisRepository accountLockRedisRepository;
 
     @Nested
     @DisplayName("lock 메서드")

@@ -37,11 +37,9 @@ import reactor.test.StepVerifier;
 @DisplayName("TenantConfigQueryAdapter 단위 테스트")
 class TenantConfigQueryAdapterTest {
 
-    @Mock
-    private TenantConfigRedisRepository tenantConfigRedisRepository;
+    @Mock private TenantConfigRedisRepository tenantConfigRedisRepository;
 
-    @Mock
-    private TenantConfigMapper tenantConfigMapper;
+    @Mock private TenantConfigMapper tenantConfigMapper;
 
     private TenantConfigQueryAdapter tenantConfigQueryAdapter;
 
@@ -53,20 +51,18 @@ class TenantConfigQueryAdapterTest {
 
     private TenantConfig createTestTenantConfig(String tenantIdStr) {
         TenantId tenantId = TenantId.from(tenantIdStr);
-        SessionConfig sessionConfig = SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(7));
+        SessionConfig sessionConfig =
+                SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(7));
         TenantRateLimitConfig rateLimitConfig = TenantRateLimitConfig.of(10, 5);
-        Set<SocialProvider> allowedSocialLogins = Set.of(SocialProvider.KAKAO, SocialProvider.GOOGLE);
-        Map<String, Set<String>> roleHierarchy = Map.of(
-                "ADMIN", Set.of("READ", "WRITE", "DELETE"),
-                "USER", Set.of("READ"));
+        Set<SocialProvider> allowedSocialLogins =
+                Set.of(SocialProvider.KAKAO, SocialProvider.GOOGLE);
+        Map<String, Set<String>> roleHierarchy =
+                Map.of(
+                        "ADMIN", Set.of("READ", "WRITE", "DELETE"),
+                        "USER", Set.of("READ"));
 
         return TenantConfig.of(
-                tenantId,
-                true,
-                allowedSocialLogins,
-                roleHierarchy,
-                sessionConfig,
-                rateLimitConfig);
+                tenantId, true, allowedSocialLogins, roleHierarchy, sessionConfig, rateLimitConfig);
     }
 
     private TenantConfigEntity createTestTenantConfigEntity(String tenantIdStr) {
@@ -101,9 +97,7 @@ class TenantConfigQueryAdapterTest {
             Mono<TenantConfig> result = tenantConfigQueryAdapter.findByTenantId(tenantId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(tenantConfig)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(tenantConfig).verifyComplete();
 
             then(tenantConfigRedisRepository).should().findByTenantId(tenantId);
             then(tenantConfigMapper).should().toTenantConfig(entity);
@@ -141,10 +135,15 @@ class TenantConfigQueryAdapterTest {
 
             // then
             StepVerifier.create(result)
-                    .expectErrorMatches(throwable ->
-                            throwable instanceof RuntimeException
-                                    && throwable.getMessage().contains("Failed to get tenant config from Redis")
-                                    && throwable.getMessage().contains(tenantId))
+                    .expectErrorMatches(
+                            throwable ->
+                                    throwable instanceof RuntimeException
+                                            && throwable
+                                                    .getMessage()
+                                                    .contains(
+                                                            "Failed to get tenant config from"
+                                                                    + " Redis")
+                                            && throwable.getMessage().contains(tenantId))
                     .verify();
         }
     }

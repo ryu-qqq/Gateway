@@ -28,9 +28,7 @@ public final class AccountLockedException extends DomainException {
     private final String userId;
     private final int retryAfterSeconds;
 
-    /**
-     * 기본 생성자
-     */
+    /** 기본 생성자 */
     public AccountLockedException() {
         super(RateLimitErrorCode.ACCOUNT_LOCKED);
         this.userId = null;

@@ -26,8 +26,7 @@ import reactor.test.StepVerifier;
 @DisplayName("IpBlockCommandAdapter 단위 테스트")
 class IpBlockCommandAdapterTest {
 
-    @Mock
-    private IpBlockRedisRepository ipBlockRedisRepository;
+    @Mock private IpBlockRedisRepository ipBlockRedisRepository;
 
     private IpBlockCommandAdapter ipBlockCommandAdapter;
 
@@ -54,9 +53,7 @@ class IpBlockCommandAdapterTest {
             Mono<Boolean> result = ipBlockCommandAdapter.block(ipAddress, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
 
             then(ipBlockRedisRepository).should().block(ipAddress, duration);
         }
@@ -75,9 +72,7 @@ class IpBlockCommandAdapterTest {
             Mono<Boolean> result = ipBlockCommandAdapter.block(ipAddress, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
         }
 
         @Test
@@ -94,9 +89,7 @@ class IpBlockCommandAdapterTest {
             Mono<Boolean> result = ipBlockCommandAdapter.block(ipAddress, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
         }
 
         @Test
@@ -113,9 +106,7 @@ class IpBlockCommandAdapterTest {
             Mono<Boolean> result = ipBlockCommandAdapter.block(ipAddress, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
         }
 
         @Test
@@ -132,9 +123,7 @@ class IpBlockCommandAdapterTest {
             Mono<Boolean> result = ipBlockCommandAdapter.block(ipAddress, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -151,9 +140,7 @@ class IpBlockCommandAdapterTest {
             Mono<Boolean> result = ipBlockCommandAdapter.block(ipAddress, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 
@@ -167,16 +154,13 @@ class IpBlockCommandAdapterTest {
             // given
             String ipAddress = "192.168.1.100";
 
-            given(ipBlockRedisRepository.unblock(eq(ipAddress)))
-                    .willReturn(Mono.just(true));
+            given(ipBlockRedisRepository.unblock(eq(ipAddress))).willReturn(Mono.just(true));
 
             // when
             Mono<Boolean> result = ipBlockCommandAdapter.unblock(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
 
             then(ipBlockRedisRepository).should().unblock(ipAddress);
         }
@@ -187,16 +171,13 @@ class IpBlockCommandAdapterTest {
             // given
             String ipAddress = "192.168.1.200";
 
-            given(ipBlockRedisRepository.unblock(eq(ipAddress)))
-                    .willReturn(Mono.just(false));
+            given(ipBlockRedisRepository.unblock(eq(ipAddress))).willReturn(Mono.just(false));
 
             // when
             Mono<Boolean> result = ipBlockCommandAdapter.unblock(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -205,16 +186,13 @@ class IpBlockCommandAdapterTest {
             // given
             String ipAddress = "::1";
 
-            given(ipBlockRedisRepository.unblock(eq(ipAddress)))
-                    .willReturn(Mono.just(true));
+            given(ipBlockRedisRepository.unblock(eq(ipAddress))).willReturn(Mono.just(true));
 
             // when
             Mono<Boolean> result = ipBlockCommandAdapter.unblock(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
         }
 
         @Test
@@ -230,9 +208,7 @@ class IpBlockCommandAdapterTest {
             Mono<Boolean> result = ipBlockCommandAdapter.unblock(ipAddress);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 }

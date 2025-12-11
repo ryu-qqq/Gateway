@@ -28,9 +28,7 @@ public final class RateLimitExceededException extends DomainException {
     private final int remaining;
     private final int retryAfterSeconds;
 
-    /**
-     * 기본 생성자
-     */
+    /** 기본 생성자 */
     public RateLimitExceededException() {
         super(RateLimitErrorCode.RATE_LIMIT_EXCEEDED);
         this.limit = 0;
@@ -82,6 +80,8 @@ public final class RateLimitExceededException extends DomainException {
     }
 
     private static String buildDetail(int limit, int remaining, int retryAfterSeconds) {
-        return String.format("limit=%d, remaining=%d, retryAfterSeconds=%d", limit, remaining, retryAfterSeconds);
+        return String.format(
+                "limit=%d, remaining=%d, retryAfterSeconds=%d",
+                limit, remaining, retryAfterSeconds);
     }
 }

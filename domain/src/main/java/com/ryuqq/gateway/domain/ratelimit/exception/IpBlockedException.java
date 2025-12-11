@@ -28,9 +28,7 @@ public final class IpBlockedException extends DomainException {
     private final String ipAddress;
     private final int retryAfterSeconds;
 
-    /**
-     * 기본 생성자
-     */
+    /** 기본 생성자 */
     public IpBlockedException() {
         super(RateLimitErrorCode.IP_BLOCKED);
         this.ipAddress = null;

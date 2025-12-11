@@ -27,8 +27,7 @@ import reactor.test.StepVerifier;
 @DisplayName("RateLimitCounterCommandAdapter 단위 테스트")
 class RateLimitCounterCommandAdapterTest {
 
-    @Mock
-    private RateLimitRedisRepository rateLimitRedisRepository;
+    @Mock private RateLimitRedisRepository rateLimitRedisRepository;
 
     private RateLimitCounterCommandAdapter rateLimitCounterCommandAdapter;
 
@@ -56,9 +55,7 @@ class RateLimitCounterCommandAdapterTest {
             Mono<Long> result = rateLimitCounterCommandAdapter.incrementAndGet(key, window);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(1L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(1L).verifyComplete();
 
             then(rateLimitRedisRepository).should().incrementAndExpire(key.value(), window);
         }
@@ -77,9 +74,7 @@ class RateLimitCounterCommandAdapterTest {
             Mono<Long> result = rateLimitCounterCommandAdapter.incrementAndGet(key, window);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(5L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(5L).verifyComplete();
         }
 
         @Test
@@ -96,9 +91,7 @@ class RateLimitCounterCommandAdapterTest {
             Mono<Long> result = rateLimitCounterCommandAdapter.incrementAndGet(key, window);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(100L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(100L).verifyComplete();
         }
 
         @Test
@@ -115,9 +108,7 @@ class RateLimitCounterCommandAdapterTest {
             Mono<Long> result = rateLimitCounterCommandAdapter.incrementAndGet(key, window);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 
@@ -131,16 +122,13 @@ class RateLimitCounterCommandAdapterTest {
             // given
             RateLimitKey key = RateLimitKey.of("gateway:rate_limit:ip:192.168.1.1");
 
-            given(rateLimitRedisRepository.delete(eq(key.value())))
-                    .willReturn(Mono.just(true));
+            given(rateLimitRedisRepository.delete(eq(key.value()))).willReturn(Mono.just(true));
 
             // when
             Mono<Boolean> result = rateLimitCounterCommandAdapter.delete(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
 
             then(rateLimitRedisRepository).should().delete(key.value());
         }
@@ -151,16 +139,13 @@ class RateLimitCounterCommandAdapterTest {
             // given
             RateLimitKey key = RateLimitKey.of("gateway:rate_limit:ip:non-existent");
 
-            given(rateLimitRedisRepository.delete(eq(key.value())))
-                    .willReturn(Mono.just(false));
+            given(rateLimitRedisRepository.delete(eq(key.value()))).willReturn(Mono.just(false));
 
             // when
             Mono<Boolean> result = rateLimitCounterCommandAdapter.delete(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -176,9 +161,7 @@ class RateLimitCounterCommandAdapterTest {
             Mono<Boolean> result = rateLimitCounterCommandAdapter.delete(key);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 }

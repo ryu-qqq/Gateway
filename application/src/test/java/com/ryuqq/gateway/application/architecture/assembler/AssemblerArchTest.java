@@ -1,19 +1,18 @@
 package com.ryuqq.gateway.application.architecture.assembler;
 
+import static com.tngtech.archunit.core.domain.JavaModifier.FINAL;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Component;
-
-import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.lang.ArchRule;
-
-import static com.tngtech.archunit.core.domain.JavaModifier.FINAL;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Assembler ArchUnit 검증 테스트 (Zero-Tolerance)

@@ -42,9 +42,7 @@ public final class TenantConfigPersistenceException extends DomainException {
      * @since 1.0.0
      */
     public TenantConfigPersistenceException(String tenantId, String operation, Throwable cause) {
-        super(
-                TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR,
-                buildDetail(tenantId, operation));
+        super(TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR, buildDetail(tenantId, operation));
         this.tenantId = tenantId;
         this.operation = operation;
         initCause(cause);
@@ -59,9 +57,7 @@ public final class TenantConfigPersistenceException extends DomainException {
      * @since 1.0.0
      */
     public TenantConfigPersistenceException(String tenantId, String operation) {
-        super(
-                TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR,
-                buildDetail(tenantId, operation));
+        super(TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR, buildDetail(tenantId, operation));
         this.tenantId = tenantId;
         this.operation = operation;
     }

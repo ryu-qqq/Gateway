@@ -26,8 +26,7 @@ import reactor.test.StepVerifier;
 @DisplayName("TenantConfigRedisRepository 통합 테스트")
 class TenantConfigRedisRepositoryIntegrationTest extends RedisTestSupport {
 
-    @Autowired
-    private TenantConfigRedisRepository tenantConfigRedisRepository;
+    @Autowired private TenantConfigRedisRepository tenantConfigRedisRepository;
 
     private TenantConfigEntity createTestEntity(String tenantId) {
         SessionConfigEntity sessionConfig = new SessionConfigEntity(5, 900L, 604800L);

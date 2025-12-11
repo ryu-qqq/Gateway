@@ -54,7 +54,8 @@ class TenantExceptionTest {
             String provider = "naver";
 
             // when
-            SocialLoginNotAllowedException exception = new SocialLoginNotAllowedException(tenantId, provider);
+            SocialLoginNotAllowedException exception =
+                    new SocialLoginNotAllowedException(tenantId, provider);
 
             // then
             assertThat(exception).isNotNull();
@@ -62,7 +63,8 @@ class TenantExceptionTest {
             assertThat(exception.provider()).isEqualTo(provider);
             assertThat(exception.getMessage()).contains("tenantId=" + tenantId);
             assertThat(exception.getMessage()).contains("provider=" + provider);
-            assertThat(exception.getErrorCode()).isEqualTo(TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED);
         }
 
         @Test
@@ -79,7 +81,8 @@ class TenantExceptionTest {
             assertThat(exception.tenantId()).isNull();
             assertThat(exception.provider()).isEqualTo(provider);
             assertThat(exception.getMessage()).contains("provider=" + provider);
-            assertThat(exception.getErrorCode()).isEqualTo(TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED);
         }
     }
 
@@ -158,7 +161,8 @@ class TenantExceptionTest {
             assertThat(exception.operation()).isEqualTo(operation);
             assertThat(exception.getMessage()).contains("tenantId=" + tenantId);
             assertThat(exception.getMessage()).contains("operation=" + operation);
-            assertThat(exception.getErrorCode()).isEqualTo(TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR);
         }
 
         @Test
@@ -178,7 +182,8 @@ class TenantExceptionTest {
             assertThat(exception.tenantId()).isEqualTo(tenantId);
             assertThat(exception.operation()).isEqualTo(operation);
             assertThat(exception.getCause()).isEqualTo(cause);
-            assertThat(exception.getErrorCode()).isEqualTo(TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR);
+            assertThat(exception.getErrorCode())
+                    .isEqualTo(TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR);
         }
 
         @Test

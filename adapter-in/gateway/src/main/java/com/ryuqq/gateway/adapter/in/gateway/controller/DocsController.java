@@ -61,14 +61,7 @@ public class DocsController {
 
         return Mono.just(resource)
                 .filter(Resource::exists)
-                .map(
-                        r ->
-                                ResponseEntity.ok()
-                                        .contentType(MediaType.TEXT_HTML)
-                                        .body(r))
-                .switchIfEmpty(
-                        Mono.just(
-                                ResponseEntity.notFound()
-                                        .<Resource>build()));
+                .map(r -> ResponseEntity.ok().contentType(MediaType.TEXT_HTML).body(r))
+                .switchIfEmpty(Mono.just(ResponseEntity.notFound().<Resource>build()));
     }
 }

@@ -28,9 +28,7 @@ public final class RefreshTokenMissingException extends DomainException {
         super(AuthenticationErrorCode.REFRESH_TOKEN_MISSING, detail);
     }
 
-    /**
-     * Constructor - 기본 예외 생성
-     */
+    /** Constructor - 기본 예외 생성 */
     public RefreshTokenMissingException() {
         super(AuthenticationErrorCode.REFRESH_TOKEN_MISSING);
     }

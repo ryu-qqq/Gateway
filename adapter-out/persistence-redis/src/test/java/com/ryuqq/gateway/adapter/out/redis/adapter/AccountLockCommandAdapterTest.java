@@ -26,8 +26,7 @@ import reactor.test.StepVerifier;
 @DisplayName("AccountLockCommandAdapter 단위 테스트")
 class AccountLockCommandAdapterTest {
 
-    @Mock
-    private AccountLockRedisRepository accountLockRedisRepository;
+    @Mock private AccountLockRedisRepository accountLockRedisRepository;
 
     private AccountLockCommandAdapter accountLockCommandAdapter;
 
@@ -54,9 +53,7 @@ class AccountLockCommandAdapterTest {
             Mono<Boolean> result = accountLockCommandAdapter.lock(userId, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
 
             then(accountLockRedisRepository).should().lock(userId, duration);
         }
@@ -75,9 +72,7 @@ class AccountLockCommandAdapterTest {
             Mono<Boolean> result = accountLockCommandAdapter.lock(userId, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
         }
 
         @Test
@@ -94,9 +89,7 @@ class AccountLockCommandAdapterTest {
             Mono<Boolean> result = accountLockCommandAdapter.lock(userId, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
         }
 
         @Test
@@ -113,9 +106,7 @@ class AccountLockCommandAdapterTest {
             Mono<Boolean> result = accountLockCommandAdapter.lock(userId, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -132,9 +123,7 @@ class AccountLockCommandAdapterTest {
             Mono<Boolean> result = accountLockCommandAdapter.lock(userId, duration);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 
@@ -148,16 +137,13 @@ class AccountLockCommandAdapterTest {
             // given
             String userId = "user-123";
 
-            given(accountLockRedisRepository.unlock(eq(userId)))
-                    .willReturn(Mono.just(true));
+            given(accountLockRedisRepository.unlock(eq(userId))).willReturn(Mono.just(true));
 
             // when
             Mono<Boolean> result = accountLockCommandAdapter.unlock(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
 
             then(accountLockRedisRepository).should().unlock(userId);
         }
@@ -168,16 +154,13 @@ class AccountLockCommandAdapterTest {
             // given
             String userId = "user-not-locked";
 
-            given(accountLockRedisRepository.unlock(eq(userId)))
-                    .willReturn(Mono.just(false));
+            given(accountLockRedisRepository.unlock(eq(userId))).willReturn(Mono.just(false));
 
             // when
             Mono<Boolean> result = accountLockCommandAdapter.unlock(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -193,9 +176,7 @@ class AccountLockCommandAdapterTest {
             Mono<Boolean> result = accountLockCommandAdapter.unlock(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 }

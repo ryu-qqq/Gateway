@@ -43,9 +43,7 @@ public final class PermissionDeniedException extends DomainException {
         this.userPermissions = Set.of();
     }
 
-    /**
-     * Constructor - 기본 예외 생성
-     */
+    /** Constructor - 기본 예외 생성 */
     public PermissionDeniedException() {
         super(AuthorizationErrorCode.PERMISSION_DENIED);
         this.requiredPermissions = Set.of();

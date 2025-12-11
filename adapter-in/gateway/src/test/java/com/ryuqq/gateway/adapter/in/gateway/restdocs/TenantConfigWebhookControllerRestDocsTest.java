@@ -44,8 +44,7 @@ class TenantConfigWebhookControllerRestDocsTest {
 
     private WebTestClient webTestClient;
 
-    @Mock
-    private SyncTenantConfigUseCase syncTenantConfigUseCase;
+    @Mock private SyncTenantConfigUseCase syncTenantConfigUseCase;
 
     @BeforeEach
     void setUp(RestDocumentationContextProvider restDocumentation) {

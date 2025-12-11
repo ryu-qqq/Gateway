@@ -1,18 +1,16 @@
 package com.ryuqq.gateway.application.architecture.factory;
 
-import com.ryuqq.gateway.application.architecture.ArchUnitPackageConstants;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
+import com.ryuqq.gateway.application.architecture.ArchUnitPackageConstants;
+import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-
-import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.lang.ArchRule;
-
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
  * ClockHolder 의존성 제어 ArchUnit 검증 테스트 (Zero-Tolerance)

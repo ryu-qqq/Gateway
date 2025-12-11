@@ -25,8 +25,7 @@ import reactor.test.StepVerifier;
 @DisplayName("AccountLockQueryAdapter 단위 테스트")
 class AccountLockQueryAdapterTest {
 
-    @Mock
-    private AccountLockRedisRepository accountLockRedisRepository;
+    @Mock private AccountLockRedisRepository accountLockRedisRepository;
 
     private AccountLockQueryAdapter accountLockQueryAdapter;
 
@@ -45,16 +44,13 @@ class AccountLockQueryAdapterTest {
             // given
             String userId = "user-123";
 
-            given(accountLockRedisRepository.isLocked(eq(userId)))
-                    .willReturn(Mono.just(true));
+            given(accountLockRedisRepository.isLocked(eq(userId))).willReturn(Mono.just(true));
 
             // when
             Mono<Boolean> result = accountLockQueryAdapter.isLocked(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
 
             then(accountLockRedisRepository).should().isLocked(userId);
         }
@@ -65,16 +61,13 @@ class AccountLockQueryAdapterTest {
             // given
             String userId = "user-456";
 
-            given(accountLockRedisRepository.isLocked(eq(userId)))
-                    .willReturn(Mono.just(false));
+            given(accountLockRedisRepository.isLocked(eq(userId))).willReturn(Mono.just(false));
 
             // when
             Mono<Boolean> result = accountLockQueryAdapter.isLocked(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -83,16 +76,13 @@ class AccountLockQueryAdapterTest {
             // given
             String userId = "non-existent-user";
 
-            given(accountLockRedisRepository.isLocked(eq(userId)))
-                    .willReturn(Mono.just(false));
+            given(accountLockRedisRepository.isLocked(eq(userId))).willReturn(Mono.just(false));
 
             // when
             Mono<Boolean> result = accountLockQueryAdapter.isLocked(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -108,9 +98,7 @@ class AccountLockQueryAdapterTest {
             Mono<Boolean> result = accountLockQueryAdapter.isLocked(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 
@@ -131,9 +119,7 @@ class AccountLockQueryAdapterTest {
             Mono<Long> result = accountLockQueryAdapter.getLockTtlSeconds(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(1800L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(1800L).verifyComplete();
 
             then(accountLockRedisRepository).should().getLockTtl(userId);
         }
@@ -151,9 +137,7 @@ class AccountLockQueryAdapterTest {
             Mono<Long> result = accountLockQueryAdapter.getLockTtlSeconds(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(-2L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(-2L).verifyComplete();
         }
 
         @Test
@@ -169,9 +153,7 @@ class AccountLockQueryAdapterTest {
             Mono<Long> result = accountLockQueryAdapter.getLockTtlSeconds(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(-1L)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(-1L).verifyComplete();
         }
 
         @Test
@@ -181,16 +163,13 @@ class AccountLockQueryAdapterTest {
             String userId = "user-long-lock";
             long longTtl = 604800L; // 7일
 
-            given(accountLockRedisRepository.getLockTtl(eq(userId)))
-                    .willReturn(Mono.just(longTtl));
+            given(accountLockRedisRepository.getLockTtl(eq(userId))).willReturn(Mono.just(longTtl));
 
             // when
             Mono<Long> result = accountLockQueryAdapter.getLockTtlSeconds(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(longTtl)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(longTtl).verifyComplete();
         }
 
         @Test
@@ -206,9 +185,7 @@ class AccountLockQueryAdapterTest {
             Mono<Long> result = accountLockQueryAdapter.getLockTtlSeconds(userId);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 }

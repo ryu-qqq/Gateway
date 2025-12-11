@@ -34,17 +34,16 @@ public abstract class RedisTestSupport {
     static GenericContainer<?> redisContainer;
 
     static {
-        redisContainer = new GenericContainer<>(DockerImageName.parse("redis:7.2-alpine"))
-                .withExposedPorts(REDIS_PORT)
-                .withCommand("redis-server", "--appendonly", "yes");
+        redisContainer =
+                new GenericContainer<>(DockerImageName.parse("redis:7.2-alpine"))
+                        .withExposedPorts(REDIS_PORT)
+                        .withCommand("redis-server", "--appendonly", "yes");
         redisContainer.start();
     }
 
-    @Autowired
-    protected ReactiveStringRedisTemplate reactiveStringRedisTemplate;
+    @Autowired protected ReactiveStringRedisTemplate reactiveStringRedisTemplate;
 
-    @Autowired
-    protected LettuceConnectionFactory connectionFactory;
+    @Autowired protected LettuceConnectionFactory connectionFactory;
 
     @DynamicPropertySource
     static void configureRedisProperties(DynamicPropertyRegistry registry) {

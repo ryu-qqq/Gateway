@@ -35,9 +35,7 @@ public final class RefreshTokenReusedException extends DomainException {
         super(AuthenticationErrorCode.REFRESH_TOKEN_REUSED, detail);
     }
 
-    /**
-     * Constructor - 기본 예외 생성
-     */
+    /** Constructor - 기본 예외 생성 */
     public RefreshTokenReusedException() {
         super(AuthenticationErrorCode.REFRESH_TOKEN_REUSED);
     }

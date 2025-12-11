@@ -29,8 +29,7 @@ import reactor.test.StepVerifier;
 @DisplayName("RefreshTokenBlacklistCommandAdapter 단위 테스트")
 class RefreshTokenBlacklistCommandAdapterTest {
 
-    @Mock
-    private RefreshTokenBlacklistRedisRepository refreshTokenBlacklistRedisRepository;
+    @Mock private RefreshTokenBlacklistRedisRepository refreshTokenBlacklistRedisRepository;
 
     private RefreshTokenBlacklistCommandAdapter refreshTokenBlacklistCommandAdapter;
 
@@ -53,18 +52,23 @@ class RefreshTokenBlacklistCommandAdapterTest {
             RefreshToken refreshToken = RefreshToken.of(tokenValue);
             long ttlSeconds = 604800L; // 7일
 
-            given(refreshTokenBlacklistRedisRepository.addToBlacklist(
-                    eq(tenantId), eq(tokenValue), eq(Duration.ofSeconds(ttlSeconds))))
+            given(
+                            refreshTokenBlacklistRedisRepository.addToBlacklist(
+                                    eq(tenantId),
+                                    eq(tokenValue),
+                                    eq(Duration.ofSeconds(ttlSeconds))))
                     .willReturn(Mono.just(true));
 
             // when
-            Mono<Void> result = refreshTokenBlacklistCommandAdapter.addToBlacklist(
-                    tenantId, refreshToken, ttlSeconds);
+            Mono<Void> result =
+                    refreshTokenBlacklistCommandAdapter.addToBlacklist(
+                            tenantId, refreshToken, ttlSeconds);
 
             // then
             StepVerifier.create(result).verifyComplete();
 
-            then(refreshTokenBlacklistRedisRepository).should()
+            then(refreshTokenBlacklistRedisRepository)
+                    .should()
                     .addToBlacklist(tenantId, tokenValue, Duration.ofSeconds(ttlSeconds));
         }
 
@@ -77,13 +81,15 @@ class RefreshTokenBlacklistCommandAdapterTest {
             RefreshToken refreshToken = RefreshToken.of(tokenValue);
             long ttlSeconds = 60L; // 1분
 
-            given(refreshTokenBlacklistRedisRepository.addToBlacklist(
-                    anyString(), anyString(), any(Duration.class)))
+            given(
+                            refreshTokenBlacklistRedisRepository.addToBlacklist(
+                                    anyString(), anyString(), any(Duration.class)))
                     .willReturn(Mono.just(true));
 
             // when
-            Mono<Void> result = refreshTokenBlacklistCommandAdapter.addToBlacklist(
-                    tenantId, refreshToken, ttlSeconds);
+            Mono<Void> result =
+                    refreshTokenBlacklistCommandAdapter.addToBlacklist(
+                            tenantId, refreshToken, ttlSeconds);
 
             // then
             StepVerifier.create(result).verifyComplete();
@@ -98,18 +104,18 @@ class RefreshTokenBlacklistCommandAdapterTest {
             RefreshToken refreshToken = RefreshToken.of(tokenValue);
             long ttlSeconds = 3600L;
 
-            given(refreshTokenBlacklistRedisRepository.addToBlacklist(
-                    anyString(), anyString(), any(Duration.class)))
+            given(
+                            refreshTokenBlacklistRedisRepository.addToBlacklist(
+                                    anyString(), anyString(), any(Duration.class)))
                     .willReturn(Mono.error(new RuntimeException("Redis connection failed")));
 
             // when
-            Mono<Void> result = refreshTokenBlacklistCommandAdapter.addToBlacklist(
-                    tenantId, refreshToken, ttlSeconds);
+            Mono<Void> result =
+                    refreshTokenBlacklistCommandAdapter.addToBlacklist(
+                            tenantId, refreshToken, ttlSeconds);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 }

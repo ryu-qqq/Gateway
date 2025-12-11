@@ -29,7 +29,8 @@ import java.util.Objects;
  * @author development-team
  * @since 1.0.0
  */
-public record SessionConfig(int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
+public record SessionConfig(
+        int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
 
     /** 기본 최대 동시 세션 수 */
     private static final int DEFAULT_MAX_ACTIVE_SESSIONS = 5;

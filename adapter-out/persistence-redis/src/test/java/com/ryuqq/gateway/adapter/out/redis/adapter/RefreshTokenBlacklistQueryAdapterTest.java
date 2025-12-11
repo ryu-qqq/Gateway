@@ -26,8 +26,7 @@ import reactor.test.StepVerifier;
 @DisplayName("RefreshTokenBlacklistQueryAdapter 단위 테스트")
 class RefreshTokenBlacklistQueryAdapterTest {
 
-    @Mock
-    private RefreshTokenBlacklistRedisRepository refreshTokenBlacklistRedisRepository;
+    @Mock private RefreshTokenBlacklistRedisRepository refreshTokenBlacklistRedisRepository;
 
     private RefreshTokenBlacklistQueryAdapter refreshTokenBlacklistQueryAdapter;
 
@@ -53,16 +52,13 @@ class RefreshTokenBlacklistQueryAdapterTest {
                     .willReturn(Mono.just(true));
 
             // when
-            Mono<Boolean> result = refreshTokenBlacklistQueryAdapter.isBlacklisted(
-                    tenantId, refreshToken);
+            Mono<Boolean> result =
+                    refreshTokenBlacklistQueryAdapter.isBlacklisted(tenantId, refreshToken);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(true)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(true).verifyComplete();
 
-            then(refreshTokenBlacklistRedisRepository).should()
-                    .isBlacklisted(tenantId, tokenValue);
+            then(refreshTokenBlacklistRedisRepository).should().isBlacklisted(tenantId, tokenValue);
         }
 
         @Test
@@ -77,13 +73,11 @@ class RefreshTokenBlacklistQueryAdapterTest {
                     .willReturn(Mono.just(false));
 
             // when
-            Mono<Boolean> result = refreshTokenBlacklistQueryAdapter.isBlacklisted(
-                    tenantId, refreshToken);
+            Mono<Boolean> result =
+                    refreshTokenBlacklistQueryAdapter.isBlacklisted(tenantId, refreshToken);
 
             // then
-            StepVerifier.create(result)
-                    .expectNext(false)
-                    .verifyComplete();
+            StepVerifier.create(result).expectNext(false).verifyComplete();
         }
 
         @Test
@@ -101,11 +95,15 @@ class RefreshTokenBlacklistQueryAdapterTest {
                     .willReturn(Mono.just(false));
 
             // when & then
-            StepVerifier.create(refreshTokenBlacklistQueryAdapter.isBlacklisted(tenantId1, refreshToken))
+            StepVerifier.create(
+                            refreshTokenBlacklistQueryAdapter.isBlacklisted(
+                                    tenantId1, refreshToken))
                     .expectNext(true)
                     .verifyComplete();
 
-            StepVerifier.create(refreshTokenBlacklistQueryAdapter.isBlacklisted(tenantId2, refreshToken))
+            StepVerifier.create(
+                            refreshTokenBlacklistQueryAdapter.isBlacklisted(
+                                    tenantId2, refreshToken))
                     .expectNext(false)
                     .verifyComplete();
         }
@@ -122,13 +120,11 @@ class RefreshTokenBlacklistQueryAdapterTest {
                     .willReturn(Mono.error(new RuntimeException("Redis connection failed")));
 
             // when
-            Mono<Boolean> result = refreshTokenBlacklistQueryAdapter.isBlacklisted(
-                    tenantId, refreshToken);
+            Mono<Boolean> result =
+                    refreshTokenBlacklistQueryAdapter.isBlacklisted(tenantId, refreshToken);
 
             // then
-            StepVerifier.create(result)
-                    .expectError(RuntimeException.class)
-                    .verify();
+            StepVerifier.create(result).expectError(RuntimeException.class).verify();
         }
     }
 }

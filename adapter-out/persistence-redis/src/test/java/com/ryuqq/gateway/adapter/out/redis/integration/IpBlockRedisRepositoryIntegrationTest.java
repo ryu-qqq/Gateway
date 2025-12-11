@@ -21,8 +21,7 @@ import reactor.test.StepVerifier;
 @DisplayName("IpBlockRedisRepository 통합 테스트")
 class IpBlockRedisRepositoryIntegrationTest extends RedisTestSupport {
 
-    @Autowired
-    private IpBlockRedisRepository ipBlockRedisRepository;
+    @Autowired private IpBlockRedisRepository ipBlockRedisRepository;
 
     @Nested
     @DisplayName("block 메서드")

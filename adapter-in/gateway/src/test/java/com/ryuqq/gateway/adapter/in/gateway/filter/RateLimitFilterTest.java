@@ -40,11 +40,9 @@ import reactor.test.StepVerifier;
 @DisplayName("RateLimitFilter 테스트")
 class RateLimitFilterTest {
 
-    @Mock
-    private CheckRateLimitUseCase checkRateLimitUseCase;
+    @Mock private CheckRateLimitUseCase checkRateLimitUseCase;
 
-    @Mock
-    private GatewayFilterChain filterChain;
+    @Mock private GatewayFilterChain filterChain;
 
     private RateLimitFilter rateLimitFilter;
 
@@ -78,25 +76,25 @@ class RateLimitFilterTest {
         @DisplayName("IP Rate Limit 허용 시 다음 필터로 진행")
         void shouldProceedWhenIpRateLimitAllowed() {
             // given
-            MockServerHttpRequest request = MockServerHttpRequest.get("/api/test")
-                    .header("X-Forwarded-For", "192.168.1.1")
-                    .build();
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             CheckRateLimitResponse ipResponse = CheckRateLimitResponse.allowed(5, 100);
             CheckRateLimitResponse endpointResponse = CheckRateLimitResponse.allowed(10, 1000);
 
-            when(checkRateLimitUseCase.execute(argThat(cmd ->
-                    cmd != null && cmd.limitType() == LimitType.IP)))
+            when(checkRateLimitUseCase.execute(
+                            argThat(cmd -> cmd != null && cmd.limitType() == LimitType.IP)))
                     .thenReturn(Mono.just(ipResponse));
-            when(checkRateLimitUseCase.execute(argThat(cmd ->
-                    cmd != null && cmd.limitType() == LimitType.ENDPOINT)))
+            when(checkRateLimitUseCase.execute(
+                            argThat(cmd -> cmd != null && cmd.limitType() == LimitType.ENDPOINT)))
                     .thenReturn(Mono.just(endpointResponse));
             when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
-            StepVerifier.create(rateLimitFilter.filter(exchange, filterChain))
-                    .verifyComplete();
+            StepVerifier.create(rateLimitFilter.filter(exchange, filterChain)).verifyComplete();
 
             verify(filterChain).filter(exchange);
         }
@@ -105,13 +103,14 @@ class RateLimitFilterTest {
         @DisplayName("IP Rate Limit 초과 시 429 반환")
         void shouldReturn429WhenIpRateLimitExceeded() {
             // given
-            MockServerHttpRequest request = MockServerHttpRequest.get("/api/test")
-                    .header("X-Forwarded-For", "192.168.1.1")
-                    .build();
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-            CheckRateLimitResponse deniedResponse = CheckRateLimitResponse.denied(
-                    100, 100, 60, RateLimitAction.REJECT);
+            CheckRateLimitResponse deniedResponse =
+                    CheckRateLimitResponse.denied(100, 100, 60, RateLimitAction.REJECT);
 
             when(checkRateLimitUseCase.execute(any(CheckRateLimitCommand.class)))
                     .thenReturn(Mono.just(deniedResponse));
@@ -122,9 +121,12 @@ class RateLimitFilterTest {
             // then
             StepVerifier.create(result).verifyComplete();
 
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo("100");
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Remaining")).isEqualTo("0");
+            assertThat(exchange.getResponse().getStatusCode())
+                    .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit"))
+                    .isEqualTo("100");
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Remaining"))
+                    .isEqualTo("0");
             assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("60");
             verify(filterChain, never()).filter(any());
         }
@@ -138,20 +140,21 @@ class RateLimitFilterTest {
         @DisplayName("Endpoint Rate Limit 초과 시 429 반환")
         void shouldReturn429WhenEndpointRateLimitExceeded() {
             // given
-            MockServerHttpRequest request = MockServerHttpRequest.get("/api/test")
-                    .header("X-Forwarded-For", "192.168.1.1")
-                    .build();
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             CheckRateLimitResponse ipResponse = CheckRateLimitResponse.allowed(5, 100);
-            CheckRateLimitResponse endpointDenied = CheckRateLimitResponse.denied(
-                    1000, 1000, 30, RateLimitAction.REJECT);
+            CheckRateLimitResponse endpointDenied =
+                    CheckRateLimitResponse.denied(1000, 1000, 30, RateLimitAction.REJECT);
 
-            when(checkRateLimitUseCase.execute(argThat(cmd ->
-                    cmd != null && cmd.limitType() == LimitType.IP)))
+            when(checkRateLimitUseCase.execute(
+                            argThat(cmd -> cmd != null && cmd.limitType() == LimitType.IP)))
                     .thenReturn(Mono.just(ipResponse));
-            when(checkRateLimitUseCase.execute(argThat(cmd ->
-                    cmd != null && cmd.limitType() == LimitType.ENDPOINT)))
+            when(checkRateLimitUseCase.execute(
+                            argThat(cmd -> cmd != null && cmd.limitType() == LimitType.ENDPOINT)))
                     .thenReturn(Mono.just(endpointDenied));
 
             // when
@@ -160,7 +163,8 @@ class RateLimitFilterTest {
             // then
             StepVerifier.create(result).verifyComplete();
 
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(exchange.getResponse().getStatusCode())
+                    .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
             assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("30");
             verify(filterChain, never()).filter(any());
         }
@@ -174,29 +178,31 @@ class RateLimitFilterTest {
         @DisplayName("Rate Limit 허용 시 헤더 추가")
         void shouldAddRateLimitHeadersWhenAllowed() {
             // given
-            MockServerHttpRequest request = MockServerHttpRequest.get("/api/test")
-                    .header("X-Forwarded-For", "192.168.1.1")
-                    .build();
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             CheckRateLimitResponse ipResponse = CheckRateLimitResponse.allowed(5, 100);
             CheckRateLimitResponse endpointResponse = CheckRateLimitResponse.allowed(10, 1000);
 
-            when(checkRateLimitUseCase.execute(argThat(cmd ->
-                    cmd != null && cmd.limitType() == LimitType.IP)))
+            when(checkRateLimitUseCase.execute(
+                            argThat(cmd -> cmd != null && cmd.limitType() == LimitType.IP)))
                     .thenReturn(Mono.just(ipResponse));
-            when(checkRateLimitUseCase.execute(argThat(cmd ->
-                    cmd != null && cmd.limitType() == LimitType.ENDPOINT)))
+            when(checkRateLimitUseCase.execute(
+                            argThat(cmd -> cmd != null && cmd.limitType() == LimitType.ENDPOINT)))
                     .thenReturn(Mono.just(endpointResponse));
             when(filterChain.filter(exchange)).thenReturn(Mono.empty());
 
             // when
-            StepVerifier.create(rateLimitFilter.filter(exchange, filterChain))
-                    .verifyComplete();
+            StepVerifier.create(rateLimitFilter.filter(exchange, filterChain)).verifyComplete();
 
             // then
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo("1000");
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Remaining")).isEqualTo("990");
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit"))
+                    .isEqualTo("1000");
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Remaining"))
+                    .isEqualTo("990");
         }
     }
 
@@ -208,9 +214,10 @@ class RateLimitFilterTest {
         @DisplayName("IpBlockedException 발생 시 403 반환")
         void shouldReturn403WhenIpBlocked() {
             // given
-            MockServerHttpRequest request = MockServerHttpRequest.get("/api/test")
-                    .header("X-Forwarded-For", "192.168.1.1")
-                    .build();
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             when(checkRateLimitUseCase.execute(any(CheckRateLimitCommand.class)))
@@ -223,7 +230,8 @@ class RateLimitFilterTest {
             StepVerifier.create(result).verifyComplete();
 
             assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-            assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("3600");
+            assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After"))
+                    .isEqualTo("3600");
             verify(filterChain, never()).filter(any());
         }
 
@@ -231,9 +239,10 @@ class RateLimitFilterTest {
         @DisplayName("RateLimitExceededException 발생 시 429 반환")
         void shouldReturn429WhenRateLimitExceeded() {
             // given
-            MockServerHttpRequest request = MockServerHttpRequest.get("/api/test")
-                    .header("X-Forwarded-For", "192.168.1.1")
-                    .build();
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             when(checkRateLimitUseCase.execute(any(CheckRateLimitCommand.class)))
@@ -245,9 +254,12 @@ class RateLimitFilterTest {
             // then
             StepVerifier.create(result).verifyComplete();
 
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit")).isEqualTo("100");
-            assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After")).isEqualTo("120");
+            assertThat(exchange.getResponse().getStatusCode())
+                    .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-RateLimit-Limit"))
+                    .isEqualTo("100");
+            assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After"))
+                    .isEqualTo("120");
             verify(filterChain, never()).filter(any());
         }
     }

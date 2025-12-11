@@ -40,9 +40,7 @@ public final class TokenRefreshFailedException extends DomainException {
         initCause(cause);
     }
 
-    /**
-     * Constructor - 기본 예외 생성
-     */
+    /** Constructor - 기본 예외 생성 */
     public TokenRefreshFailedException() {
         super(AuthenticationErrorCode.TOKEN_REFRESH_FAILED);
     }

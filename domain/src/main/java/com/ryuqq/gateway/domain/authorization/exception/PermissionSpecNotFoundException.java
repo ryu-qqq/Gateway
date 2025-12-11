@@ -24,16 +24,12 @@ public final class PermissionSpecNotFoundException extends DomainException {
      * @param method HTTP 메서드
      */
     public PermissionSpecNotFoundException(String path, String method) {
-        super(
-                AuthorizationErrorCode.PERMISSION_SPEC_NOT_FOUND,
-                buildDetail(path, method));
+        super(AuthorizationErrorCode.PERMISSION_SPEC_NOT_FOUND, buildDetail(path, method));
         this.path = path;
         this.method = method;
     }
 
-    /**
-     * Constructor - 기본 예외 생성
-     */
+    /** Constructor - 기본 예외 생성 */
     public PermissionSpecNotFoundException() {
         super(AuthorizationErrorCode.PERMISSION_SPEC_NOT_FOUND);
         this.path = null;

@@ -191,7 +191,8 @@ class TokenRefreshFilterTest {
             when(mockTokenPair.accessTokenValue()).thenReturn("new-access-token");
             when(mockTokenPair.refreshTokenValue()).thenReturn("new-refresh-token");
 
-            RefreshAccessTokenResponse refreshResponse = new RefreshAccessTokenResponse(mockTokenPair);
+            RefreshAccessTokenResponse refreshResponse =
+                    new RefreshAccessTokenResponse(mockTokenPair);
 
             when(authHubClient.extractExpiredTokenInfo("access-token-123"))
                     .thenReturn(Mono.just(expiredToken));
@@ -304,7 +305,8 @@ class TokenRefreshFilterTest {
                     .thenReturn(
                             Mono.error(
                                     new TokenRefreshFailedException(
-                                            "tenant-1/user:123", new RuntimeException("DB error"))));
+                                            "tenant-1/user:123",
+                                            new RuntimeException("DB error"))));
 
             // when & then
             StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
@@ -345,8 +347,8 @@ class TokenRefreshFilterTest {
             ObjectMapper mockObjectMapper = org.mockito.Mockito.mock(ObjectMapper.class);
             when(mockObjectMapper.writeValueAsBytes(any()))
                     .thenThrow(
-                            new com.fasterxml.jackson.core.JsonProcessingException("Mocked error") {
-                            });
+                            new com.fasterxml.jackson.core.JsonProcessingException(
+                                    "Mocked error") {});
             TokenRefreshFilter filterWithMockedMapper =
                     new TokenRefreshFilter(
                             refreshAccessTokenUseCase, authHubClient, mockObjectMapper);

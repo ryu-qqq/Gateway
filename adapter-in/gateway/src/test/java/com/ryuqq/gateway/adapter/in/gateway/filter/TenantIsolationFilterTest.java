@@ -45,11 +45,9 @@ import reactor.test.StepVerifier;
 @DisplayName("TenantIsolationFilter 테스트")
 class TenantIsolationFilterTest {
 
-    @Mock
-    private GetTenantConfigUseCase getTenantConfigUseCase;
+    @Mock private GetTenantConfigUseCase getTenantConfigUseCase;
 
-    @Mock
-    private GatewayFilterChain filterChain;
+    @Mock private GatewayFilterChain filterChain;
 
     private TenantIsolationFilter tenantIsolationFilter;
 
@@ -63,13 +61,15 @@ class TenantIsolationFilterTest {
     /** 테스트용 TenantConfig 생성 */
     private TenantConfig createTestTenantConfig(String tenantIdStr, boolean mfaRequired) {
         TenantId tenantId = TenantId.from(tenantIdStr);
-        SessionConfig sessionConfig = SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(7));
+        SessionConfig sessionConfig =
+                SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(7));
         TenantRateLimitConfig rateLimitConfig = TenantRateLimitConfig.of(10, 5);
-        Set<SocialProvider> allowedSocialLogins = Set.of(SocialProvider.KAKAO, SocialProvider.GOOGLE);
-        Map<String, Set<String>> roleHierarchy = Map.of(
-                "ADMIN", Set.of("READ", "WRITE", "DELETE"),
-                "USER", Set.of("READ")
-        );
+        Set<SocialProvider> allowedSocialLogins =
+                Set.of(SocialProvider.KAKAO, SocialProvider.GOOGLE);
+        Map<String, Set<String>> roleHierarchy =
+                Map.of(
+                        "ADMIN", Set.of("READ", "WRITE", "DELETE"),
+                        "USER", Set.of("READ"));
 
         return TenantConfig.of(
                 tenantId,
@@ -77,8 +77,7 @@ class TenantIsolationFilterTest {
                 allowedSocialLogins,
                 roleHierarchy,
                 sessionConfig,
-                rateLimitConfig
-        );
+                rateLimitConfig);
     }
 
     @Nested
@@ -155,8 +154,11 @@ class TenantIsolationFilterTest {
             TenantConfig tenantConfig = createTestTenantConfig("tenant-123", true);
             GetTenantConfigResponse response = GetTenantConfigResponse.from(tenantConfig);
 
-            when(getTenantConfigUseCase.execute(argThat(query ->
-                    query != null && "tenant-123".equals(query.tenantId()))))
+            when(getTenantConfigUseCase.execute(
+                            argThat(
+                                    query ->
+                                            query != null
+                                                    && "tenant-123".equals(query.tenantId()))))
                     .thenReturn(Mono.just(response));
             when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
 
@@ -165,7 +167,8 @@ class TenantIsolationFilterTest {
                     .verifyComplete();
 
             // then
-            assertThat((TenantConfig) exchange.getAttribute("tenantContext")).isEqualTo(tenantConfig);
+            assertThat((TenantConfig) exchange.getAttribute("tenantContext"))
+                    .isEqualTo(tenantConfig);
             assertThat((Boolean) exchange.getAttribute("mfaRequired")).isTrue();
         }
 
@@ -221,7 +224,8 @@ class TenantIsolationFilterTest {
                     .verifyComplete();
 
             // then - Response Header에 X-Tenant-Id 추가됨
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-Tenant-Id")).isEqualTo("tenant-123");
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-Tenant-Id"))
+                    .isEqualTo("tenant-123");
         }
 
         @Test
@@ -247,7 +251,8 @@ class TenantIsolationFilterTest {
                     .verifyComplete();
 
             // then - Response Header에 X-Organization-Id 추가됨
-            assertThat(exchange.getResponse().getHeaders().getFirst("X-Organization-Id")).isEqualTo("org-789");
+            assertThat(exchange.getResponse().getHeaders().getFirst("X-Organization-Id"))
+                    .isEqualTo("org-789");
         }
 
         @Test
@@ -299,7 +304,8 @@ class TenantIsolationFilterTest {
             // then
             StepVerifier.create(result).verifyComplete();
 
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+            assertThat(exchange.getResponse().getStatusCode())
+                    .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
             verify(filterChain, never()).filter(any());
         }
     }
@@ -326,12 +332,14 @@ class TenantIsolationFilterTest {
 
             // Reactor Context 검증을 위해 filterChain에서 context 확인
             when(filterChain.filter(any(ServerWebExchange.class)))
-                    .thenReturn(Mono.deferContextual(ctx -> {
-                        assertThat(ctx.hasKey("tenantId")).isTrue();
-                        String tenantIdFromContext = ctx.get("tenantId");
-                        assertThat(tenantIdFromContext).isEqualTo("tenant-123");
-                        return Mono.empty();
-                    }));
+                    .thenReturn(
+                            Mono.deferContextual(
+                                    ctx -> {
+                                        assertThat(ctx.hasKey("tenantId")).isTrue();
+                                        String tenantIdFromContext = ctx.get("tenantId");
+                                        assertThat(tenantIdFromContext).isEqualTo("tenant-123");
+                                        return Mono.empty();
+                                    }));
 
             // when & then
             StepVerifier.create(tenantIsolationFilter.filter(exchange, filterChain))

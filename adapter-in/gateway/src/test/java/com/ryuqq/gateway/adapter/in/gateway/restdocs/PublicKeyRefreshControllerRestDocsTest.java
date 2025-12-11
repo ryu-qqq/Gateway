@@ -37,8 +37,7 @@ class PublicKeyRefreshControllerRestDocsTest {
 
     private WebTestClient webTestClient;
 
-    @Mock
-    private RefreshPublicKeysUseCase refreshPublicKeysUseCase;
+    @Mock private RefreshPublicKeysUseCase refreshPublicKeysUseCase;
 
     @BeforeEach
     void setUp(RestDocumentationContextProvider restDocumentation) {

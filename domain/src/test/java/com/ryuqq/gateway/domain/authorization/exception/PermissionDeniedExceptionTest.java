@@ -2,7 +2,6 @@ package com.ryuqq.gateway.domain.authorization.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

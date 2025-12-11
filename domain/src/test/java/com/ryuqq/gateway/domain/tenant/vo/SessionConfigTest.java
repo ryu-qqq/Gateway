@@ -24,7 +24,8 @@ class SessionConfigTest {
             Duration refreshTokenTTL = Duration.ofDays(7);
 
             // when
-            SessionConfig config = SessionConfig.of(maxActiveSessions, accessTokenTTL, refreshTokenTTL);
+            SessionConfig config =
+                    SessionConfig.of(maxActiveSessions, accessTokenTTL, refreshTokenTTL);
 
             // then
             assertThat(config).isNotNull();
@@ -37,7 +38,8 @@ class SessionConfigTest {
         @DisplayName("maxActiveSessions가 1인 경우 성공")
         void shouldCreateWithMinimalMaxActiveSessions() {
             // when
-            SessionConfig config = SessionConfig.of(1, Duration.ofMinutes(1), Duration.ofMinutes(1));
+            SessionConfig config =
+                    SessionConfig.of(1, Duration.ofMinutes(1), Duration.ofMinutes(1));
 
             // then
             assertThat(config.maxActiveSessions()).isEqualTo(1);
@@ -80,7 +82,8 @@ class SessionConfigTest {
         @Test
         @DisplayName("accessTokenTTL이 음수면 예외 발생")
         void shouldThrowExceptionWhenAccessTokenTTLIsNegative() {
-            assertThatThrownBy(() -> SessionConfig.of(5, Duration.ofMinutes(-15), Duration.ofDays(7)))
+            assertThatThrownBy(
+                            () -> SessionConfig.of(5, Duration.ofMinutes(-15), Duration.ofDays(7)))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("accessTokenTTL must be positive");
         }
@@ -104,7 +107,8 @@ class SessionConfigTest {
         @Test
         @DisplayName("refreshTokenTTL이 음수면 예외 발생")
         void shouldThrowExceptionWhenRefreshTokenTTLIsNegative() {
-            assertThatThrownBy(() -> SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(-7)))
+            assertThatThrownBy(
+                            () -> SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(-7)))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("refreshTokenTTL must be positive");
         }
@@ -141,7 +145,8 @@ class SessionConfigTest {
 
             // when
             SessionConfig config =
-                    SessionConfig.ofSeconds(maxActiveSessions, accessTokenTTLSeconds, refreshTokenTTLSeconds);
+                    SessionConfig.ofSeconds(
+                            maxActiveSessions, accessTokenTTLSeconds, refreshTokenTTLSeconds);
 
             // then
             assertThat(config.maxActiveSessions()).isEqualTo(10);
@@ -250,7 +255,8 @@ class SessionConfigTest {
         void shouldNotBeEqualWhenDifferentMaxActiveSessions() {
             // given
             SessionConfig config1 = SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(7));
-            SessionConfig config2 = SessionConfig.of(10, Duration.ofMinutes(15), Duration.ofDays(7));
+            SessionConfig config2 =
+                    SessionConfig.of(10, Duration.ofMinutes(15), Duration.ofDays(7));
 
             // when & then
             assertThat(config1).isNotEqualTo(config2);
@@ -272,7 +278,8 @@ class SessionConfigTest {
         void shouldNotBeEqualWhenDifferentRefreshTokenTTL() {
             // given
             SessionConfig config1 = SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(7));
-            SessionConfig config2 = SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(14));
+            SessionConfig config2 =
+                    SessionConfig.of(5, Duration.ofMinutes(15), Duration.ofDays(14));
 
             // when & then
             assertThat(config1).isNotEqualTo(config2);
@@ -307,7 +314,8 @@ class SessionConfigTest {
         @Test
         @DisplayName("record 클래스는 final임")
         void shouldBeFinalClass() {
-            assertThat(java.lang.reflect.Modifier.isFinal(SessionConfig.class.getModifiers())).isTrue();
+            assertThat(java.lang.reflect.Modifier.isFinal(SessionConfig.class.getModifiers()))
+                    .isTrue();
         }
     }
 }

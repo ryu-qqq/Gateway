@@ -1,16 +1,15 @@
 package com.ryuqq.gateway.domain.architecture;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
+import static com.ryuqq.gateway.domain.architecture.ArchUnitPackageConstants.*;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.lang.ArchRule;
-
-import static com.ryuqq.gateway.domain.architecture.ArchUnitPackageConstants.*;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 
 /**
  * Domain Purity ArchUnit 검증 테스트 (Zero-Tolerance)

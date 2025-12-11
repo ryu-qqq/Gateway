@@ -1,12 +1,10 @@
 package com.ryuqq.gateway.application.tenant.service.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.ryuqq.gateway.application.tenant.dto.command.SyncTenantConfigCommand;
-import com.ryuqq.gateway.application.tenant.dto.response.SyncTenantConfigResponse;
 import com.ryuqq.gateway.application.tenant.port.out.command.TenantConfigCommandPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

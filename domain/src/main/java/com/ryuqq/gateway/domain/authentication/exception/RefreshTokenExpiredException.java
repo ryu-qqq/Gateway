@@ -28,9 +28,7 @@ public final class RefreshTokenExpiredException extends DomainException {
         super(AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED, detail);
     }
 
-    /**
-     * Constructor - 기본 예외 생성
-     */
+    /** Constructor - 기본 예외 생성 */
     public RefreshTokenExpiredException() {
         super(AuthenticationErrorCode.REFRESH_TOKEN_EXPIRED);
     }

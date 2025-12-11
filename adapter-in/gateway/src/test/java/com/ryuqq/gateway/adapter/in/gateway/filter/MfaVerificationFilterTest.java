@@ -197,8 +197,8 @@ class MfaVerificationFilterTest {
             ObjectMapper mockObjectMapper = org.mockito.Mockito.mock(ObjectMapper.class);
             when(mockObjectMapper.writeValueAsBytes(org.mockito.ArgumentMatchers.any()))
                     .thenThrow(
-                            new com.fasterxml.jackson.core.JsonProcessingException("Mocked error") {
-                            });
+                            new com.fasterxml.jackson.core.JsonProcessingException(
+                                    "Mocked error") {});
             MfaVerificationFilter filterWithMockedMapper =
                     new MfaVerificationFilter(mockObjectMapper);
 

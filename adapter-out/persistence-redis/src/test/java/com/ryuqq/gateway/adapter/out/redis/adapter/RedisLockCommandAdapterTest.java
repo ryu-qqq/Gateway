@@ -46,8 +46,7 @@ class RedisLockCommandAdapterTest {
             String tenantId = "tenant-1";
             Long userId = 123L;
 
-            given(lock.tryLock(eq(0L), eq(10L), eq(TimeUnit.SECONDS)))
-                    .willReturn(Mono.just(true));
+            given(lock.tryLock(eq(0L), eq(10L), eq(TimeUnit.SECONDS))).willReturn(Mono.just(true));
 
             // when & then
             StepVerifier.create(adapter.tryLock(tenantId, userId))
@@ -64,8 +63,7 @@ class RedisLockCommandAdapterTest {
             String tenantId = "tenant-2";
             Long userId = 456L;
 
-            given(lock.tryLock(eq(0L), eq(10L), eq(TimeUnit.SECONDS)))
-                    .willReturn(Mono.just(false));
+            given(lock.tryLock(eq(0L), eq(10L), eq(TimeUnit.SECONDS))).willReturn(Mono.just(false));
 
             // when & then
             StepVerifier.create(adapter.tryLock(tenantId, userId))
@@ -96,8 +94,7 @@ class RedisLockCommandAdapterTest {
             String tenantId = "tenant-999";
             Long userId = 12345L;
 
-            given(lock.tryLock(eq(0L), eq(10L), eq(TimeUnit.SECONDS)))
-                    .willReturn(Mono.just(true));
+            given(lock.tryLock(eq(0L), eq(10L), eq(TimeUnit.SECONDS))).willReturn(Mono.just(true));
 
             // when & then
             StepVerifier.create(adapter.tryLock(tenantId, userId))
@@ -122,8 +119,7 @@ class RedisLockCommandAdapterTest {
             given(lock.forceUnlock()).willReturn(Mono.just(true));
 
             // when & then
-            StepVerifier.create(adapter.unlock(tenantId, userId))
-                    .verifyComplete();
+            StepVerifier.create(adapter.unlock(tenantId, userId)).verifyComplete();
 
             verify(redissonReactiveClient).getLock("tenant:tenant-1:refresh:lock:123");
             verify(lock).forceUnlock();
@@ -140,8 +136,7 @@ class RedisLockCommandAdapterTest {
                     .willReturn(Mono.error(new RuntimeException("Redis connection failed")));
 
             // when & then
-            StepVerifier.create(adapter.unlock(tenantId, userId))
-                    .verifyComplete();
+            StepVerifier.create(adapter.unlock(tenantId, userId)).verifyComplete();
         }
 
         @Test
@@ -154,8 +149,7 @@ class RedisLockCommandAdapterTest {
             given(lock.forceUnlock()).willReturn(Mono.just(true));
 
             // when & then
-            StepVerifier.create(adapter.unlock(tenantId, userId))
-                    .verifyComplete();
+            StepVerifier.create(adapter.unlock(tenantId, userId)).verifyComplete();
 
             verify(redissonReactiveClient).getLock("tenant:tenant-888:refresh:lock:99999");
         }

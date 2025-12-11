@@ -29,9 +29,7 @@ public final class RefreshTokenInvalidException extends DomainException {
         super(AuthenticationErrorCode.REFRESH_TOKEN_INVALID, detail);
     }
 
-    /**
-     * Constructor - 기본 예외 생성
-     */
+    /** Constructor - 기본 예외 생성 */
     public RefreshTokenInvalidException() {
         super(AuthenticationErrorCode.REFRESH_TOKEN_INVALID);
     }

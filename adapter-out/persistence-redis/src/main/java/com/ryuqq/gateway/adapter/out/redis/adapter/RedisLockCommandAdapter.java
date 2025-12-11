@@ -72,9 +72,7 @@ public class RedisLockCommandAdapter implements RedisLockCommandPort {
         String lockKey = buildKey(tenantId, userId);
         RLockReactive lock = redissonReactiveClient.getLock(lockKey);
 
-        return lock.forceUnlock()
-                .then()
-                .onErrorResume(e -> Mono.empty());
+        return lock.forceUnlock().then().onErrorResume(e -> Mono.empty());
     }
 
     /**
