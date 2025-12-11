@@ -47,8 +47,8 @@ class TokenPairTest {
 
             // then
             assertThat(tokenPair).isNotNull();
-            assertThat(tokenPair.getAccessToken()).isEqualTo(accessToken);
-            assertThat(tokenPair.getRefreshToken()).isEqualTo(refreshToken);
+            assertThat(tokenPair.accessToken()).isEqualTo(accessToken);
+            assertThat(tokenPair.refreshToken()).isEqualTo(refreshToken);
         }
 
         @Test
@@ -62,8 +62,8 @@ class TokenPairTest {
             TokenPair tokenPair = TokenPair.of(accessTokenValue, refreshTokenValue);
 
             // then
-            assertThat(tokenPair.getAccessToken().getValue()).isEqualTo(accessTokenValue);
-            assertThat(tokenPair.getRefreshToken().getValue()).isEqualTo(refreshTokenValue);
+            assertThat(tokenPair.accessToken().value()).isEqualTo(accessTokenValue);
+            assertThat(tokenPair.refreshToken().value()).isEqualTo(refreshTokenValue);
         }
     }
 
@@ -118,7 +118,7 @@ class TokenPairTest {
             TokenPair tokenPair = TokenPair.of(accessToken, refreshToken);
 
             // when
-            AccessToken result = tokenPair.getAccessToken();
+            AccessToken result = tokenPair.accessToken();
 
             // then
             assertThat(result).isSameAs(accessToken);
@@ -133,7 +133,7 @@ class TokenPairTest {
             TokenPair tokenPair = TokenPair.of(accessToken, refreshToken);
 
             // when
-            RefreshToken result = tokenPair.getRefreshToken();
+            RefreshToken result = tokenPair.refreshToken();
 
             // then
             assertThat(result).isSameAs(refreshToken);

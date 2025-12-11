@@ -1,6 +1,6 @@
 # Test Fixtures ArchUnit — **의존성 규칙 자동 검증**
 
-> **목적**: Test Fixtures 모듈의 의존성 규칙을 ArchUnit으로 자동 검증
+> **목적**: Gradle testFixtures의 의존성 규칙을 ArchUnit으로 자동 검증
 
 ---
 
@@ -8,9 +8,9 @@
 
 ### 핵심 원칙
 
-1. **domain-test-fixtures**: `domain`만 의존
-2. **application-test-fixtures**: `application` + `domain-test-fixtures` 의존
-3. **adapter-test-fixtures**: 해당 `adapter` + `application-test-fixtures` 의존
+1. **domain testFixtures**: `domain`만 의존
+2. **application testFixtures**: `application` + `domain testFixtures` 의존
+3. **adapter testFixtures**: 해당 `adapter` + 상위 레이어 testFixtures 의존
 4. **역방향 의존 금지**: 하위 레이어가 상위 레이어 Fixture 의존 불가
 
 ---
@@ -37,11 +37,11 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.*;
 /**
  * Test Fixtures 의존성 규칙 ArchUnit 검증 (Zero-Tolerance)
  *
- * <p>모든 Test Fixtures 모듈은 정확히 이 규칙을 따라야 합니다:</p>
+ * <p>모든 Test Fixtures는 정확히 이 규칙을 따라야 합니다:</p>
  * <ul>
- *   <li>domain-test-fixtures: domain만 의존</li>
- *   <li>application-test-fixtures: application + domain-test-fixtures 의존</li>
- *   <li>adapter-test-fixtures: 해당 adapter + application-test-fixtures 의존</li>
+ *   <li>domain testFixtures: domain만 의존</li>
+ *   <li>application testFixtures: application + domain testFixtures 의존</li>
+ *   <li>adapter testFixtures: 해당 adapter + 상위 레이어 testFixtures 의존</li>
  *   <li>역방향 의존 금지: 하위 → 상위 레이어 Fixture 의존 불가</li>
  * </ul>
  *
@@ -62,10 +62,10 @@ class TestFixturesArchTest {
     }
 
     /**
-     * 규칙 1: domain-test-fixtures는 domain만 의존
+     * 규칙 1: domain testFixtures는 domain만 의존
      */
     @Test
-    @DisplayName("[필수] domain-test-fixtures는 domain만 의존해야 한다")
+    @DisplayName("[필수] domain testFixtures는 domain만 의존해야 한다")
     void domainTestFixtures_ShouldOnlyDependOnDomain() {
         ArchRule rule = classes()
             .that().resideInAPackage("..fixture.domain..")
@@ -77,16 +77,16 @@ class TestFixturesArchTest {
                 "org.assertj..",
                 "org.mockito.."
             )
-            .because("domain-test-fixtures는 domain만 의존해야 합니다");
+            .because("domain testFixtures는 domain만 의존해야 합니다");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 2: application-test-fixtures는 application + domain-test-fixtures 의존
+     * 규칙 2: application testFixtures는 application + domain testFixtures 의존
      */
     @Test
-    @DisplayName("[필수] application-test-fixtures는 application과 domain-test-fixtures만 의존해야 한다")
+    @DisplayName("[필수] application testFixtures는 application과 domain testFixtures만 의존해야 한다")
     void applicationTestFixtures_ShouldOnlyDependOnApplicationAndDomainFixtures() {
         ArchRule rule = classes()
             .that().resideInAPackage("..fixture.application..")
@@ -100,67 +100,67 @@ class TestFixturesArchTest {
                 "org.assertj..",
                 "org.mockito.."
             )
-            .because("application-test-fixtures는 application과 domain-test-fixtures만 의존해야 합니다");
+            .because("application testFixtures는 application과 domain testFixtures만 의존해야 합니다");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 3: domain-test-fixtures는 application-test-fixtures 의존 금지
+     * 규칙 3: domain testFixtures는 application testFixtures 의존 금지
      */
     @Test
-    @DisplayName("[금지] domain-test-fixtures는 application-test-fixtures를 의존할 수 없다")
+    @DisplayName("[금지] domain testFixtures는 application testFixtures를 의존할 수 없다")
     void domainTestFixtures_MustNotDependOnApplicationTestFixtures() {
         ArchRule rule = noClasses()
             .that().resideInAPackage("..fixture.domain..")
             .should().dependOnClassesThat()
             .resideInAPackage("..fixture.application..")
-            .because("domain-test-fixtures는 application-test-fixtures를 의존할 수 없습니다 (역방향 의존 금지)");
+            .because("domain testFixtures는 application testFixtures를 의존할 수 없습니다 (역방향 의존 금지)");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 4: application-test-fixtures는 adapter-test-fixtures 의존 금지
+     * 규칙 4: application testFixtures는 adapter testFixtures 의존 금지
      */
     @Test
-    @DisplayName("[금지] application-test-fixtures는 adapter-test-fixtures를 의존할 수 없다")
+    @DisplayName("[금지] application testFixtures는 adapter testFixtures를 의존할 수 없다")
     void applicationTestFixtures_MustNotDependOnAdapterTestFixtures() {
         ArchRule rule = noClasses()
             .that().resideInAPackage("..fixture.application..")
             .should().dependOnClassesThat()
             .resideInAPackage("..fixture.adapter..")
-            .because("application-test-fixtures는 adapter-test-fixtures를 의존할 수 없습니다 (역방향 의존 금지)");
+            .because("application testFixtures는 adapter testFixtures를 의존할 수 없습니다 (역방향 의존 금지)");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 5: adapter-in-test-fixtures는 adapter-out-test-fixtures 의존 금지
+     * 규칙 5: adapter-in testFixtures는 adapter-out testFixtures 의존 금지
      */
     @Test
-    @DisplayName("[금지] adapter-in-test-fixtures는 adapter-out-test-fixtures를 의존할 수 없다")
+    @DisplayName("[금지] adapter-in testFixtures는 adapter-out testFixtures를 의존할 수 없다")
     void adapterInTestFixtures_MustNotDependOnAdapterOutTestFixtures() {
         ArchRule rule = noClasses()
             .that().resideInAPackage("..fixture.adapter.in..")
             .should().dependOnClassesThat()
             .resideInAPackage("..fixture.adapter.out..")
-            .because("adapter-in-test-fixtures는 adapter-out-test-fixtures를 의존할 수 없습니다");
+            .because("adapter-in testFixtures는 adapter-out testFixtures를 의존할 수 없습니다");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 6: adapter-out-test-fixtures는 adapter-in-test-fixtures 의존 금지
+     * 규칙 6: adapter-out testFixtures는 adapter-in testFixtures 의존 금지
      */
     @Test
-    @DisplayName("[금지] adapter-out-test-fixtures는 adapter-in-test-fixtures를 의존할 수 없다")
+    @DisplayName("[금지] adapter-out testFixtures는 adapter-in testFixtures를 의존할 수 없다")
     void adapterOutTestFixtures_MustNotDependOnAdapterInTestFixtures() {
         ArchRule rule = noClasses()
             .that().resideInAPackage("..fixture.adapter.out..")
             .should().dependOnClassesThat()
             .resideInAPackage("..fixture.adapter.in..")
-            .because("adapter-out-test-fixtures는 adapter-in-test-fixtures를 의존할 수 없습니다");
+            .because("adapter-out testFixtures는 adapter-in testFixtures를 의존할 수 없습니다");
 
         rule.check(classes);
     }
@@ -181,52 +181,7 @@ class TestFixturesArchTest {
     }
 
     /**
-     * 규칙 8: Fixture 메서드는 static이어야 함
-     */
-    @Test
-    @DisplayName("[필수] Fixture 메서드는 static이어야 한다")
-    void fixtureMethods_ShouldBeStatic() {
-        ArchRule rule = methods()
-            .that().areDeclaredInClassesThat().resideInAPackage("..fixture..")
-            .and().arePublic()
-            .should().beStatic()
-            .because("Fixture 메서드는 인스턴스 생성 없이 사용하기 위해 static이어야 합니다");
-
-        rule.check(classes);
-    }
-
-    /**
-     * 규칙 9: Fixture 클래스는 상태(필드)를 가지지 않아야 함
-     */
-    @Test
-    @DisplayName("[금지] Fixture 클래스는 인스턴스 필드를 가질 수 없다")
-    void fixtureClasses_MustNotHaveInstanceFields() {
-        ArchRule rule = fields()
-            .that().areDeclaredInClassesThat().resideInAPackage("..fixture..")
-            .and().areNotStatic()
-            .should().notBeDeclared()
-            .because("Fixture 클래스는 상태를 가질 수 없습니다 (Stateless Factory Pattern)");
-
-        rule.check(classes);
-    }
-
-    /**
-     * 규칙 10: Fixture 클래스는 생성자를 가지지 않아야 함
-     */
-    @Test
-    @DisplayName("[금지] Fixture 클래스는 public 생성자를 가질 수 없다")
-    void fixtureClasses_MustNotHavePublicConstructor() {
-        ArchRule rule = noConstructors()
-            .that().areDeclaredInClassesThat().resideInAPackage("..fixture..")
-            .and().arePublic()
-            .should().beDeclared()
-            .because("Fixture 클래스는 인스턴스 생성이 불필요합니다 (모든 메서드 static)");
-
-        rule.check(classes);
-    }
-
-    /**
-     * 규칙 11: Fixture 클래스 네이밍 규칙
+     * 규칙 8: Fixture 클래스 네이밍 규칙
      */
     @Test
     @DisplayName("[필수] Fixture 클래스는 'Fixture' 접미사를 가져야 한다")
@@ -240,7 +195,7 @@ class TestFixturesArchTest {
     }
 
     /**
-     * 규칙 12: Fixture 패키지 위치
+     * 규칙 9: Fixture 패키지 위치
      */
     @Test
     @DisplayName("[필수] Fixture 클래스는 fixture 패키지에 위치해야 한다")
@@ -259,12 +214,12 @@ class TestFixturesArchTest {
 
 ## 3️⃣ 의존성 매트릭스 (ArchUnit 검증)
 
-| From ↓ / To → | domain-test-fixtures | application-test-fixtures | adapter-*-test-fixtures |
-|---------------|----------------------|---------------------------|-------------------------|
-| **domain-test-fixtures** | - | ❌ (규칙 3) | ❌ (규칙 3) |
-| **application-test-fixtures** | ✅ (규칙 2) | - | ❌ (규칙 4) |
-| **adapter-in-test-fixtures** | ✅ | ✅ | ❌ (규칙 5) |
-| **adapter-out-test-fixtures** | ✅ | ✅ | ❌ (규칙 6) |
+| From ↓ / To → | domain testFixtures | application testFixtures | adapter-* testFixtures |
+|---------------|---------------------|--------------------------|------------------------|
+| **domain testFixtures** | - | ❌ (규칙 3) | ❌ (규칙 3) |
+| **application testFixtures** | ✅ (규칙 2) | - | ❌ (규칙 4) |
+| **adapter-in testFixtures** | ✅ | ✅ | ❌ (규칙 5) |
+| **adapter-out testFixtures** | ✅ | ❌ | ❌ (규칙 6) |
 
 ---
 
@@ -277,7 +232,7 @@ class TestFixturesArchTest {
 
 dependencies {
     // ArchUnit
-    testImplementation 'com.tngtech.archunit:archunit-junit5:1.1.0'
+    testImplementation libs.archunit.junit5
 }
 
 tasks.named('test') {
@@ -316,9 +271,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -337,16 +292,16 @@ jobs:
 
 ## 6️⃣ 위반 예시 및 해결
 
-### 예시 1: domain-test-fixtures가 application-test-fixtures 의존
+### 예시 1: domain testFixtures가 application testFixtures 의존
 
 **❌ Bad**:
 ```java
-// domain-test-fixtures/OrderFixture.java
+// domain/src/testFixtures/java/.../OrderFixture.java
 package com.ryuqq.fixture.domain;
 
 import com.ryuqq.fixture.application.command.PlaceOrderCommandFixture;  // ❌
 
-public class OrderFixture {
+public final class OrderFixture {
     public static Order fromCommand(PlaceOrderCommand command) {  // ❌
         // ...
     }
@@ -361,10 +316,15 @@ Class <com.ryuqq.fixture.domain.OrderFixture> depends on class <com.ryuqq.fixtur
 
 **✅ Good**:
 ```java
-// domain-test-fixtures/OrderFixture.java
+// domain/src/testFixtures/java/.../OrderFixture.java
 package com.ryuqq.fixture.domain;
 
-public class OrderFixture {
+public final class OrderFixture {
+
+    private OrderFixture() {
+        throw new AssertionError("Utility class - do not instantiate");
+    }
+
     public static Order defaultOrder() {  // ✅ Domain 객체만 생성
         return Order.forNew(
             OrderId.forNew(),
@@ -374,49 +334,78 @@ public class OrderFixture {
 }
 ```
 
-### 예시 2: Fixture 클래스에 인스턴스 필드 존재
+### 예시 2: Fixture 클래스가 'Fixture' 접미사 누락
 
 **❌ Bad**:
 ```java
-// domain-test-fixtures/OrderFixture.java
+// domain/src/testFixtures/java/.../OrderFactory.java
 package com.ryuqq.fixture.domain;
 
-public class OrderFixture {
-    private static int counter = 0;  // ✅ static은 허용
-    private String name;              // ❌ 인스턴스 필드 금지
-
-    public OrderFixture(String name) {  // ❌ public 생성자 금지
-        this.name = name;
-    }
-
-    public Order create() {  // ❌ non-static 메서드 금지
-        return Order.forNew(OrderId.of(counter++), Money.of(BigDecimal.ZERO));
-    }
+public final class OrderFactory {  // ❌ 'Fixture' 접미사 누락
+    public static Order create() { ... }
 }
 ```
 
 **ArchUnit 실패 메시지**:
 ```
-java.lang.AssertionError: Architecture Violation [Priority: MEDIUM] - Rule 'fields that are declared in classes that reside in a package '..fixture..' and are not static should not be declared' was violated (1 times):
-Field <com.ryuqq.fixture.domain.OrderFixture.name> is declared in <com.ryuqq.fixture.domain.OrderFixture>
+java.lang.AssertionError: Architecture Violation [Priority: MEDIUM] - Rule 'classes that reside in a package '..fixture..' should have simple name ending with 'Fixture'' was violated (1 times):
+Class <com.ryuqq.fixture.domain.OrderFactory> does not have simple name ending with 'Fixture'
 ```
 
 **✅ Good**:
 ```java
-// domain-test-fixtures/OrderFixture.java
+// domain/src/testFixtures/java/.../OrderFixture.java
 package com.ryuqq.fixture.domain;
 
-public class OrderFixture {
-    private static int counter = 0;  // ✅ static 필드 허용
+public final class OrderFixture {  // ✅ 'Fixture' 접미사 사용
+    public static Order create() { ... }
+}
+```
 
-    private OrderFixture() {  // ✅ private 생성자로 인스턴스 생성 방지
-        throw new AssertionError("Utility class");
+---
+
+## 7️⃣ Fixture 클래스 구조 권장 사항
+
+### 권장 패턴
+
+```java
+package com.ryuqq.fixture.domain;
+
+/**
+ * Order Domain 객체 Test Fixture
+ *
+ * @author development-team
+ * @since 1.0.0
+ */
+public final class OrderFixture {  // ✅ final 클래스
+
+    // ✅ private 생성자 (인스턴스 생성 방지)
+    private OrderFixture() {
+        throw new AssertionError("Utility class - do not instantiate");
     }
 
-    public static Order defaultOrder() {  // ✅ static 메서드
+    // ✅ static 메서드만 사용
+    public static Order defaultNewOrder() {
         return Order.forNew(
-            OrderId.of(counter++),
-            Money.of(BigDecimal.ZERO)
+            OrderId.forNew(),
+            Money.of(BigDecimal.valueOf(50000))
+        );
+    }
+
+    public static Order defaultExistingOrder() {
+        return Order.forExisting(
+            OrderId.of(1L),
+            Money.of(BigDecimal.valueOf(50000)),
+            OrderStatus.PLACED
+        );
+    }
+
+    // ✅ 커스텀 빌더 메서드
+    public static Order customOrder(Long id, BigDecimal amount, OrderStatus status) {
+        return Order.forExisting(
+            OrderId.of(id),
+            Money.of(amount),
+            status
         );
     }
 }
@@ -424,12 +413,12 @@ public class OrderFixture {
 
 ---
 
-## 7️⃣ 체크리스트
+## 8️⃣ 체크리스트
 
 ArchUnit 검증 구현 시:
 - [ ] `TestFixturesArchTest.java` 파일 생성
-- [ ] 12개 규칙 모두 구현
-- [ ] build.gradle에 ArchUnit 의존성 추가
+- [ ] 9개 규칙 모두 구현
+- [ ] build.gradle에 ArchUnit 의존성 추가 (`libs.archunit.junit5`)
 - [ ] `@Tag("architecture")`, `@Tag("test-fixtures")` 적용
 - [ ] 빌드 시 자동 실행 설정
 - [ ] CI/CD 파이프라인 통합
@@ -440,12 +429,12 @@ ArchUnit 검증 구현 시:
 
 ## 📖 관련 문서
 
-- **[Test Fixtures Guide](./01_test-fixtures-guide.md)** - 테스트 픽스쳐 전체 가이드
-- **[Test Fixtures Migration](./03_test-fixtures-migration.md)** - 마이그레이션 가이드
-- **[ArchUnit Rules](../../05-testing/archunit-rules/)** - 전체 ArchUnit 규칙
+- **[Test Fixtures Guide](./01_test-fixtures-guide.md)** - Gradle testFixtures 전체 가이드
+- **[Integration Testing Overview](../integration-testing/01_integration-testing-overview.md)** - 통합 테스트 가이드
+- **[Domain Layer ArchUnit](../../02-domain-layer/aggregate/aggregate-archunit.md)** - Domain 아키텍처 규칙
 
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-13
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-05
+**버전**: 2.0.0

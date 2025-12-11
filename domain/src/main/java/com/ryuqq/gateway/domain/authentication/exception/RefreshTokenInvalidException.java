@@ -18,23 +18,21 @@ import com.ryuqq.gateway.domain.common.exception.DomainException;
  * @author development-team
  * @since 1.0.0
  */
-public class RefreshTokenInvalidException extends DomainException {
+public final class RefreshTokenInvalidException extends DomainException {
 
     /**
-     * Constructor - 메시지로 예외 생성
+     * Constructor - 상세 정보로 예외 생성
      *
-     * @param message 상세 에러 메시지
+     * @param detail 상세 정보
      */
-    public RefreshTokenInvalidException(String message) {
-        super(AuthenticationErrorCode.REFRESH_TOKEN_INVALID.getCode(), message);
+    public RefreshTokenInvalidException(String detail) {
+        super(AuthenticationErrorCode.REFRESH_TOKEN_INVALID, detail);
     }
 
     /**
-     * 에러 코드 조회
-     *
-     * @return AuthenticationErrorCode.REFRESH_TOKEN_INVALID
+     * Constructor - 기본 예외 생성
      */
-    public AuthenticationErrorCode getErrorCode() {
-        return AuthenticationErrorCode.REFRESH_TOKEN_INVALID;
+    public RefreshTokenInvalidException() {
+        super(AuthenticationErrorCode.REFRESH_TOKEN_INVALID);
     }
 }

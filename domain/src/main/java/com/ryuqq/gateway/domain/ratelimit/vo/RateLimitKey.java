@@ -19,15 +19,18 @@ import java.util.Objects;
  *   <li>INVALID_JWT: gateway:rate_limit:invalid_jwt:{ipAddress}
  * </ul>
  *
+ * @param value Redis Key 문자열
  * @author development-team
  * @since 1.0.0
  */
-public final class RateLimitKey {
+public record RateLimitKey(String value) {
 
-    private final String value;
-
-    private RateLimitKey(String value) {
-        this.value = value;
+    /** Compact Constructor (검증 로직) */
+    public RateLimitKey {
+        Objects.requireNonNull(value, "key cannot be null");
+        if (value.isBlank()) {
+            throw new IllegalArgumentException("key cannot be blank");
+        }
     }
 
     /**
@@ -39,10 +42,6 @@ public final class RateLimitKey {
      * @throws IllegalArgumentException key가 blank인 경우
      */
     public static RateLimitKey of(String key) {
-        Objects.requireNonNull(key, "key cannot be null");
-        if (key.isBlank()) {
-            throw new IllegalArgumentException("key cannot be blank");
-        }
         return new RateLimitKey(key);
     }
 
@@ -57,32 +56,6 @@ public final class RateLimitKey {
         Objects.requireNonNull(limitType, "limitType cannot be null");
         String key = limitType.buildKey(keyParts);
         return new RateLimitKey(key);
-    }
-
-    /**
-     * Redis Key 값 반환
-     *
-     * @return Redis Key 문자열
-     */
-    public String getValue() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        RateLimitKey that = (RateLimitKey) o;
-        return Objects.equals(value, that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
     }
 
     @Override

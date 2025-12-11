@@ -18,28 +18,33 @@ import java.util.Objects;
  *   <li>auditLogRequired: Audit Log 필수 여부
  * </ul>
  *
+ * @param limitType 제한 타입
+ * @param maxRequests 최대 요청 수
+ * @param window 시간 창
+ * @param action 초과 시 조치
+ * @param auditLogRequired Audit Log 필수 여부
  * @author development-team
  * @since 1.0.0
  */
-public final class RateLimitPolicy {
+public record RateLimitPolicy(
+        LimitType limitType,
+        int maxRequests,
+        Duration window,
+        RateLimitAction action,
+        boolean auditLogRequired) {
 
-    private final LimitType limitType;
-    private final int maxRequests;
-    private final Duration window;
-    private final RateLimitAction action;
-    private final boolean auditLogRequired;
+    /** Compact Constructor (검증 로직) */
+    public RateLimitPolicy {
+        Objects.requireNonNull(limitType, "limitType cannot be null");
+        Objects.requireNonNull(window, "window cannot be null");
+        Objects.requireNonNull(action, "action cannot be null");
 
-    private RateLimitPolicy(
-            LimitType limitType,
-            int maxRequests,
-            Duration window,
-            RateLimitAction action,
-            boolean auditLogRequired) {
-        this.limitType = limitType;
-        this.maxRequests = maxRequests;
-        this.window = window;
-        this.action = action;
-        this.auditLogRequired = auditLogRequired;
+        if (maxRequests <= 0) {
+            throw new IllegalArgumentException("maxRequests must be positive");
+        }
+        if (window.isZero() || window.isNegative()) {
+            throw new IllegalArgumentException("window must be positive");
+        }
     }
 
     /**
@@ -60,17 +65,6 @@ public final class RateLimitPolicy {
             Duration window,
             RateLimitAction action,
             boolean auditLogRequired) {
-        Objects.requireNonNull(limitType, "limitType cannot be null");
-        Objects.requireNonNull(window, "window cannot be null");
-        Objects.requireNonNull(action, "action cannot be null");
-
-        if (maxRequests <= 0) {
-            throw new IllegalArgumentException("maxRequests must be positive");
-        }
-        if (window.isZero() || window.isNegative()) {
-            throw new IllegalArgumentException("window must be positive");
-        }
-
         return new RateLimitPolicy(limitType, maxRequests, window, action, auditLogRequired);
     }
 
@@ -126,45 +120,15 @@ public final class RateLimitPolicy {
         return remaining < 0 ? 0 : (int) remaining;
     }
 
-    public LimitType getLimitType() {
-        return limitType;
-    }
-
-    public int getMaxRequests() {
-        return maxRequests;
-    }
-
-    public Duration getWindow() {
-        return window;
-    }
-
-    public RateLimitAction getAction() {
-        return action;
-    }
-
-    public boolean isAuditLogRequired() {
-        return auditLogRequired;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        RateLimitPolicy that = (RateLimitPolicy) o;
-        return maxRequests == that.maxRequests
-                && auditLogRequired == that.auditLogRequired
-                && limitType == that.limitType
-                && Objects.equals(window, that.window)
-                && action == that.action;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(limitType, maxRequests, window, action, auditLogRequired);
+    /**
+     * 시간 창(Window)을 초(Seconds) 단위로 조회
+     *
+     * <p>Law of Demeter 준수를 위한 위임 메서드
+     *
+     * @return 시간 창(초 단위)
+     */
+    public long windowSeconds() {
+        return window.getSeconds();
     }
 
     @Override

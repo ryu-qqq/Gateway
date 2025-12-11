@@ -6,67 +6,87 @@
 
 ## 1️⃣ 전체 모듈 구조
 
-### 프로덕션 모듈
+### 프로덕션 모듈 (6개)
 
 ```
 project/
-├── domain/                         ⭐ 도메인 레이어 (핵심 비즈니스 로직)
-│   └── src/main/java/
-│       └── com/{owner}/domain/
-│           ├── order/
-│           ├── product/
-│           └── customer/
 │
-├── application/                    ⭐ 애플리케이션 레이어 (UseCase)
-│   └── src/main/java/
-│       └── com/{owner}/application/
-│           ├── order/
-│           ├── product/
-│           └── customer/
+├── domain/                              ⭐ 도메인 레이어 (핵심 비즈니스 로직)
+│   ├── src/main/java/
+│   │   └── com/company/template/domain/
+│   │       ├── common/                  # 공통 인터페이스 (DomainEvent, DomainException)
+│   │       └── {boundedContext}/        # 예: order, product, customer
+│   │           ├── aggregate/           # Aggregate Root + Entity
+│   │           ├── vo/                  # Value Object
+│   │           ├── event/               # Domain Event
+│   │           └── exception/           # BC 전용 예외
+│   └── src/testFixtures/java/           # Test Fixtures (Gradle 플러그인)
 │
-├── adapter-in/                     ⭐ Inbound Adapters
-│   └── rest-api/                   ⭐ REST API Adapter
-│       └── src/main/java/
-│           └── com/{owner}/adapter/in/rest/
-│               ├── order/
-│               ├── product/
-│               └── customer/
+├── application/                         ⭐ 애플리케이션 레이어 (UseCase)
+│   ├── src/main/java/
+│   │   └── com/company/template/application/
+│   │       ├── common/                  # 공통 DTO, Config
+│   │       └── {boundedContext}/
+│   │           ├── assembler/           # Domain ↔ DTO 변환
+│   │           ├── dto/                 # Command, Query, Response, Bundle
+│   │           ├── facade/              # 여러 Manager 조합
+│   │           ├── factory/             # Command/Query Factory
+│   │           ├── manager/             # 단일 Port Transaction
+│   │           ├── port/                # Port-In (UseCase), Port-Out (Persistence)
+│   │           ├── service/             # UseCase 구현체
+│   │           └── listener/            # Event Listener
+│   └── src/testFixtures/java/
 │
-├── adapter-out/                    ⭐ Outbound Adapters
-│   └── persistence-mysql/          ⭐ MySQL Persistence Adapter
-│       └── src/main/java/
-│           └── com/{owner}/adapter/out/persistence/
-│               ├── order/
-│               ├── product/
-│               └── customer/
+├── adapter-in/                          ⭐ Inbound Adapters (Driving)
+│   └── rest-api/                        ⭐ REST API Adapter
+│       ├── src/main/java/
+│       │   └── com/company/template/adapter/in/rest/
+│       │       ├── common/              # 공통 DTO, Error Handler
+│       │       └── {boundedContext}/
+│       │           ├── controller/      # HTTP Controller (CQRS 분리)
+│       │           ├── dto/             # API Request/Response
+│       │           ├── mapper/          # API ↔ UseCase DTO 변환
+│       │           └── error/           # BC 전용 Error Mapper
+│       └── src/testFixtures/java/       # (Optional)
 │
-└── bootstrap/                      ⭐ Spring Boot Application (진입점)
-    └── src/main/java/
-        └── com/{owner}/BootstrapApplication.java
-```
-
-### 테스트 Fixtures 모듈
-
-```
-project/
-├── domain-test-fixtures/                       ⭐ Domain 객체 Fixture
-│   └── src/main/java/
-│       └── com/{owner}/fixture/domain/
+├── adapter-out/                         ⭐ Outbound Adapters (Driven)
+│   ├── persistence-mysql/               ⭐ MySQL Persistence Adapter
+│   │   ├── src/main/java/
+│   │   │   └── com/company/template/adapter/out/persistence/
+│   │   │       ├── config/              # JPA, Flyway Config
+│   │   │       ├── common/              # Base Entity
+│   │   │       └── {boundedContext}/
+│   │   │           ├── adapter/         # Command/Query Adapter
+│   │   │           ├── entity/          # JPA Entity
+│   │   │           ├── mapper/          # Entity ↔ Domain 변환
+│   │   │           └── repository/      # JPA/QueryDSL Repository
+│   │   └── src/testFixtures/java/       # (Optional)
+│   │
+│   └── persistence-redis/               ⭐ Redis Persistence Adapter
+│       ├── src/main/java/
+│       │   └── com/company/template/adapter/out/redis/
+│       │       ├── config/              # Lettuce, Redisson Config
+│       │       └── {boundedContext}/
+│       │           └── adapter/         # Cache/Lock Adapter
+│       └── src/testFixtures/java/       # (Optional)
 │
-├── application-test-fixtures/                  ⭐ Application DTO Fixture
-│   └── src/main/java/
-│       └── com/{owner}/fixture/application/
-│
-├── adapter-in/
-│   └── rest-api-test-fixtures/                 ⭐ Optional (REST Request Fixture)
-│       └── src/main/java/
-│           └── com/{owner}/fixture/adapter/rest/
-│
-└── adapter-out/
-    └── persistence-mysql-test-fixtures/        ⭐ Optional (Entity Fixture)
+└── bootstrap/                           ⭐ Bootstrap Modules (Application Entry Points)
+    └── bootstrap-web-api/               ⭐ Spring Boot Application
         └── src/main/java/
-            └── com/{owner}/fixture/adapter/persistence/
+            └── com/company/template/
+                └── BootstrapWebApiApplication.java
 ```
+
+### 모듈 역할 요약
+
+| 모듈 | 역할 | 핵심 원칙 |
+|------|------|----------|
+| **domain** | 순수 비즈니스 로직 | Pure Java, Lombok 금지, Law of Demeter |
+| **application** | UseCase + Transaction 관리 | CQRS 분리, Port/Adapter 패턴 |
+| **adapter-in/rest-api** | HTTP 요청/응답 처리 | Thin Controller, Bean Validation |
+| **adapter-out/persistence-mysql** | MySQL 저장/조회 | Long FK 전략, CQRS 분리 |
+| **adapter-out/persistence-redis** | 캐싱 + 분산락 | Lettuce (캐싱), Redisson (분산락) |
+| **bootstrap/bootstrap-web-api** | Spring Boot 진입점 | 모든 모듈 조립, Config |
 
 ---
 
@@ -75,127 +95,148 @@ project/
 ### 프로덕션 모듈 의존성
 
 ```
-┌─────────────────────────────────────────┐
-│ bootstrap (Spring Boot Application)    │
-│ - adapter-in/rest-api                   │
-│ - adapter-out/persistence-mysql         │
-│ - application                           │
-│ - domain                                │
-└─────────────────────────────────────────┘
-             ↓ implementation
-┌─────────────────────────────────────────┐
-│ adapter-in/rest-api (REST API)          │
-│ - application (Port-In)                 │
-│ - domain (DTO 변환)                     │
-└─────────────────────────────────────────┘
-             ↓ implementation
-┌─────────────────────────────────────────┐
-│ application (UseCase)                   │
-│ - domain                                │
-└─────────────────────────────────────────┘
-             ↓ implementation
-┌─────────────────────────────────────────┐
-│ domain (Domain Objects)                 │
-│ - (No dependencies)                     │
-└─────────────────────────────────────────┘
-             ↑ implementation
-┌─────────────────────────────────────────┐
-│ adapter-out/persistence-mysql (MySQL)   │
-│ - application (Port-Out)                │
-│ - domain (Entity → Domain 변환)        │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ bootstrap/bootstrap-web-api (Spring Boot Application)               │
+│ ├── adapter-in/rest-api                                             │
+│ ├── adapter-out/persistence-mysql                                   │
+│ ├── adapter-out/persistence-redis                                   │
+│ ├── application                                                     │
+│ └── domain                                                          │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓ implementation
+┌─────────────────────────────────────────────────────────────────────┐
+│ adapter-in/rest-api (REST API Adapter)                              │
+│ ├── application (Port-In UseCase)                                   │
+│ └── domain (DTO 변환용)                                             │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓ implementation
+┌─────────────────────────────────────────────────────────────────────┐
+│ application (UseCase Layer)                                         │
+│ └── domain                                                          │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↓ implementation
+┌─────────────────────────────────────────────────────────────────────┐
+│ domain (Domain Layer)                                               │
+│ └── (No dependencies - Pure Java)                                   │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↑ implementation
+┌─────────────────────────────────────────────────────────────────────┐
+│ adapter-out/persistence-mysql (MySQL Adapter)                       │
+│ ├── application (Port-Out 구현)                                     │
+│ └── domain (Entity ↔ Domain 변환)                                   │
+└─────────────────────────────────────────────────────────────────────┘
+                              ↑ implementation
+┌─────────────────────────────────────────────────────────────────────┐
+│ adapter-out/persistence-redis (Redis Adapter)                       │
+│ ├── application (Port-Out 구현)                                     │
+│ └── domain (Cache DTO 변환)                                         │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Test Fixtures 의존성
+### 의존성 규칙 매트릭스
 
-```
-domain-test-fixtures
-    ↓ api
-  domain
-```
+| From ↓ / To → | domain | application | rest-api | persistence-mysql | persistence-redis | bootstrap |
+|---------------|--------|-------------|----------|-------------------|-------------------|-----------|
+| **domain** | - | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **application** | ✅ | - | ❌ | ❌ | ❌ | ❌ |
+| **rest-api** | ✅ | ✅ | - | ❌ | ❌ | ❌ |
+| **persistence-mysql** | ✅ | ✅ | ❌ | - | ❌ | ❌ |
+| **persistence-redis** | ✅ | ✅ | ❌ | ❌ | - | ❌ |
+| **bootstrap** | ✅ | ✅ | ✅ | ✅ | ✅ | - |
 
-```
-application-test-fixtures
-    ↓ api                    ↓ api
-  application         domain-test-fixtures
-```
-
-```
-adapter-*-test-fixtures
-    ↓ api                    ↓ api
-  adapter-*          application-test-fixtures
-```
+**핵심 규칙**:
+- ✅ domain은 **외부 의존성 없음** (Pure Java)
+- ✅ application은 **domain만 의존**
+- ✅ adapter는 **application + domain만 의존**
+- ❌ adapter-in과 adapter-out은 **서로 의존 금지**
 
 ---
 
 ## 3️⃣ settings.gradle 설정
 
 ```gradle
-rootProject.name = 'spring-standards'
+rootProject.name = 'spring-hexagonal-template'
 
-// ============================================================
-// Production Modules
-// ============================================================
+// ========================================
+// Core Modules (Hexagonal Architecture)
+// ========================================
 include 'domain'
 include 'application'
 
-// Adapter-In Modules
+// ========================================
+// Adapter Modules (Ports & Adapters)
+// ========================================
+// Inbound Adapters (Driving)
 include 'adapter-in:rest-api'
-project(':adapter-in:rest-api').name = 'rest-api'
 
-// Adapter-Out Modules
+// Outbound Adapters (Driven)
 include 'adapter-out:persistence-mysql'
-project(':adapter-out:persistence-mysql').name = 'persistence-mysql'
+include 'adapter-out:persistence-redis'
 
-// Bootstrap
-include 'bootstrap'
+// ========================================
+// Bootstrap Modules (Runnable Applications)
+// ========================================
+include 'bootstrap:bootstrap-web-api'
 
-// ============================================================
-// Test Fixtures Modules
-// ============================================================
-include 'domain-test-fixtures'
-include 'application-test-fixtures'
+// ========================================
+// Project Structure
+// ========================================
+project(':domain').projectDir = file('domain')
+project(':application').projectDir = file('application')
 
-// Adapter-In Test Fixtures
-include 'adapter-in:rest-api-test-fixtures'
-project(':adapter-in:rest-api-test-fixtures').name = 'rest-api-test-fixtures'
+project(':adapter-in:rest-api').projectDir = file('adapter-in/rest-api')
+project(':adapter-out:persistence-mysql').projectDir = file('adapter-out/persistence-mysql')
+project(':adapter-out:persistence-redis').projectDir = file('adapter-out/persistence-redis')
 
-// Adapter-Out Test Fixtures
-include 'adapter-out:persistence-mysql-test-fixtures'
-project(':adapter-out:persistence-mysql-test-fixtures').name = 'persistence-mysql-test-fixtures'
+project(':bootstrap:bootstrap-web-api').projectDir = file('bootstrap/bootstrap-web-api')
 ```
 
 ---
 
-## 4️⃣ 버전 관리 (gradle.properties 필수)
+## 4️⃣ 버전 관리 (Version Catalog)
 
 ### ⚠️ 버전 관리 규칙 (Zero-Tolerance)
 
 **❌ 금지**: build.gradle에 직접 버전 하드코딩
-**✅ 필수**: gradle.properties에 버전 명시 → build.gradle에서 참조
+**✅ 필수**: `gradle/libs.versions.toml`에 버전 명시 → `libs.xxx` 문법으로 참조
 
-### gradle.properties (루트)
+### libs.versions.toml 구조
 
-```properties
-# ============================================================
-# Java Version
-# ============================================================
-javaVersion=21
+```toml
+# gradle/libs.versions.toml
 
-# ============================================================
-# Plugin Versions
-# ============================================================
-springBootVersion=3.5.0
-springDependencyManagementVersion=1.1.4
+[versions]
+springBoot = "3.5.6"
+springDependencyManagement = "1.1.5"
+querydsl = "5.1.0"
+archunit = "1.2.1"
 
-# ============================================================
-# Library Versions
-# ============================================================
-querydslVersion=5.0.0
-archunitVersion=1.1.0
-commonsCollections4Version=4.4
-guavaVersion=32.1.3-jre
+[libraries]
+# Spring Boot Starters (BOM 관리 - 버전 생략)
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web" }
+spring-boot-starter-data-jpa = { module = "org.springframework.boot:spring-boot-starter-data-jpa" }
+
+# 외부 라이브러리 (version.ref 필수)
+querydsl-jpa = { module = "com.querydsl:querydsl-jpa", version.ref = "querydsl" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+[plugins]
+spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
+spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "springDependencyManagement" }
 ```
+
+### build.gradle에서 참조
+
+```gradle
+dependencies {
+    // ✅ Version Catalog 참조
+    implementation libs.spring.boot.starter.web
+    implementation libs.querydsl.jpa
+    testImplementation libs.archunit.junit5
+}
+```
+
+> 📖 **상세 문서**: [Version Management](./version-management.md)
 
 ---
 
@@ -206,17 +247,26 @@ guavaVersion=32.1.3-jre
 ```gradle
 plugins {
     id 'java-library'
+    id 'java-test-fixtures'  // ⭐ testFixtures 활성화
 }
 
 dependencies {
-    // ✅ Domain은 외부 의존성 없음 (Pure Java)
-    // Lombok 금지 (Zero-Tolerance)
-}
+    // ========================================
+    // Domain은 외부 의존성 없음 (Pure Java)
+    // ========================================
+    // ❌ Lombok 금지 (Zero-Tolerance)
+    // ❌ Spring 의존성 금지
+    // ❌ JPA 의존성 금지
 
-java {
-    // ✅ gradle.properties에서 버전 참조 (하드코딩 금지)
-    sourceCompatibility = JavaVersion.toVersion(javaVersion)
-    targetCompatibility = JavaVersion.toVersion(javaVersion)
+    // ✅ 허용: 순수 Java 유틸리티만
+    implementation rootProject.libs.uuid.creator  // UUIDv7 생성
+
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation rootProject.libs.junit.jupiter
+    testImplementation rootProject.libs.assertj.core
+    testImplementation rootProject.libs.archunit.junit5
 }
 ```
 
@@ -225,37 +275,30 @@ java {
 ```gradle
 plugins {
     id 'java-library'
-    id 'org.springframework.boot' version "$springBootVersion" apply false
-    id 'io.spring.dependency-management' version "$springDependencyManagementVersion"
+    id 'java-test-fixtures'
 }
 
 dependencies {
-    // ✅ Domain 의존
-    implementation project(':domain')
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':domain')
 
-    // Spring Boot (Starter 제외, @Transactional 등 어노테이션만)
-    implementation 'org.springframework:spring-context'
-    implementation 'org.springframework:spring-tx'
+    // Spring (Context, TX only - Starter 제외)
+    implementation rootProject.libs.spring.context
+    implementation rootProject.libs.spring.tx
 
-    // Test Fixtures
-    testImplementation project(':domain-test-fixtures')
-    testImplementation project(':application-test-fixtures')
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation rootProject.libs.spring.boot.starter.test
+    testImplementation testFixtures(project(':domain'))
 
-    // 테스트
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.mockito:mockito-junit-jupiter'
-}
-
-dependencyManagement {
-    imports {
-        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
-    }
-}
-
-java {
-    // ✅ gradle.properties에서 버전 참조
-    sourceCompatibility = JavaVersion.toVersion(javaVersion)
-    targetCompatibility = JavaVersion.toVersion(javaVersion)
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    testFixturesApi project(':domain')
+    testFixturesApi testFixtures(project(':domain'))
 }
 ```
 
@@ -264,39 +307,36 @@ java {
 ```gradle
 plugins {
     id 'java-library'
-    id 'org.springframework.boot' version "$springBootVersion" apply false
-    id 'io.spring.dependency-management' version "$springDependencyManagementVersion"
+    id 'java-test-fixtures'
 }
 
 dependencies {
-    // ✅ Application, Domain 의존
-    implementation project(':application')
-    implementation project(':domain')
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':application')
+    api project(':domain')
 
     // Spring Boot Web
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation rootProject.libs.spring.boot.starter.web
+    implementation rootProject.libs.spring.boot.starter.validation
 
-    // Test Fixtures
-    testImplementation project(':domain-test-fixtures')
-    testImplementation project(':application-test-fixtures')
-    testImplementation project(':adapter-in:rest-api-test-fixtures')
+    // OpenAPI/Swagger
+    implementation rootProject.libs.springdoc.openapi.starter
 
-    // 테스트
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
-}
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation rootProject.libs.spring.boot.starter.test
+    testImplementation rootProject.libs.spring.restdocs.mockmvc
+    testImplementation testFixtures(project(':domain'))
+    testImplementation testFixtures(project(':application'))
 
-dependencyManagement {
-    imports {
-        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
-    }
-}
-
-java {
-    // ✅ gradle.properties에서 버전 참조
-    sourceCompatibility = JavaVersion.toVersion(javaVersion)
-    targetCompatibility = JavaVersion.toVersion(javaVersion)
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    testFixturesApi project(':application')
+    testFixturesApi testFixtures(project(':application'))
 }
 ```
 
@@ -305,103 +345,177 @@ java {
 ```gradle
 plugins {
     id 'java-library'
-    id 'org.springframework.boot' version "$springBootVersion" apply false
-    id 'io.spring.dependency-management' version "$springDependencyManagementVersion"
+    id 'java-test-fixtures'
 }
 
 dependencies {
-    // ✅ Application, Domain 의존
-    implementation project(':application')
-    implementation project(':domain')
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':application')
+    api project(':domain')
 
     // Spring Boot Data JPA
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation rootProject.libs.spring.boot.starter.data.jpa
 
-    // QueryDSL (✅ gradle.properties 버전 참조)
-    implementation "com.querydsl:querydsl-jpa:${querydslVersion}:jakarta"
-    annotationProcessor "com.querydsl:querydsl-apt:${querydslVersion}:jakarta"
-    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
-    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+    // QueryDSL
+    implementation rootProject.libs.querydsl.jpa.jakarta
+    annotationProcessor rootProject.libs.querydsl.apt.jakarta
+    annotationProcessor rootProject.libs.jakarta.annotation.api
+    annotationProcessor rootProject.libs.jakarta.persistence.api
 
-    // Database
-    runtimeOnly 'com.mysql:mysql-connector-j'
-    runtimeOnly 'com.h2database:h2'
+    // Flyway
+    implementation rootProject.libs.flyway.core
+    implementation rootProject.libs.flyway.mysql
 
-    // Test Fixtures
-    testImplementation project(':domain-test-fixtures')
-    testImplementation project(':application-test-fixtures')
-    testImplementation project(':adapter-out:persistence-mysql-test-fixtures')
+    // Database Drivers
+    runtimeOnly rootProject.libs.mysql.connector
 
-    // 테스트
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.testcontainers:testcontainers'
-    testImplementation 'org.testcontainers:mysql'
-}
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation rootProject.libs.spring.boot.starter.test
+    testImplementation rootProject.libs.testcontainers.mysql
+    testImplementation rootProject.libs.testcontainers.junit
+    testImplementation testFixtures(project(':domain'))
 
-dependencyManagement {
-    imports {
-        mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
-    }
-}
+    testRuntimeOnly rootProject.libs.h2
 
-java {
-    // ✅ gradle.properties에서 버전 참조
-    sourceCompatibility = JavaVersion.toVersion(javaVersion)
-    targetCompatibility = JavaVersion.toVersion(javaVersion)
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    testFixturesApi project(':domain')
+    testFixturesApi testFixtures(project(':domain'))
 }
 ```
 
-### bootstrap/build.gradle
+### adapter-out/persistence-redis/build.gradle
+
+```gradle
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'
+}
+
+dependencies {
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':application')
+    api project(':domain')
+
+    // Lettuce (캐싱 - Spring Boot 기본)
+    implementation rootProject.libs.spring.boot.starter.data.redis
+
+    // Redisson (분산락)
+    implementation rootProject.libs.redisson.spring.boot.starter
+
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation rootProject.libs.spring.boot.starter.test
+    testImplementation rootProject.libs.testcontainers.junit
+    testImplementation testFixtures(project(':domain'))
+
+    // ========================================
+    // Test Fixtures Dependencies
+    // ========================================
+    testFixturesApi project(':domain')
+    testFixturesApi testFixtures(project(':domain'))
+}
+```
+
+### bootstrap/bootstrap-web-api/build.gradle
 
 ```gradle
 plugins {
     id 'java'
-    id 'org.springframework.boot' version "$springBootVersion"
-    id 'io.spring.dependency-management' version "$springDependencyManagementVersion"
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
 }
 
 dependencies {
-    // ✅ 모든 모듈 의존
+    // ========================================
+    // All Modules
+    // ========================================
     implementation project(':domain')
     implementation project(':application')
     implementation project(':adapter-in:rest-api')
     implementation project(':adapter-out:persistence-mysql')
+    implementation project(':adapter-out:persistence-redis')
 
     // Spring Boot
-    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation rootProject.libs.spring.boot.starter
 
-    // 테스트
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation rootProject.libs.spring.boot.starter.test
+    testImplementation testFixtures(project(':domain'))
+    testImplementation testFixtures(project(':application'))
 }
 
-java {
-    // ✅ gradle.properties에서 버전 참조
-    sourceCompatibility = JavaVersion.toVersion(javaVersion)
-    targetCompatibility = JavaVersion.toVersion(javaVersion)
+bootJar {
+    enabled = true
+}
+
+jar {
+    enabled = false
 }
 ```
 
 ---
 
-## 6️⃣ 의존성 규칙 매트릭스
+## 6️⃣ Test Fixtures (Gradle 플러그인)
 
-### 프로덕션 모듈 의존성
+### 핵심 원칙
 
-| From ↓ / To → | domain | application | adapter-in/rest-api | adapter-out/persistence-mysql | bootstrap |
-|---------------|--------|-------------|---------------------|-------------------------------|-----------|
-| **domain** | - | ❌ | ❌ | ❌ | ❌ |
-| **application** | ✅ | - | ❌ | ❌ | ❌ |
-| **adapter-in/rest-api** | ✅ | ✅ | - | ❌ | ❌ |
-| **adapter-out/persistence-mysql** | ✅ | ✅ | ❌ | - | ❌ |
-| **bootstrap** | ✅ | ✅ | ✅ | ✅ | - |
+Gradle `java-test-fixtures` 플러그인을 사용하여 **별도 모듈 없이** 테스트 픽스쳐를 공유합니다.
 
-### Test Fixtures 의존성
+### 디렉토리 구조
 
-| From ↓ / To → | domain-tf | application-tf | adapter-*-tf |
-|---------------|-----------|----------------|--------------|
-| **domain-tf** | - | ❌ | ❌ |
-| **application-tf** | ✅ | - | ❌ |
-| **adapter-*-tf** | ✅ | ✅ | - |
+```
+domain/
+├── src/main/java/                    (Production 코드)
+├── src/test/java/                    (단위 테스트)
+└── src/testFixtures/java/            ⭐ Test Fixtures
+    └── com/company/template/fixture/domain/
+        ├── OrderFixture.java
+        ├── ProductFixture.java
+        └── MoneyFixture.java
+```
+
+### 의존성 전파
+
+```gradle
+// application/build.gradle
+dependencies {
+    // Domain Fixture 사용
+    testImplementation testFixtures(project(':domain'))
+
+    // Application Fixture 전파
+    testFixturesApi project(':domain')
+    testFixturesApi testFixtures(project(':domain'))
+}
+```
+
+### 의존성 흐름
+
+```
+domain testFixtures
+    ↓ 의존
+  domain (Production)
+
+application testFixtures
+    ↓ 의존              ↓ 의존
+  application      domain testFixtures
+
+adapter-* testFixtures
+    ↓ 의존                    ↓ 의존
+  adapter-*         application testFixtures (또는 domain testFixtures)
+```
+
+> 📖 **상세 문서**: [Test Fixtures Guide](../05-testing/test-fixtures/01_test-fixtures-guide.md)
 
 ---
 
@@ -409,10 +523,10 @@ java {
 
 ### 멀티모듈 의존성 검증
 
-**위치**: `bootstrap/src/test/java/architecture/ModuleDependencyArchTest.java`
+**위치**: `bootstrap/bootstrap-web-api/src/test/java/.../ModuleDependencyArchTest.java`
 
 ```java
-package com.{owner}.architecture;
+package com.company.template.architecture;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -422,7 +536,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.*;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
  * Multi-Module 의존성 규칙 ArchUnit 검증
@@ -439,67 +553,64 @@ class ModuleDependencyArchTest {
     @BeforeAll
     static void setUp() {
         classes = new ClassFileImporter()
-            .importPackages("com.{owner}");
+            .importPackages("com.company.template");
     }
 
     /**
-     * 규칙 1: domain은 외부 의존성 없음
+     * 규칙 1: domain은 외부 모듈 의존 금지
      */
     @Test
-    @DisplayName("[필수] domain은 외부 모듈을 의존할 수 없다")
-    void domain_MustNotDependOnAnyOtherModule() {
-        ArchRule rule = slices()
-            .matching("com.{owner}.domain.(*)..")
-            .should().notDependOnEachOther()
-            .because("domain은 Pure Java로 작성되어야 하며 외부 의존성이 없어야 합니다");
+    @DisplayName("[필수] domain은 application, adapter를 의존할 수 없다")
+    void domain_MustNotDependOnOtherModules() {
+        ArchRule rule = noClasses()
+            .that().resideInAPackage("..domain..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                "..application..",
+                "..adapter.."
+            )
+            .because("domain은 Pure Java로 작성되어야 하며 외부 모듈 의존이 없어야 합니다");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 2: application은 domain만 의존
+     * 규칙 2: application은 adapter 의존 금지
      */
     @Test
-    @DisplayName("[필수] application은 domain만 의존해야 한다")
-    void application_ShouldOnlyDependOnDomain() {
-        ArchRule rule = slices()
-            .matching("com.{owner}.application.(*)..")
-            .should().onlyDependOn("com.{owner}.domain..", "java..", "org.springframework..")
+    @DisplayName("[필수] application은 adapter를 의존할 수 없다")
+    void application_MustNotDependOnAdapter() {
+        ArchRule rule = noClasses()
+            .that().resideInAPackage("..application..")
+            .should().dependOnClassesThat().resideInAPackage("..adapter..")
             .because("application은 domain만 의존해야 합니다");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 3: adapter는 application + domain 의존
+     * 규칙 3: adapter-in과 adapter-out은 서로 의존 금지
      */
     @Test
-    @DisplayName("[필수] adapter는 application과 domain만 의존해야 한다")
-    void adapter_ShouldOnlyDependOnApplicationAndDomain() {
-        ArchRule rule = slices()
-            .matching("com.{owner}.adapter.(*)..")
-            .should().onlyDependOn(
-                "com.{owner}.application..",
-                "com.{owner}.domain..",
-                "java..",
-                "org.springframework..",
-                "jakarta.."
-            )
-            .because("adapter는 application과 domain만 의존해야 합니다");
+    @DisplayName("[금지] adapter-in과 adapter-out은 서로 의존할 수 없다")
+    void adapterIn_MustNotDependOnAdapterOut() {
+        ArchRule rule = noClasses()
+            .that().resideInAPackage("..adapter.in..")
+            .should().dependOnClassesThat().resideInAPackage("..adapter.out..")
+            .because("adapter-in과 adapter-out은 서로 독립적이어야 합니다");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 4: adapter-in과 adapter-out은 서로 의존 금지
+     * 규칙 4: adapter-out은 adapter-in 의존 금지
      */
     @Test
-    @DisplayName("[금지] adapter-in과 adapter-out은 서로 의존할 수 없다")
-    void adapterIn_MustNotDependOnAdapterOut() {
-        ArchRule rule = slices()
-            .matching("com.{owner}.adapter.in.(*)..")
-            .should().notDependOn("com.{owner}.adapter.out..")
-            .because("adapter-in과 adapter-out은 서로 의존할 수 없습니다");
+    @DisplayName("[금지] adapter-out은 adapter-in을 의존할 수 없다")
+    void adapterOut_MustNotDependOnAdapterIn() {
+        ArchRule rule = noClasses()
+            .that().resideInAPackage("..adapter.out..")
+            .should().dependOnClassesThat().resideInAPackage("..adapter.in..")
+            .because("adapter-out과 adapter-in은 서로 독립적이어야 합니다");
 
         rule.check(classes);
     }
@@ -516,22 +627,45 @@ class ModuleDependencyArchTest {
 # 루트에서 전체 빌드
 ./gradlew clean build
 
+# Version Catalog 일관성 검증
+./gradlew verifyVersionCatalog
+
+# Lombok 금지 검증
+./gradlew checkNoLombok
+```
+
+### 모듈별 빌드
+
+```bash
 # 특정 모듈만 빌드
 ./gradlew :domain:build
 ./gradlew :application:build
 ./gradlew :adapter-in:rest-api:build
 ./gradlew :adapter-out:persistence-mysql:build
+./gradlew :adapter-out:persistence-redis:build
+./gradlew :bootstrap:bootstrap-web-api:build
 ```
 
-### 모듈 의존성 확인
+### 테스트 실행
+
+```bash
+# 전체 테스트
+./gradlew test
+
+# ArchUnit 테스트만
+./gradlew test --tests "*ArchTest"
+
+# 모듈별 테스트
+./gradlew :domain:test
+./gradlew :application:test
+```
+
+### 의존성 확인
 
 ```bash
 # 모듈 의존성 트리 확인
 ./gradlew :application:dependencies
 ./gradlew :adapter-in:rest-api:dependencies
-
-# ArchUnit 검증
-./gradlew test --tests "*ArchTest"
 ```
 
 ---
@@ -539,25 +673,44 @@ class ModuleDependencyArchTest {
 ## 9️⃣ 체크리스트
 
 멀티모듈 구조 설정 시:
-- [ ] **gradle.properties에 버전 명시** (하드코딩 금지)
+
+### 프로젝트 초기화
 - [ ] settings.gradle에 모든 모듈 등록
-- [ ] 각 모듈별 build.gradle 작성 (버전은 gradle.properties 참조)
-- [ ] 의존성 흐름 준수 (domain → application → adapter)
-- [ ] Test Fixtures 모듈 추가
-- [ ] ArchUnit 검증 테스트 작성
-- [ ] 빌드 및 테스트 통과 확인
-- [ ] CI/CD 파이프라인 통합
+- [ ] `gradle/libs.versions.toml` 생성 (버전 하드코딩 금지)
+- [ ] 각 모듈별 build.gradle 작성 (Version Catalog 참조)
+
+### 의존성 규칙
+- [ ] domain: 외부 의존성 없음 (Pure Java)
+- [ ] application: domain만 의존
+- [ ] adapter: application + domain만 의존
+- [ ] adapter-in ↔ adapter-out 상호 의존 없음
+
+### Test Fixtures
+- [ ] `java-test-fixtures` 플러그인 적용
+- [ ] `src/testFixtures/java/` 디렉토리 생성
+- [ ] `testFixtures(project(':...'))` 문법으로 의존성 전파
+
+### 검증
+- [ ] ArchUnit 의존성 검증 테스트 작성
+- [ ] `./gradlew verifyVersionCatalog` 통과
+- [ ] `./gradlew checkNoLombok` 통과
+- [ ] 전체 빌드 및 테스트 통과
 
 ---
 
 ## 📖 관련 문서
 
-- **[Gradle Configuration](./gradle-configuration.md)** - Gradle 설정 상세
-- **[Version Management](./version-management.md)** - Java, Spring Boot, 라이브러리 버전
-- **[Test Fixtures Guide](../05-testing/test-fixtures/01_test-fixtures-guide.md)** - 테스트 픽스쳐 가이드
+- **[Version Management](./version-management.md)** - Version Catalog 기반 의존성 관리
+- **[Gradle Configuration](./gradle-configuration.md)** - QA 도구 및 플러그인 설정
+- **[Test Fixtures Guide](../05-testing/test-fixtures/01_test-fixtures-guide.md)** - 테스트 픽스쳐 전략
+- **[Domain Guide](../02-domain-layer/domain-guide.md)** - Domain Layer 가이드
+- **[Application Guide](../03-application-layer/application-guide.md)** - Application Layer 가이드
+- **[REST API Guide](../01-adapter-in-layer/rest-api/rest-api-guide.md)** - REST API Layer 가이드
+- **[MySQL Persistence Guide](../04-persistence-layer/mysql/persistence-mysql-guide.md)** - MySQL Adapter 가이드
+- **[Redis Persistence Guide](../04-persistence-layer/redis/persistence-redis-guide.md)** - Redis Adapter 가이드
 
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-13
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-05
+**버전**: 2.0.0

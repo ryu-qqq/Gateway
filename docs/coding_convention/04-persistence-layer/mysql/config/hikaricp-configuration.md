@@ -331,7 +331,8 @@ spring:
 ```java
 // 50개 INSERT를 1번의 네트워크 라운드트립으로 처리
 for (int i = 0; i < 1000; i++) {
-    orderRepository.save(Order.create(...));
+    Order order = Order.create(customerId, orderItems, clock);
+    orderRepository.save(order);
 }
 // Without Batch: 1000번 네트워크 왕복
 // With Batch: 20번 네트워크 왕복 (50개씩)
@@ -475,7 +476,7 @@ services:
 - [Spring Boot Actuator](https://docs.spring.io/spring-boot/reference/actuator/)
 
 ### 관련 문서
-- [flyway-testing-guide.md](./flyway-testing-guide.md) - Flyway 통합 가이드
+- [flyway-guide.md](./flyway-guide.md) - Flyway 통합 가이드
 - [persistence-mysql-guide.md](../persistence-mysql-guide.md) - MySQL Persistence Layer 전체 가이드
 
 ---

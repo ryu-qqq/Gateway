@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.tenant.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-import java.util.Map;
 
 /**
  * Tenant Config Persistence 예외
@@ -44,9 +43,8 @@ public final class TenantConfigPersistenceException extends DomainException {
      */
     public TenantConfigPersistenceException(String tenantId, String operation, Throwable cause) {
         super(
-                TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR.getCode(),
-                String.format("Failed to %s tenant config for tenantId: %s", operation, tenantId),
-                Map.of("tenantId", tenantId, "operation", operation));
+                TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR,
+                buildDetail(tenantId, operation));
         this.tenantId = tenantId;
         this.operation = operation;
         initCause(cause);
@@ -62,9 +60,8 @@ public final class TenantConfigPersistenceException extends DomainException {
      */
     public TenantConfigPersistenceException(String tenantId, String operation) {
         super(
-                TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR.getCode(),
-                String.format("Failed to %s tenant config for tenantId: %s", operation, tenantId),
-                Map.of("tenantId", tenantId, "operation", operation));
+                TenantErrorCode.TENANT_CONFIG_PERSISTENCE_ERROR,
+                buildDetail(tenantId, operation));
         this.tenantId = tenantId;
         this.operation = operation;
     }
@@ -76,7 +73,7 @@ public final class TenantConfigPersistenceException extends DomainException {
      * @author development-team
      * @since 1.0.0
      */
-    public String getTenantId() {
+    public String tenantId() {
         return tenantId;
     }
 
@@ -87,7 +84,11 @@ public final class TenantConfigPersistenceException extends DomainException {
      * @author development-team
      * @since 1.0.0
      */
-    public String getOperation() {
+    public String operation() {
         return operation;
+    }
+
+    private static String buildDetail(String tenantId, String operation) {
+        return String.format("tenantId=%s, operation=%s", tenantId, operation);
     }
 }

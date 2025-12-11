@@ -22,7 +22,7 @@ class AccountLockedExceptionTest {
 
             // then
             assertThat(exception).isNotNull();
-            assertThat(exception.code()).isEqualTo("RATE-003");
+            assertThat(exception.getCode()).isEqualTo("RATE-003");
             assertThat(exception.getMessage())
                     .isEqualTo("Account locked due to too many failures.");
         }
@@ -35,8 +35,8 @@ class AccountLockedExceptionTest {
 
             // then
             assertThat(exception).isNotNull();
-            assertThat(exception.code()).isEqualTo("RATE-003");
-            assertThat(exception.getUserId()).isEqualTo("user-123");
+            assertThat(exception.getCode()).isEqualTo("RATE-003");
+            assertThat(exception.userId()).isEqualTo("user-123");
         }
 
         @Test
@@ -46,19 +46,19 @@ class AccountLockedExceptionTest {
             AccountLockedException exception = new AccountLockedException("user-123", 1800);
 
             // then
-            assertThat(exception.getUserId()).isEqualTo("user-123");
-            assertThat(exception.getRetryAfterSeconds()).isEqualTo(1800);
+            assertThat(exception.userId()).isEqualTo("user-123");
+            assertThat(exception.retryAfterSeconds()).isEqualTo(1800);
         }
 
         @Test
-        @DisplayName("args에 userId, retryAfterSeconds 포함")
-        void shouldIncludeArgsInException() {
+        @DisplayName("개별 필드 접근자를 통해 userId, retryAfterSeconds 확인")
+        void shouldAccessFieldsThroughGetters() {
             // when
             AccountLockedException exception = new AccountLockedException("user-123", 1800);
 
             // then
-            assertThat(exception.args()).containsEntry("userId", "user-123");
-            assertThat(exception.args()).containsEntry("retryAfterSeconds", 1800);
+            assertThat(exception.userId()).isEqualTo("user-123");
+            assertThat(exception.retryAfterSeconds()).isEqualTo(1800);
         }
     }
 
@@ -98,7 +98,7 @@ class AccountLockedExceptionTest {
             AccountLockedException exception = new AccountLockedException();
 
             // when & then
-            assertThat(exception.code()).isEqualTo(RateLimitErrorCode.ACCOUNT_LOCKED.getCode());
+            assertThat(exception.getCode()).isEqualTo(RateLimitErrorCode.ACCOUNT_LOCKED.getCode());
             assertThat(exception.getMessage())
                     .isEqualTo(RateLimitErrorCode.ACCOUNT_LOCKED.getMessage());
         }

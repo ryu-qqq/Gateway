@@ -84,7 +84,7 @@ class JwtAuthenticationFilterTest {
                         .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
-        // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
+        // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, organizationId, permissionHash 제공
         JwtClaims claims =
                 JwtClaims.of(
                         "user-123",
@@ -93,7 +93,9 @@ class JwtAuthenticationFilterTest {
                         Instant.now(),
                         List.of("ROLE_USER"),
                         "tenant-123",
-                        "hash-456");
+                        "org-789",
+                        "hash-456",
+                        false);
         ValidateJwtResponse response = new ValidateJwtResponse(claims, true);
         when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                 .thenReturn(Mono.just(response));
@@ -136,7 +138,7 @@ class JwtAuthenticationFilterTest {
         String subject = "user-123";
         List<String> roles = List.of("ROLE_USER", "ROLE_ADMIN");
 
-        // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, permissionHash 제공
+        // ConcurrentHashMap은 null 값을 허용하지 않으므로 tenantId, organizationId, permissionHash 제공
         JwtClaims claims =
                 JwtClaims.of(
                         subject,
@@ -145,7 +147,9 @@ class JwtAuthenticationFilterTest {
                         Instant.now(),
                         roles,
                         "tenant-123",
-                        "hash-456");
+                        "org-789",
+                        "hash-456",
+                        false);
         ValidateJwtResponse response = new ValidateJwtResponse(claims, true);
         when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
                 .thenReturn(Mono.just(response));

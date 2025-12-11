@@ -36,9 +36,7 @@ public final class PublicKeyNotFoundException extends DomainException {
      * @since 1.0.0
      */
     public PublicKeyNotFoundException(String kid) {
-        super(
-                AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getCode(),
-                "Public key not found: kid=" + kid);
+        super(AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND, "kid=" + kid);
     }
 
     /**
@@ -50,8 +48,6 @@ public final class PublicKeyNotFoundException extends DomainException {
      * @since 1.0.0
      */
     public PublicKeyNotFoundException() {
-        super(
-                AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getCode(),
-                AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND.getMessage());
+        super(AuthenticationErrorCode.PUBLIC_KEY_NOT_FOUND);
     }
 }

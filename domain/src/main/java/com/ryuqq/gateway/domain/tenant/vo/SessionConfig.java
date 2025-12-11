@@ -23,10 +23,13 @@ import java.util.Objects;
  * boolean canCreateSession = config.canCreateNewSession(currentSessionCount);
  * }</pre>
  *
+ * @param maxActiveSessions 최대 동시 세션 수
+ * @param accessTokenTTL Access Token 만료 시간
+ * @param refreshTokenTTL Refresh Token 만료 시간
  * @author development-team
  * @since 1.0.0
  */
-public final class SessionConfig {
+public record SessionConfig(int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
 
     /** 기본 최대 동시 세션 수 */
     private static final int DEFAULT_MAX_ACTIVE_SESSIONS = 5;
@@ -37,15 +40,19 @@ public final class SessionConfig {
     /** 기본 Refresh Token TTL (7일) */
     private static final Duration DEFAULT_REFRESH_TOKEN_TTL = Duration.ofDays(7);
 
-    private final int maxActiveSessions;
-    private final Duration accessTokenTTL;
-    private final Duration refreshTokenTTL;
-
-    private SessionConfig(
-            int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
-        this.maxActiveSessions = maxActiveSessions;
-        this.accessTokenTTL = accessTokenTTL;
-        this.refreshTokenTTL = refreshTokenTTL;
+    /** Compact Constructor (검증 로직) */
+    public SessionConfig {
+        if (maxActiveSessions <= 0) {
+            throw new IllegalArgumentException("maxActiveSessions must be positive");
+        }
+        Objects.requireNonNull(accessTokenTTL, "accessTokenTTL cannot be null");
+        if (accessTokenTTL.isZero() || accessTokenTTL.isNegative()) {
+            throw new IllegalArgumentException("accessTokenTTL must be positive");
+        }
+        Objects.requireNonNull(refreshTokenTTL, "refreshTokenTTL cannot be null");
+        if (refreshTokenTTL.isZero() || refreshTokenTTL.isNegative()) {
+            throw new IllegalArgumentException("refreshTokenTTL must be positive");
+        }
     }
 
     /**
@@ -61,10 +68,6 @@ public final class SessionConfig {
      */
     public static SessionConfig of(
             int maxActiveSessions, Duration accessTokenTTL, Duration refreshTokenTTL) {
-        validateMaxActiveSessions(maxActiveSessions);
-        validateTTL(accessTokenTTL, "accessTokenTTL");
-        validateTTL(refreshTokenTTL, "refreshTokenTTL");
-
         return new SessionConfig(maxActiveSessions, accessTokenTTL, refreshTokenTTL);
     }
 
@@ -102,19 +105,6 @@ public final class SessionConfig {
                 Duration.ofSeconds(refreshTokenTTLSeconds));
     }
 
-    private static void validateMaxActiveSessions(int maxActiveSessions) {
-        if (maxActiveSessions <= 0) {
-            throw new IllegalArgumentException("maxActiveSessions must be positive");
-        }
-    }
-
-    private static void validateTTL(Duration ttl, String fieldName) {
-        Objects.requireNonNull(ttl, fieldName + " cannot be null");
-        if (ttl.isZero() || ttl.isNegative()) {
-            throw new IllegalArgumentException(fieldName + " must be positive");
-        }
-    }
-
     /**
      * 새 세션 생성 가능 여부 확인
      *
@@ -128,46 +118,13 @@ public final class SessionConfig {
     }
 
     /**
-     * 최대 동시 세션 수 반환
-     *
-     * @return 최대 동시 세션 수
-     * @author development-team
-     * @since 1.0.0
-     */
-    public int getMaxActiveSessions() {
-        return maxActiveSessions;
-    }
-
-    /**
-     * Access Token TTL 반환
-     *
-     * @return Access Token 만료 시간
-     * @author development-team
-     * @since 1.0.0
-     */
-    public Duration getAccessTokenTTL() {
-        return accessTokenTTL;
-    }
-
-    /**
-     * Refresh Token TTL 반환
-     *
-     * @return Refresh Token 만료 시간
-     * @author development-team
-     * @since 1.0.0
-     */
-    public Duration getRefreshTokenTTL() {
-        return refreshTokenTTL;
-    }
-
-    /**
      * Access Token TTL을 초 단위로 반환
      *
      * @return Access Token TTL (초)
      * @author development-team
      * @since 1.0.0
      */
-    public long getAccessTokenTTLSeconds() {
+    public long accessTokenTTLSeconds() {
         return accessTokenTTL.toSeconds();
     }
 
@@ -178,27 +135,8 @@ public final class SessionConfig {
      * @author development-team
      * @since 1.0.0
      */
-    public long getRefreshTokenTTLSeconds() {
+    public long refreshTokenTTLSeconds() {
         return refreshTokenTTL.toSeconds();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        SessionConfig that = (SessionConfig) o;
-        return maxActiveSessions == that.maxActiveSessions
-                && Objects.equals(accessTokenTTL, that.accessTokenTTL)
-                && Objects.equals(refreshTokenTTL, that.refreshTokenTTL);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(maxActiveSessions, accessTokenTTL, refreshTokenTTL);
     }
 
     @Override

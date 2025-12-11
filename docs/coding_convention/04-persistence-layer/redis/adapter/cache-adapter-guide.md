@@ -102,7 +102,9 @@ package com.ryuqq.adapter.out.persistence.redis.order.adapter;
 
 import com.ryuqq.application.order.port.out.OrderCachePort;
 import com.ryuqq.domain.order.Order;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -172,13 +174,21 @@ public class OrderCacheAdapter implements OrderCachePort {
     /**
      * Order 전체 캐시 무효화 (패턴 기반)
      *
-     * <p>주의: Prod에서는 SCAN 사용 권장</p>
+     * <p>SCAN 명령어를 사용하여 안전하게 키를 삭제합니다.</p>
+     * <p>⚠️ KEYS 명령어는 절대 사용 금지 (Redis 블로킹)</p>
      */
     @Override
     public void evictAll() {
-        // SCAN 패턴 사용 (KEYS 금지)
-        redisTemplate.keys(KEY_PREFIX + "*")
-            .forEach(redisTemplate::delete);
+        ScanOptions options = ScanOptions.scanOptions()
+            .match(KEY_PREFIX + "*")
+            .count(100)
+            .build();
+
+        try (Cursor<String> cursor = redisTemplate.scan(options)) {
+            while (cursor.hasNext()) {
+                redisTemplate.delete(cursor.next());
+            }
+        }
     }
 
     private String generateKey(Long orderId) {
@@ -351,13 +361,11 @@ public void evictAll() {
         .count(100)  // 한 번에 100개씩
         .build();
 
-    redisTemplate.execute((RedisCallback<Object>) connection -> {
-        Cursor<byte[]> cursor = connection.scan(options);
+    try (Cursor<String> cursor = redisTemplate.scan(options)) {
         while (cursor.hasNext()) {
-            redisTemplate.delete(new String(cursor.next()));
+            redisTemplate.delete(cursor.next());
         }
-        return null;
-    });
+    }
 }
 ```
 
@@ -370,9 +378,9 @@ public void evictAll() {
 
 ## 8️⃣ 체크리스트
 
-CacheAdapter 구현 시:
+### 필수 규칙 (Zero-Tolerance)
 - [ ] `@Component` 어노테이션 추가
-- [ ] Port 인터페이스 구현
+- [ ] Port 인터페이스 구현 (CachePort)
 - [ ] RedisTemplate 의존성 주입
 - [ ] Key Naming Convention 준수 (`{namespace}:{entity}:{id}`)
 - [ ] TTL 필수 지정
@@ -381,7 +389,14 @@ CacheAdapter 구현 시:
 - [ ] DB 접근 없음 (QueryAdapter로 분리)
 - [ ] `@Transactional` 절대 금지
 - [ ] **KEYS 명령어 절대 금지** (Prod에서 성능 문제)
-- [ ] **SCAN 사용** (페이지네이션 지원, 안전)
+
+### 선택적 규칙 (상황에 따라)
+- [ ] ObjectMapper 의존성 (Object 타입 캐시, JSON 직렬화 필요 시)
+- [ ] evictByPattern 메서드 (패턴 기반 삭제 필요 시)
+- [ ] scanKeys 메서드 (evictByPattern 구현 시 SCAN 사용)
+
+> **참고**: 단순 String key-value 캐시의 경우 ObjectMapper, evictByPattern, scanKeys가 불필요합니다.
+> Object 타입 캐시(JSON 직렬화)나 패턴 기반 삭제가 필요한 경우에만 구현하세요.
 
 ---
 
@@ -394,5 +409,9 @@ CacheAdapter 구현 시:
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-13
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-09
+**버전**: 1.1.0
+
+### 변경 이력
+- **v1.1.0** (2025-12-09): ObjectMapper, evictByPattern, scanKeys 규칙을 선택적으로 변경
+- **v1.0.0** (2025-11-13): 최초 작성

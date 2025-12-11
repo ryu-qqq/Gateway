@@ -81,6 +81,7 @@ public class JwtValidator {
                                             : null;
                             List<String> roles = claims.getStringListClaim("roles");
                             String tenantId = claims.getStringClaim("tenantId");
+                            String organizationId = claims.getStringClaim("organizationId");
                             String permissionHash = claims.getStringClaim("permissionHash");
                             Boolean mfaVerifiedClaim = claims.getBooleanClaim("mfaVerified");
                             boolean mfaVerified = mfaVerifiedClaim != null && mfaVerifiedClaim;
@@ -92,6 +93,7 @@ public class JwtValidator {
                                     issuedAt,
                                     roles != null ? roles : List.of(),
                                     tenantId,
+                                    organizationId,
                                     permissionHash,
                                     mfaVerified);
                         })

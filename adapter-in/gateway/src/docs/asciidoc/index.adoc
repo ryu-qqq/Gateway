@@ -1,0 +1,583 @@
+= Connectly Gateway Documentation
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 3
+:sectlinks:
+:sectnums:
+
+[[overview]]
+== 개요
+
+**Connectly Gateway**는 마이크로서비스 아키텍처의 API Gateway입니다.
+
+Spring Cloud Gateway 기반으로 구축되었으며, 모든 클라이언트 요청이 백엔드 서비스에 도달하기 전에 이 Gateway를 통과합니다.
+
+=== 핵심 기능
+
+* **인증 (Authentication)**: JWT 기반 토큰 검증 및 자동 갱신
+* **인가 (Authorization)**: 사용자 권한 기반 API 접근 제어
+* **Rate Limiting**: IP, Endpoint, User 기반 요청 제한
+* **Multi-Tenancy**: 테넌트 격리 및 설정 관리
+* **MFA 검증**: 고위험 작업에 대한 2차 인증
+* **요청 추적**: 분산 추적을 위한 Trace ID 관리
+
+[[architecture]]
+== 아키텍처
+
+[[architecture-overview]]
+=== 시스템 개요
+
+[source]
+----
+                                    ┌─────────────────────────────────────────────────────────┐
+                                    │                   Connectly Gateway                      │
+                                    │                                                          │
+┌──────────┐     HTTPS              │  ┌─────────────────────────────────────────────────┐   │
+│  Client  │ ─────────────────────▶ │  │              Filter Chain                        │   │
+│  (App)   │                        │  │                                                   │   │
+└──────────┘                        │  │  1. TraceIdFilter                                │   │
+                                    │  │  2. RateLimitFilter (IP/Endpoint)                │   │
+                                    │  │  3. TokenRefreshFilter                           │   │
+                                    │  │  4. JwtAuthenticationFilter                      │   │
+                                    │  │  5. UserRateLimitFilter                          │   │
+                                    │  │  6. TenantIsolationFilter                        │   │
+                                    │  │  7. PermissionFilter                             │   │
+                                    │  │  8. MfaVerificationFilter                        │   │
+                                    │  │                                                   │   │
+                                    │  └──────────────────────┬──────────────────────────┘   │
+                                    │                         │                               │
+                                    │                         ▼                               │
+                                    │  ┌─────────────────────────────────────────────────┐   │
+                                    │  │           Route to Backend Services              │   │
+                                    │  └─────────────────────────────────────────────────┘   │
+                                    │                                                          │
+                                    └─────────────────────────────────────────────────────────┘
+                                                              │
+                          ┌───────────────────────────────────┼───────────────────────────────────┐
+                          │                                   │                                   │
+                          ▼                                   ▼                                   ▼
+                  ┌──────────────┐                    ┌──────────────┐                    ┌──────────────┐
+                  │ User Service │                    │Order Service │                    │ Auth Hub     │
+                  └──────────────┘                    └──────────────┘                    └──────────────┘
+----
+
+[[architecture-filter-chain]]
+=== Filter Chain
+
+Gateway의 핵심은 **Filter Chain**입니다. 모든 요청은 순차적으로 Filter를 통과하며, 각 Filter는 특정 보안/기능을 담당합니다.
+
+==== Filter 실행 순서
+
+[cols="1,3,6", options="header"]
+|===
+| 순서 | Filter | 역할
+
+| 1
+| `TraceIdFilter`
+| 분산 추적을 위한 Trace ID 생성/전파. MDC에 저장하여 로깅에 활용
+
+| 2
+| `RateLimitFilter`
+| **인증 전** Rate Limiting. IP 및 Endpoint 기반 요청 제한. DDoS 방어 1차 방어선
+
+| 3
+| `TokenRefreshFilter`
+| Access Token 만료 시 Refresh Token으로 자동 갱신. 클라이언트 투명하게 처리
+
+| 4
+| `JwtAuthenticationFilter`
+| JWT 토큰 검증 및 Claims 추출. Public Key 기반 서명 검증
+
+| 5
+| `UserRateLimitFilter`
+| **인증 후** 사용자별 Rate Limiting. JWT에서 userId 추출하여 제한
+
+| 6
+| `TenantIsolationFilter`
+| Multi-Tenant 환경에서 테넌트 격리. 테넌트 설정 조회 및 헤더 주입
+
+| 7
+| `PermissionFilter`
+| RBAC 기반 권한 검사. 사용자 역할과 API 권한 매핑 검증
+
+| 8
+| `MfaVerificationFilter`
+| 고위험 엔드포인트에 대한 MFA(2차 인증) 검증
+|===
+
+==== Filter 동작 흐름
+
+[source]
+----
+요청 수신
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ TraceIdFilter                                                                    │
+│   • X-Trace-Id 헤더 확인 (없으면 생성)                                           │
+│   • MDC에 traceId 저장                                                           │
+│   • 다음 Filter로 전달                                                            │
+└─────────────────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ RateLimitFilter                                                                  │
+│   • Client IP 추출                                                               │
+│   • Redis에서 IP/Endpoint별 카운터 조회                                           │
+│   • 제한 초과 시 429 Too Many Requests 반환                                       │
+│   • X-RateLimit-* 헤더 추가                                                      │
+└─────────────────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ TokenRefreshFilter                                                               │
+│   • Access Token 만료 여부 확인                                                   │
+│   • 만료 시: Refresh Token으로 AuthHub에 토큰 갱신 요청                           │
+│   • 새 Access Token을 Authorization 헤더에 설정                                   │
+│   • 응답 헤더에 새 토큰 포함 (X-New-Access-Token)                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ JwtAuthenticationFilter                                                          │
+│   • Authorization 헤더에서 Bearer 토큰 추출                                       │
+│   • Public Key로 JWT 서명 검증                                                    │
+│   • Claims 추출 (userId, tenantId, roles 등)                                     │
+│   • ServerWebExchange에 인증 정보 저장                                            │
+│   • 검증 실패 시 401 Unauthorized 반환                                            │
+└─────────────────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ UserRateLimitFilter                                                              │
+│   • JWT Claims에서 userId 추출                                                   │
+│   • 사용자별 Rate Limit 체크                                                      │
+│   • OTP 시도 횟수 등 민감 작업 제한                                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ TenantIsolationFilter                                                            │
+│   • JWT Claims에서 tenantId 추출                                                 │
+│   • Redis/AuthHub에서 테넌트 설정 조회                                            │
+│   • 테넌트 활성화 상태 검증                                                        │
+│   • X-Tenant-Config 헤더로 백엔드에 설정 전달                                     │
+└─────────────────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ PermissionFilter                                                                 │
+│   • 요청 경로 + HTTP Method로 필요 권한 결정                                      │
+│   • 사용자 역할(roles)과 권한 매핑 확인                                           │
+│   • AuthHub의 Permission Spec과 비교                                             │
+│   • 권한 없으면 403 Forbidden 반환                                                │
+└─────────────────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ MfaVerificationFilter                                                            │
+│   • 고위험 엔드포인트 여부 확인                                                   │
+│   • MFA 필요 시 X-MFA-Token 헤더 검증                                            │
+│   • 검증 실패 시 403 + MFA 필요 응답                                              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+    │
+    ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                            Backend Service로 라우팅                               │
+└─────────────────────────────────────────────────────────────────────────────────┘
+----
+
+[[architecture-external-dependencies]]
+=== 외부 의존성
+
+[source]
+----
+                        ┌─────────────────┐
+                        │ Connectly       │
+                        │ Gateway         │
+                        └────────┬────────┘
+                                 │
+          ┌──────────────────────┼──────────────────────┐
+          │                      │                      │
+          ▼                      ▼                      ▼
+   ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+   │   AuthHub    │      │    Redis     │      │  Backend     │
+   │              │      │              │      │  Services    │
+   │ • JWT Public │      │ • Rate Limit │      │              │
+   │   Key 제공    │      │   Counter    │      │ • User       │
+   │ • Token 갱신  │      │ • Permission │      │ • Order      │
+   │ • Permission │      │   Cache      │      │ • Product    │
+   │   Spec 제공   │      │ • Tenant     │      │ • ...        │
+   │ • Tenant     │      │   Config     │      │              │
+   │   Config     │      │   Cache      │      │              │
+   └──────────────┘      └──────────────┘      └──────────────┘
+----
+
+==== AuthHub
+
+인증/인가 중앙 서버입니다.
+
+* **JWT Public Key**: JWT 검증용 Public Key 제공
+* **Token Refresh**: Refresh Token으로 새 Access Token 발급
+* **Permission Spec**: API 권한 명세 제공
+* **Tenant Config**: 테넌트별 설정 정보 제공
+
+==== Redis
+
+고성능 캐싱 및 카운터 저장소입니다.
+
+* **Rate Limit Counter**: 요청 횟수 카운팅
+* **Permission Cache**: 권한 정보 캐시
+* **Tenant Config Cache**: 테넌트 설정 캐시
+* **Public Key Cache**: JWT Public Key 캐시
+
+[[architecture-project-structure]]
+=== 프로젝트 구조
+
+[source]
+----
+adapter-in/gateway/
+├── src/main/java/com/ryuqq/gateway/adapter/in/gateway/
+│   ├── config/
+│   │   └── GatewayFilterOrder.java      # Filter 실행 순서 상수
+│   │
+│   ├── filter/                          # 핵심 Filter 구현
+│   │   ├── TraceIdFilter.java
+│   │   ├── RateLimitFilter.java
+│   │   ├── TokenRefreshFilter.java
+│   │   ├── JwtAuthenticationFilter.java
+│   │   ├── UserRateLimitFilter.java
+│   │   ├── TenantIsolationFilter.java
+│   │   ├── PermissionFilter.java
+│   │   └── MfaVerificationFilter.java
+│   │
+│   ├── controller/                      # 내부 관리 API
+│   │   ├── PublicKeyRefreshController.java
+│   │   ├── PermissionWebhookController.java
+│   │   └── TenantConfigWebhookController.java
+│   │
+│   ├── error/                           # 에러 처리
+│   │   └── JwtErrorHandler.java
+│   │
+│   ├── common/
+│   │   ├── dto/                         # 공통 DTO
+│   │   │   ├── ApiResponse.java
+│   │   │   └── ErrorInfo.java
+│   │   └── util/                        # 유틸리티
+│   │       ├── ClientIpExtractor.java
+│   │       └── GatewayErrorResponder.java
+│   │
+│   └── trace/                           # 추적 관련
+│       └── TraceIdMdcContext.java
+│
+└── src/docs/asciidoc/
+    └── index.adoc                       # 이 문서
+----
+
+[[security]]
+== 보안
+
+[[security-authentication]]
+=== JWT 인증
+
+[source]
+----
+┌──────────┐                  ┌─────────────┐                  ┌──────────┐
+│  Client  │                  │   Gateway   │                  │ AuthHub  │
+└────┬─────┘                  └──────┬──────┘                  └────┬─────┘
+     │                               │                              │
+     │  1. Request + Bearer Token    │                              │
+     │ ─────────────────────────────▶│                              │
+     │                               │                              │
+     │                               │  2. Get Public Key (cached)  │
+     │                               │ ────────────────────────────▶│
+     │                               │                              │
+     │                               │◀──────────────────────────── │
+     │                               │     Public Key               │
+     │                               │                              │
+     │                               │  3. Verify JWT Signature     │
+     │                               │  4. Extract Claims           │
+     │                               │  5. Store in Exchange        │
+     │                               │                              │
+     │  6. Response                  │                              │
+     │ ◀─────────────────────────────│                              │
+     │                               │                              │
+----
+
+==== JWT Claims 구조
+
+[source,json]
+----
+{
+  "sub": "user-123",
+  "tenantId": "tenant-abc",
+  "roles": ["USER", "ADMIN"],
+  "permissions": ["read:users", "write:orders"],
+  "iat": 1704067200,
+  "exp": 1704070800
+}
+----
+
+[[security-rate-limiting]]
+=== Rate Limiting
+
+다단계 Rate Limiting으로 시스템을 보호합니다.
+
+[cols="1,2,3", options="header"]
+|===
+| 레벨 | 적용 시점 | 목적
+
+| IP 기반
+| 인증 전 (RateLimitFilter)
+| DDoS 방어, 악성 IP 차단
+
+| Endpoint 기반
+| 인증 전 (RateLimitFilter)
+| 특정 API 과부하 방지
+
+| User 기반
+| 인증 후 (UserRateLimitFilter)
+| 사용자별 공정한 사용 보장
+
+| OTP 시도
+| 인증 후 (UserRateLimitFilter)
+| Brute Force 공격 방지
+|===
+
+==== Rate Limit 응답 헤더
+
+[source]
+----
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1704067260
+----
+
+[[security-multi-tenancy]]
+=== Multi-Tenancy
+
+테넌트 격리를 통해 데이터 보안을 보장합니다.
+
+[source]
+----
+요청 → JWT에서 tenantId 추출 → 테넌트 설정 조회 → 테넌트 활성화 검증
+                                      │
+                                      ▼
+                              X-Tenant-Config 헤더로
+                              백엔드 서비스에 전달
+----
+
+[[internal-api]]
+== 내부 관리 API
+
+[IMPORTANT]
+====
+이 API들은 **내부 시스템 전용**입니다.
+
+* 외부에서 직접 호출하면 안 됩니다
+* IP Whitelist 또는 내부 네트워크에서만 접근 가능해야 합니다
+* AuthHub와 같은 내부 서비스에서 Webhook으로 호출됩니다
+====
+
+[[internal-api-actuator]]
+=== Actuator APIs
+
+[[internal-api-refresh-public-keys]]
+==== Public Key Cache 갱신
+
+JWT 검증을 위한 Public Key 캐시를 갱신합니다.
+
+AuthHub의 Public Key가 변경되었을 때 호출합니다.
+
+===== Request
+
+include::{snippets}/actuator/refresh-public-keys/curl-request.adoc[]
+
+===== Response
+
+include::{snippets}/actuator/refresh-public-keys/http-response.adoc[]
+
+[[internal-api-webhooks]]
+=== Webhook APIs
+
+AuthHub로부터 호출되는 Webhook 엔드포인트입니다.
+
+[[internal-api-webhooks-permission]]
+==== Permission Webhooks
+
+[[internal-api-webhooks-permission-spec-sync]]
+===== Permission Spec 동기화
+
+Permission Spec 캐시를 무효화합니다.
+
+AuthHub에서 권한 명세가 변경되었을 때 호출됩니다.
+
+====== Request
+
+include::{snippets}/webhooks/permission/spec-sync/curl-request.adoc[]
+
+====== Request Fields
+
+include::{snippets}/webhooks/permission/spec-sync/request-fields.adoc[]
+
+====== Response
+
+include::{snippets}/webhooks/permission/spec-sync/http-response.adoc[]
+
+[[internal-api-webhooks-permission-user-invalidate]]
+===== 사용자 권한 캐시 무효화
+
+특정 사용자의 Permission Hash 캐시를 무효화합니다.
+
+사용자의 역할이나 권한이 변경되었을 때 호출됩니다.
+
+====== Request
+
+include::{snippets}/webhooks/permission/user-invalidate/curl-request.adoc[]
+
+====== Request Fields
+
+include::{snippets}/webhooks/permission/user-invalidate/request-fields.adoc[]
+
+====== Response
+
+include::{snippets}/webhooks/permission/user-invalidate/http-response.adoc[]
+
+[[internal-api-tenant]]
+=== Tenant Config API
+
+[[internal-api-tenant-config-changed]]
+==== Tenant Config 캐시 무효화
+
+Tenant Config 캐시를 무효화합니다.
+
+AuthHub에서 테넌트 설정이 변경되었을 때 호출됩니다.
+
+===== Request
+
+include::{snippets}/internal/tenants/config-changed/curl-request.adoc[]
+
+===== Request Fields
+
+include::{snippets}/internal/tenants/config-changed/request-fields.adoc[]
+
+===== Response
+
+include::{snippets}/internal/tenants/config-changed/http-response.adoc[]
+
+[[api-summary]]
+== API 요약
+
+[cols="1,3,4", options="header"]
+|===
+| Method | Endpoint | 설명
+
+| `POST`
+| `/actuator/refresh-public-keys`
+| Public Key 캐시 갱신
+
+| `POST`
+| `/webhooks/permission/spec-sync`
+| Permission Spec 캐시 무효화
+
+| `POST`
+| `/webhooks/permission/user-invalidate`
+| 사용자 권한 캐시 무효화
+
+| `POST`
+| `/internal/gateway/tenants/config-changed`
+| Tenant Config 캐시 무효화
+|===
+
+[[http-status-codes]]
+== HTTP 상태 코드
+
+[cols="1,3", options="header"]
+|===
+| 상태 코드 | 설명
+
+| `200 OK`
+| 요청 성공
+
+| `401 Unauthorized`
+| 인증 실패 (JWT 없음, 만료, 유효하지 않음)
+
+| `403 Forbidden`
+| 권한 없음 (인증은 됐으나 접근 권한 없음)
+
+| `429 Too Many Requests`
+| Rate Limit 초과
+
+| `500 Internal Server Error`
+| 서버 내부 오류
+|===
+
+[[error-response]]
+== 에러 응답 형식
+
+모든 에러는 다음 형식으로 반환됩니다.
+
+[source,json]
+----
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "AUTH_001",
+    "message": "Invalid or expired token"
+  }
+}
+----
+
+[[appendix]]
+== 부록
+
+[[appendix-headers]]
+=== 요청/응답 헤더
+
+==== 요청 헤더
+
+[cols="2,1,4", options="header"]
+|===
+| 헤더 | 필수 | 설명
+
+| `Authorization`
+| O
+| Bearer {access_token} 형식의 JWT
+
+| `X-Trace-Id`
+| X
+| 분산 추적용 ID (없으면 자동 생성)
+
+| `X-Refresh-Token`
+| X
+| Access Token 만료 시 갱신용
+
+| `X-MFA-Token`
+| X
+| MFA 검증이 필요한 요청에 사용
+|===
+
+==== 응답 헤더
+
+[cols="2,4", options="header"]
+|===
+| 헤더 | 설명
+
+| `X-Trace-Id`
+| 요청 추적용 ID
+
+| `X-RateLimit-Limit`
+| Rate Limit 최대 요청 수
+
+| `X-RateLimit-Remaining`
+| 남은 요청 수
+
+| `X-RateLimit-Reset`
+| Rate Limit 리셋 시각 (Unix timestamp)
+
+| `X-New-Access-Token`
+| Token 갱신 시 새 Access Token
+|===

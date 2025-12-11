@@ -38,7 +38,7 @@
 ## 3️⃣ ArchUnit 테스트 (완전 강제 버전)
 
 ```java
-package com.ryuqq.adapter.in.rest.architecture;
+package com.company.adapter.in.rest.architecture;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -69,7 +69,7 @@ class MapperArchTest {
     @BeforeAll
     static void setUp() {
         classes = new ClassFileImporter()
-            .importPackages("com.ryuqq.adapter.in.rest");
+            .importPackages("com.company.adapter.in.rest");
     }
 
     /**

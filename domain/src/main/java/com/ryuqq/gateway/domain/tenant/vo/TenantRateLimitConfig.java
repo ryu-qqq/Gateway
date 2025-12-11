@@ -1,7 +1,5 @@
 package com.ryuqq.gateway.domain.tenant.vo;
 
-import java.util.Objects;
-
 /**
  * TenantRateLimitConfig - 테넌트별 Rate Limit 설정 Value Object
  *
@@ -21,10 +19,12 @@ import java.util.Objects;
  * boolean withinLimit = config.isLoginAttemptAllowed(currentCount);
  * }</pre>
  *
+ * @param loginAttemptsPerHour 시간당 로그인 시도 횟수
+ * @param otpRequestsPerHour 시간당 OTP 요청 횟수
  * @author development-team
  * @since 1.0.0
  */
-public final class TenantRateLimitConfig {
+public record TenantRateLimitConfig(int loginAttemptsPerHour, int otpRequestsPerHour) {
 
     /** 기본 시간당 로그인 시도 횟수 */
     private static final int DEFAULT_LOGIN_ATTEMPTS_PER_HOUR = 10;
@@ -32,12 +32,14 @@ public final class TenantRateLimitConfig {
     /** 기본 시간당 OTP 요청 횟수 */
     private static final int DEFAULT_OTP_REQUESTS_PER_HOUR = 5;
 
-    private final int loginAttemptsPerHour;
-    private final int otpRequestsPerHour;
-
-    private TenantRateLimitConfig(int loginAttemptsPerHour, int otpRequestsPerHour) {
-        this.loginAttemptsPerHour = loginAttemptsPerHour;
-        this.otpRequestsPerHour = otpRequestsPerHour;
+    /** Compact Constructor (검증 로직) */
+    public TenantRateLimitConfig {
+        if (loginAttemptsPerHour <= 0) {
+            throw new IllegalArgumentException("loginAttemptsPerHour must be positive");
+        }
+        if (otpRequestsPerHour <= 0) {
+            throw new IllegalArgumentException("otpRequestsPerHour must be positive");
+        }
     }
 
     /**
@@ -51,9 +53,6 @@ public final class TenantRateLimitConfig {
      * @since 1.0.0
      */
     public static TenantRateLimitConfig of(int loginAttemptsPerHour, int otpRequestsPerHour) {
-        validatePositive(loginAttemptsPerHour, "loginAttemptsPerHour");
-        validatePositive(otpRequestsPerHour, "otpRequestsPerHour");
-
         return new TenantRateLimitConfig(loginAttemptsPerHour, otpRequestsPerHour);
     }
 
@@ -69,12 +68,6 @@ public final class TenantRateLimitConfig {
     public static TenantRateLimitConfig defaultConfig() {
         return new TenantRateLimitConfig(
                 DEFAULT_LOGIN_ATTEMPTS_PER_HOUR, DEFAULT_OTP_REQUESTS_PER_HOUR);
-    }
-
-    private static void validatePositive(int value, String fieldName) {
-        if (value <= 0) {
-            throw new IllegalArgumentException(fieldName + " must be positive");
-        }
     }
 
     /**
@@ -102,28 +95,6 @@ public final class TenantRateLimitConfig {
     }
 
     /**
-     * 시간당 로그인 시도 횟수 반환
-     *
-     * @return 시간당 로그인 시도 횟수
-     * @author development-team
-     * @since 1.0.0
-     */
-    public int getLoginAttemptsPerHour() {
-        return loginAttemptsPerHour;
-    }
-
-    /**
-     * 시간당 OTP 요청 횟수 반환
-     *
-     * @return 시간당 OTP 요청 횟수
-     * @author development-team
-     * @since 1.0.0
-     */
-    public int getOtpRequestsPerHour() {
-        return otpRequestsPerHour;
-    }
-
-    /**
      * 남은 로그인 시도 횟수 계산
      *
      * @param currentCount 현재 로그인 시도 횟수
@@ -147,24 +118,6 @@ public final class TenantRateLimitConfig {
     public int calculateRemainingOtpRequests(int currentCount) {
         int remaining = otpRequestsPerHour - currentCount;
         return Math.max(remaining, 0);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        TenantRateLimitConfig that = (TenantRateLimitConfig) o;
-        return loginAttemptsPerHour == that.loginAttemptsPerHour
-                && otpRequestsPerHour == that.otpRequestsPerHour;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(loginAttemptsPerHour, otpRequestsPerHour);
     }
 
     @Override

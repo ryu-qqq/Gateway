@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.tenant.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-import java.util.Map;
 
 /**
  * Tenant ID 불일치 예외
@@ -41,30 +40,31 @@ public final class TenantMismatchException extends DomainException {
      */
     public TenantMismatchException(String expectedTenantId, String actualTenantId) {
         super(
-                TenantErrorCode.TENANT_MISMATCH.getCode(),
-                String.format(
-                        "Tenant ID mismatch. Expected: %s, Actual: %s",
-                        expectedTenantId, actualTenantId),
-                Map.of(
-                        "expectedTenantId", expectedTenantId,
-                        "actualTenantId", actualTenantId));
+                TenantErrorCode.TENANT_MISMATCH,
+                buildDetail(expectedTenantId, actualTenantId));
         this.expectedTenantId = expectedTenantId;
         this.actualTenantId = actualTenantId;
     }
 
     /**
-     * 기본 에러 메시지 사용
+     * 단일 Tenant ID로 예외 생성
      *
      * @param tenantId 관련된 Tenant ID
      * @author development-team
      * @since 1.0.0
      */
     public TenantMismatchException(String tenantId) {
-        super(
-                TenantErrorCode.TENANT_MISMATCH.getCode(),
-                TenantErrorCode.TENANT_MISMATCH.getMessage(),
-                Map.of("tenantId", tenantId));
+        super(TenantErrorCode.TENANT_MISMATCH, "tenantId=" + tenantId);
         this.expectedTenantId = tenantId;
+        this.actualTenantId = null;
+    }
+
+    /**
+     * 기본 예외 생성
+     */
+    public TenantMismatchException() {
+        super(TenantErrorCode.TENANT_MISMATCH);
+        this.expectedTenantId = null;
         this.actualTenantId = null;
     }
 
@@ -75,7 +75,7 @@ public final class TenantMismatchException extends DomainException {
      * @author development-team
      * @since 1.0.0
      */
-    public String getExpectedTenantId() {
+    public String expectedTenantId() {
         return expectedTenantId;
     }
 
@@ -86,7 +86,11 @@ public final class TenantMismatchException extends DomainException {
      * @author development-team
      * @since 1.0.0
      */
-    public String getActualTenantId() {
+    public String actualTenantId() {
         return actualTenantId;
+    }
+
+    private static String buildDetail(String expected, String actual) {
+        return String.format("expected=%s, actual=%s", expected, actual);
     }
 }

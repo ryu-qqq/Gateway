@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.tenant.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-import java.util.Map;
 
 /**
  * 소셜 로그인 제공자 불허용 예외
@@ -41,30 +40,21 @@ public final class SocialLoginNotAllowedException extends DomainException {
      */
     public SocialLoginNotAllowedException(String tenantId, String provider) {
         super(
-                TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED.getCode(),
-                String.format(
-                        "Social login provider '%s' is not allowed for tenant: %s",
-                        provider, tenantId),
-                Map.of(
-                        "tenantId", tenantId,
-                        "provider", provider));
+                TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED,
+                buildDetail(tenantId, provider));
         this.tenantId = tenantId;
         this.provider = provider;
     }
 
     /**
-     * 기본 에러 메시지 사용
+     * Provider만으로 예외 생성
      *
      * @param provider 허용되지 않은 소셜 로그인 제공자
      * @author development-team
      * @since 1.0.0
      */
     public SocialLoginNotAllowedException(String provider) {
-        super(
-                TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED.getCode(),
-                String.format(
-                        "Social login provider '%s' is not allowed for this tenant.", provider),
-                Map.of("provider", provider));
+        super(TenantErrorCode.SOCIAL_LOGIN_NOT_ALLOWED, "provider=" + provider);
         this.tenantId = null;
         this.provider = provider;
     }
@@ -76,7 +66,7 @@ public final class SocialLoginNotAllowedException extends DomainException {
      * @author development-team
      * @since 1.0.0
      */
-    public String getTenantId() {
+    public String tenantId() {
         return tenantId;
     }
 
@@ -87,7 +77,11 @@ public final class SocialLoginNotAllowedException extends DomainException {
      * @author development-team
      * @since 1.0.0
      */
-    public String getProvider() {
+    public String provider() {
         return provider;
+    }
+
+    private static String buildDetail(String tenantId, String provider) {
+        return String.format("tenantId=%s, provider=%s", tenantId, provider);
     }
 }

@@ -18,12 +18,20 @@
 
 ## 2) 생성 메서드 패턴
 
-### ID VO (OrderId, CustomerId 등)
+### ID VO - Long 타입 (Auto Increment)
 
-| 메서드 | 값 전달 | null 체크 | 용도 |
-|--------|---------|-----------|------|
-| `forNew()` | ❌ null | - | 신규 생성 (Auto Increment 대비) |
-| `of(Long value)` | ✅ 필수 | ✅ 필수 | 값 기반 생성 |
+| 메서드 | 반환값 | null 허용 | 용도 |
+|--------|--------|-----------|------|
+| `forNew()` | null | ✅ 허용 | 신규 생성 (DB가 ID 할당) |
+| `of(Long value)` | 값 | ❌ 금지 | 기존 ID 참조 |
+| `isNew()` | boolean | - | null 여부 확인 |
+
+### ID VO - UUID 타입 (UUIDv7)
+
+| 메서드 | 반환값 | null 허용 | 용도 |
+|--------|--------|-----------|------|
+| `forNew()` | UUIDv7 | ❌ 금지 | 신규 생성 (Application이 ID 생성) |
+| `of(String value)` | 값 | ❌ 금지 | 기존 UUID 파싱 |
 
 ### 일반 VO (Money, Email 등)
 
@@ -35,23 +43,28 @@
 
 ## 3) VO 유형별 템플릿
 
-### 3-1) ID VO (OrderId, CustomerId 등)
+### 3-1) ID VO - Long 타입 (Auto Increment)
 
 **특징**:
 - Record로 구현
-- Long 타입 래핑
-- `forNew()` 제공 (null 허용, Auto Increment 대비)
+- **Long 타입 래핑 (DB AUTO_INCREMENT 사용)**
+- `forNew()` 제공 (**null 허용** - DB가 ID 할당 예정)
 - `of(Long value)` 제공 (null 체크 필수)
+- `isNew()` 제공 (null 여부 확인)
 - Compact Constructor에서 검증
+
+**사용 시점**: 내부 PK로 사용, 외부 노출 비권장 (추측 가능)
 
 ```java
 /**
- * Order ID Value Object
+ * Order ID Value Object (Auto Increment)
+ *
+ * <p><strong>DB 전략</strong>: MySQL AUTO_INCREMENT - DB가 ID 할당</p>
  *
  * <p><strong>생성 패턴</strong>:</p>
  * <ul>
- *   <li>{@code forNew()} - 신규 생성 (ID = null, Auto Increment 대비)</li>
- *   <li>{@code of(Long value)} - 값 기반 생성 (null 체크 필수)</li>
+ *   <li>{@code forNew()} - 신규 엔티티 생성 시 (ID = null, DB가 할당 예정)</li>
+ *   <li>{@code of(Long value)} - 기존 엔티티 조회/참조 시 (ID 필수)</li>
  * </ul>
  *
  * @author development-team
@@ -62,19 +75,16 @@ public record OrderId(Long value) {
     /**
      * Compact Constructor (검증 로직)
      *
-     * <p>주의: forNew()로 생성 시 null 허용</p>
+     * <p>주의: forNew()로 생성 시 null 허용 (DB AUTO_INCREMENT 대비)</p>
      */
     public OrderId {
-        // of()로 생성 시에만 검증 (forNew()는 null 허용)
         if (value != null && value <= 0) {
-            throw new IllegalArgumentException("OrderId 값은 양수여야 합니다: " + value);
+            throw new IllegalArgumentException("OrderId는 양수여야 합니다: " + value);
         }
     }
 
     /**
-     * 신규 생성 (Auto Increment 대비)
-     *
-     * <p>ID가 null인 상태로 생성. DB에서 Auto Increment로 할당될 예정.</p>
+     * 신규 생성 - DB AUTO_INCREMENT가 ID 할당 예정
      *
      * @return OrderId (value = null)
      */
@@ -83,7 +93,7 @@ public record OrderId(Long value) {
     }
 
     /**
-     * 값 기반 생성
+     * 기존 ID 참조 - null 금지
      *
      * @param value ID 값 (null 불가)
      * @return OrderId
@@ -91,15 +101,15 @@ public record OrderId(Long value) {
      */
     public static OrderId of(Long value) {
         if (value == null) {
-            throw new IllegalArgumentException("OrderId 값은 null일 수 없습니다.");
+            throw new IllegalArgumentException("기존 OrderId는 null일 수 없습니다");
         }
         return new OrderId(value);
     }
 
     /**
-     * null 여부 확인
+     * 신규 엔티티 여부 확인
      *
-     * @return ID가 null이면 true
+     * @return ID가 null이면 true (아직 DB에 저장되지 않음)
      */
     public boolean isNew() {
         return value == null;
@@ -109,7 +119,120 @@ public record OrderId(Long value) {
 
 ---
 
-### 3-2) Simple VO - 단일 필드 (Money, Quantity 등)
+### 3-2) ID VO - UUID 타입 (UUIDv7, Application 생성)
+
+**특징**:
+- Record로 구현
+- **String 타입 래핑 (UUIDv7 형식)**
+- `forNew()` 제공 (**UUIDv7 자동 생성** - null 불가)
+- `of(String value)` 제공 (기존 UUID 파싱)
+- `isNew()` 없음 (항상 값 존재)
+- Compact Constructor에서 UUIDv7 형식 검증
+
+**사용 시점**: 외부 노출 ID (보안), 분산 환경, 추측 불가능한 ID 필요 시
+
+**의존성**: `com.github.f4b6a3:uuid-creator:6.0.0` (domain-guide.md 허용 예외 참조)
+
+```java
+import com.github.f4b6a3.uuid.UuidCreator;
+import java.util.regex.Pattern;
+
+/**
+ * User ID Value Object (UUIDv7 - Application Generated)
+ *
+ * <p><strong>특징</strong>:</p>
+ * <ul>
+ *   <li>UUIDv7: 시간 기반 정렬 가능 (첫 48bit = Unix timestamp ms)</li>
+ *   <li>Application에서 생성 (DB 의존 없음)</li>
+ *   <li>외부 노출 안전 (Long보다 추측 불가)</li>
+ * </ul>
+ *
+ * <p><strong>MySQL 저장</strong>: BINARY(16) 권장 (36바이트 → 16바이트 절약)</p>
+ *
+ * @author development-team
+ * @since 1.0.0
+ */
+public record UserId(String value) {
+
+    // UUIDv7 형식: 버전 7 (7xxx), 변형 8/9/a/b
+    private static final Pattern UUIDV7_PATTERN =
+        Pattern.compile("^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$");
+
+    /**
+     * Compact Constructor (검증 로직)
+     *
+     * <p>UUIDv7 형식 검증 - null 절대 금지</p>
+     */
+    public UserId {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("UserId는 null이거나 빈 문자열일 수 없습니다");
+        }
+        value = value.toLowerCase().trim();
+        if (!UUIDV7_PATTERN.matcher(value).matches()) {
+            throw new IllegalArgumentException("유효하지 않은 UUIDv7 형식입니다: " + value);
+        }
+    }
+
+    /**
+     * 신규 생성 - UUIDv7 자동 생성 (null 불가)
+     *
+     * @return UserId (UUIDv7 값)
+     */
+    public static UserId forNew() {
+        return new UserId(UuidCreator.getTimeOrderedEpoch().toString());
+    }
+
+    /**
+     * 기존 UUID 파싱
+     *
+     * @param value UUID 문자열
+     * @return UserId
+     * @throws IllegalArgumentException UUIDv7 형식이 아닌 경우
+     */
+    public static UserId of(String value) {
+        return new UserId(value);
+    }
+}
+```
+
+---
+
+### ID VO 비교 요약
+
+| 항목 | Long ID (Auto Increment) | UUID ID (UUIDv7) |
+|------|--------------------------|------------------|
+| **타입** | `Long` | `String` (UUIDv7) |
+| **생성 주체** | DB (AUTO_INCREMENT) | Application (uuid-creator) |
+| **`forNew()`** | `null` 반환 | UUIDv7 생성 반환 |
+| **`isNew()`** | ✅ 있음 | ❌ 없음 (항상 값 존재) |
+| **null 허용** | ✅ 허용 (DB 할당 전) | ❌ 금지 |
+| **MySQL 저장** | `BIGINT` (8바이트) | `BINARY(16)` (16바이트) |
+| **외부 노출** | ❌ 비권장 (추측 가능) | ✅ 안전 (추측 불가) |
+| **정렬** | 자연 정렬 | 시간순 정렬 (UUIDv7) |
+
+### MySQL 인덱스 전략
+
+```sql
+-- Long ID (Auto Increment) - 기본 PK
+CREATE TABLE orders (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    ...
+);
+
+-- UUID ID (UUIDv7) - BINARY(16) 저장
+CREATE TABLE users (
+    id BINARY(16) PRIMARY KEY,  -- UUIDv7: 시간순 정렬 보장
+    ...
+);
+
+-- Entity에서 변환 예시 (Persistence Layer)
+-- UUID String → BINARY(16): UUID_TO_BIN(?, 1)
+-- BINARY(16) → UUID String: BIN_TO_UUID(id, 1)
+```
+
+---
+
+### 3-3) Simple VO - 단일 필드 (Money, Quantity 등)
 
 **특징**:
 - Record로 구현
@@ -208,7 +331,7 @@ public record Money(Long amount) {
 
 ---
 
-### 3-3) Simple VO - 단일 필드 (Email, PhoneNumber 등)
+### 3-4) Simple VO - 단일 필드 (Email, PhoneNumber 등)
 
 **특징**:
 - Record로 구현
@@ -286,7 +409,7 @@ public record Email(String value) {
 
 ---
 
-### 3-4) Multi-field VO - 여러 원시 타입 필드 (Address 등)
+### 3-5) Multi-field VO - 여러 원시 타입 필드 (Address 등)
 
 **특징**:
 - Record로 구현
@@ -363,7 +486,7 @@ public record Address(String zipCode, String street, String detail) {
 
 ---
 
-### 3-5) Composite VO - VO 안에 VO (FullAddress 등)
+### 3-6) Composite VO - VO 안에 VO (FullAddress 등)
 
 **특징**:
 - Record로 구현
@@ -580,7 +703,8 @@ Long value = id.value();  // ✅ value() 사용 (getValue() 아님!)
 
 | VO 유형 | 특징 | 예시 |
 |---------|------|------|
-| **ID VO** | Long 래핑, forNew() + of() + isNew() | OrderId, CustomerId |
+| **ID VO (Long)** | DB Auto Increment, forNew()=null, isNew() 있음 | OrderId, ProductId |
+| **ID VO (UUID)** | UUIDv7 Application 생성, forNew()=UUID, null 금지 | UserId, TraceId |
 | **Simple VO (단일 필드)** | 원시 타입 1개 래핑 | Money, Email, PhoneNumber |
 | **Multi-field VO** | 여러 원시 타입 조합 | Address (zipCode, street, detail) |
 | **Composite VO** | VO 안에 다른 VO들 포함 | FullAddress (ZipCode, Street, City) |
@@ -636,7 +760,7 @@ public record Address(String zipCode, String street, String detail) {
 ```java
 // ✅ Record + Compact Constructor + 정적 팩토리
 public record Money(Long amount) {
-    
+
     public Money {  // ✅ Compact Constructor
         if (amount == null) {
             throw new IllegalArgumentException("금액은 null일 수 없습니다.");
@@ -653,7 +777,7 @@ public record Money(Long amount) {
 
 // ✅ ID VO는 forNew() + of() 모두 제공
 public record OrderId(Long value) {
-    
+
     public OrderId {  // ✅ Compact Constructor
         if (value != null && value <= 0) {
             throw new IllegalArgumentException("OrderId 값은 양수여야 합니다: " + value);
@@ -692,13 +816,21 @@ public record FullAddress(ZipCode zipCode, Street street, City city) {
 
 Value Object 작성 후 다음을 확인:
 
-### ID VO (OrderId, CustomerId 등)
+### ID VO - Long 타입 (OrderId, ProductId 등)
 - [ ] `record` 키워드 사용
 - [ ] Compact Constructor에 검증 로직 (양수 체크, null 허용)
-- [ ] `forNew()` 메서드 있음 (null 허용)
+- [ ] `forNew()` 메서드 있음 (**null 반환** - DB Auto Increment)
 - [ ] `of(Long value)` 메서드 있음 (null 체크 필수)
 - [ ] `isNew()` 메서드 있음 (null 여부 확인)
 - [ ] 외부 의존성 제로 (Lombok, JPA, Spring 등 절대 금지)
+
+### ID VO - UUID 타입 (UserId, TraceId 등)
+- [ ] `record` 키워드 사용
+- [ ] Compact Constructor에 UUIDv7 형식 검증 (**null 금지**)
+- [ ] `forNew()` 메서드 있음 (**UUIDv7 자동 생성**)
+- [ ] `of(String value)` 메서드 있음 (기존 UUID 파싱)
+- [ ] `isNew()` 없음 (항상 값 존재)
+- [ ] 의존성: `uuid-creator` 라이브러리만 허용
 
 ### Simple VO (Money, Email 등)
 - [ ] `record` 키워드 사용
@@ -737,6 +869,156 @@ Value Object 작성 후 다음을 확인:
 | 코드량 | 짧음 | 길음 |
 
 **✅ Record를 사용하면 100줄 이상의 Boilerplate 코드를 10줄로 줄일 수 있습니다!**
+
+---
+
+## 9) 조회용 공통 VO
+
+Domain Layer의 `common/vo/` 패키지에는 **조회 조건용 공통 VO**들도 포함됩니다.
+
+### 위치
+
+```
+domain/common/vo/
+├── LockKey.java           # 분산 락 키 인터페이스
+├── CacheKey.java          # 캐시 키 인터페이스
+├── DateRange.java         # 날짜 범위
+├── SortDirection.java     # 정렬 방향 (ASC/DESC)
+├── SortKey.java           # 정렬 키 인터페이스
+├── PageRequest.java       # 오프셋 기반 페이징
+└── CursorPageRequest.java # 커서 기반 페이징
+```
+
+### 조회용 VO 요약
+
+| VO | 설명 | 주요 메서드 |
+|----|------|-------------|
+| `DateRange` | 시작일~종료일 범위 | `of()`, `lastDays()`, `thisMonth()`, `startInstant()`, `endInstant()` |
+| `SortDirection` | ASC/DESC 정렬 방향 | `isAscending()`, `reverse()`, `fromString()` |
+| `SortKey` | BC별 정렬 키 인터페이스 | `fieldName()` - BC별 enum으로 구현 |
+| `PageRequest` | 오프셋 기반 페이징 | `of()`, `offset()`, `totalPages()` |
+| `CursorPageRequest` | 커서 기반 페이징 | `of()`, `afterId()`, `fetchSize()` |
+
+**⚠️ 중요**: `DateRange`는 내부적으로 `LocalDate`를 사용하지만, Domain Layer 규칙에 따라 시간 변환 메서드(`startInstant()`, `endInstant()`)는 **`Instant`를 반환**합니다. `LocalDateTime` 사용은 금지됩니다.
+
+### LockKey 구현 (분산 락)
+
+분산 락에 사용되는 키를 정의하는 인터페이스입니다.
+
+```java
+// domain/common/vo/LockKey.java (인터페이스)
+public interface LockKey {
+    String value();
+}
+
+// domain/order/vo/OrderLockKey.java (구현체)
+public record OrderLockKey(Long orderId) implements LockKey {
+
+    private static final String PREFIX = "lock:order:";
+
+    public OrderLockKey {
+        if (orderId == null || orderId <= 0) {
+            throw new IllegalArgumentException("orderId must be positive");
+        }
+    }
+
+    @Override
+    public String value() {
+        return PREFIX + orderId;
+    }
+}
+```
+
+**키 형식 규칙**:
+```
+lock:{domain}:{id}
+lock:{domain}:{entity}:{id}
+lock:{domain}:{entity}:{id}:{sub-entity}:{sub-id}
+```
+
+**예시**: `lock:order:123`, `lock:stock:item:456`
+
+### CacheKey 구현 (캐싱)
+
+Redis 캐시에 사용되는 키를 정의하는 인터페이스입니다.
+
+```java
+// domain/common/vo/CacheKey.java (인터페이스)
+public interface CacheKey {
+    String value();
+}
+
+// domain/product/vo/ProductCacheKey.java (구현체)
+public record ProductCacheKey(Long productId) implements CacheKey {
+
+    private static final String PREFIX = "cache:product:";
+
+    public ProductCacheKey {
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException("productId must be positive");
+        }
+    }
+
+    @Override
+    public String value() {
+        return PREFIX + productId;
+    }
+}
+```
+
+**키 형식 규칙**:
+```
+cache:{domain}:{id}
+cache:{domain}:{entity}:{id}
+cache:{domain}:{entity}:{id}:{sub-entity}:{sub-id}
+```
+
+**예시**: `cache:product:123`, `cache:user:profile:456`
+
+### LockKey vs CacheKey 비교
+
+| 구분 | LockKey | CacheKey |
+|------|---------|----------|
+| 목적 | 분산 락 동시성 제어 | 데이터 캐싱 |
+| 키 접두사 | `lock:` | `cache:` |
+| TTL 특성 | 락 획득 시간 (짧음) | 캐시 만료 시간 (길음) |
+| 사용 Port | `DistributedLockPort` | `CachePort` |
+
+### SortKey 구현 예시
+
+```java
+// domain/order/vo/OrderSortKey.java
+public enum OrderSortKey implements SortKey {
+    ORDER_DATE("orderDate"),
+    TOTAL_AMOUNT("totalAmount");
+
+    private final String fieldName;
+
+    OrderSortKey(String fieldName) {
+        this.fieldName = fieldName;
+    }
+
+    @Override
+    public String fieldName() {
+        return fieldName;
+    }
+}
+```
+
+### Domain Criteria에서 사용
+
+```java
+// domain/order/query/criteria/OrderSearchCriteria.java
+public record OrderSearchCriteria(
+    Long memberId,
+    DateRange orderDateRange,
+    OrderSortKey sortKey,
+    SortDirection sortDirection,
+    PageRequest page
+) {}
+```
+
+**자세한 내용**: 각 VO 파일의 JavaDoc 참조
 
 ---
 

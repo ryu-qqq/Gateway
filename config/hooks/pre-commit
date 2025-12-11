@@ -79,6 +79,25 @@ fi
 log_info "Found $JAVA_FILES Java file(s) changed"
 
 # ========================================
+# Run Spotless Auto-Format
+# ========================================
+
+echo ""
+log_info "Running Spotless auto-format..."
+cd "$PROJECT_ROOT"
+
+if ./gradlew spotlessApply --quiet --no-daemon; then
+    # Re-stage any files that were modified by Spotless
+    git add -u
+    log_success "Spotless formatting applied"
+else
+    log_error "Spotless formatting failed"
+    echo ""
+    echo "  Run './gradlew spotlessApply' to see detailed errors"
+    exit 1
+fi
+
+# ========================================
 # Run ArchUnit Tests
 # ========================================
 

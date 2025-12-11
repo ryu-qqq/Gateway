@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.tenant.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-import java.util.Map;
 
 /**
  * MFA 인증 필수 예외
@@ -38,10 +37,7 @@ public final class MfaRequiredException extends DomainException {
      * @since 1.0.0
      */
     public MfaRequiredException(String tenantId) {
-        super(
-                TenantErrorCode.MFA_REQUIRED.getCode(),
-                String.format("MFA verification required for tenant: %s", tenantId),
-                Map.of("tenantId", tenantId));
+        super(TenantErrorCode.MFA_REQUIRED, "tenantId=" + tenantId);
         this.tenantId = tenantId;
     }
 
@@ -52,7 +48,7 @@ public final class MfaRequiredException extends DomainException {
      * @since 1.0.0
      */
     public MfaRequiredException() {
-        super(TenantErrorCode.MFA_REQUIRED.getCode(), TenantErrorCode.MFA_REQUIRED.getMessage());
+        super(TenantErrorCode.MFA_REQUIRED);
         this.tenantId = null;
     }
 
@@ -63,7 +59,7 @@ public final class MfaRequiredException extends DomainException {
      * @author development-team
      * @since 1.0.0
      */
-    public String getTenantId() {
+    public String tenantId() {
         return tenantId;
     }
 }

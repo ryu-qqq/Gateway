@@ -1,7 +1,5 @@
 package com.ryuqq.gateway.domain.authentication.vo;
 
-import java.util.Objects;
-
 /**
  * ExpiredTokenInfo - 만료된 JWT에서 추출한 정보
  *
@@ -14,20 +12,13 @@ import java.util.Objects;
  *   <li>서명 검증 후 만료 여부와 관계없이 사용자 식별 가능
  * </ul>
  *
+ * @param expired JWT 만료 여부
+ * @param userId 사용자 ID
+ * @param tenantId 테넌트 ID
  * @author development-team
  * @since 1.0.0
  */
-public final class ExpiredTokenInfo {
-
-    private final boolean expired;
-    private final Long userId;
-    private final String tenantId;
-
-    private ExpiredTokenInfo(boolean expired, Long userId, String tenantId) {
-        this.expired = expired;
-        this.userId = userId;
-        this.tenantId = tenantId;
-    }
+public record ExpiredTokenInfo(boolean expired, Long userId, String tenantId) {
 
     /**
      * ExpiredTokenInfo 생성
@@ -48,43 +39,6 @@ public final class ExpiredTokenInfo {
      */
     public boolean isExpired() {
         return expired;
-    }
-
-    /**
-     * 사용자 ID 조회
-     *
-     * @return 사용자 ID
-     */
-    public Long userId() {
-        return userId;
-    }
-
-    /**
-     * 테넌트 ID 조회
-     *
-     * @return 테넌트 ID
-     */
-    public String tenantId() {
-        return tenantId;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        ExpiredTokenInfo that = (ExpiredTokenInfo) o;
-        return expired == that.expired
-                && Objects.equals(userId, that.userId)
-                && Objects.equals(tenantId, that.tenantId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(expired, userId, tenantId);
     }
 
     @Override

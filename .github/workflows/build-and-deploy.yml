@@ -1,0 +1,115 @@
+# ============================================================================
+# Connectly Gateway Build & Deploy
+#
+# Reusable Workflows 사용하여 단순화
+# gateway만 빌드/배포
+# ============================================================================
+
+name: Build and Deploy to ECS
+
+on:
+  workflow_dispatch: # 수동 트리거 허용
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'terraform/**'
+      - '.github/workflows/terraform-*.yml'
+      - '**.md'
+      - 'docs/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECS_CLUSTER: gateway-cluster-prod
+
+jobs:
+  # ============================================================================
+  # 테스트 (공통 - 한 번만 실행)
+  # ============================================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Run tests
+        run: |
+          chmod +x gradlew
+          ./gradlew clean test -x jacocoTestCoverageVerification --no-daemon
+
+  # ============================================================================
+  # 빌드 Job
+  # ============================================================================
+  build-gateway:
+    name: Build gateway
+    needs: test
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
+    with:
+      ecr-repository: gateway-prod
+      component: gateway
+      dockerfile: bootstrap/bootstrap-gateway/Dockerfile
+      gradle-task: ":bootstrap:bootstrap-gateway:bootJar"
+      timeout-minutes: 30
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # 배포 Job
+  # ============================================================================
+  deploy-gateway:
+    name: Deploy gateway
+    needs: build-gateway
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
+    with:
+      ecs-cluster: gateway-cluster-prod
+      ecs-service: gateway-prod
+      image-uri: ${{ needs.build-gateway.outputs.image-uri }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # Terraform Image Tag 업데이트 (자동화)
+  # ============================================================================
+  update-terraform-tags:
+    name: Update Terraform Image Tags
+    needs: [build-gateway]
+    uses: ./.github/workflows/terraform-apply.yml
+    with:
+      gateway-image-tag: ${{ needs.build-gateway.outputs.image-tag }}
+    secrets:
+      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
+
+  # ============================================================================
+  # 배포 완료 알림 (Slack + GitHub Summary)
+  # ============================================================================
+  notify:
+    name: Deployment Notification
+    needs: [deploy-gateway, update-terraform-tags]
+    if: always()
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
+    with:
+      project-name: Connectly Gateway
+      environment: prod
+      status: ${{ (needs.deploy-gateway.result == 'success' && needs.update-terraform-tags.result == 'success') && 'success' || 'failure' }}
+      components: |
+        [
+          {"name": "gateway", "status": "${{ needs.deploy-gateway.result }}"},
+          {"name": "terraform-tags", "status": "${{ needs.update-terraform-tags.result }}"}
+        ]
+      mention-on-failure: "@here"
+    secrets:
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -103,6 +103,6 @@ public record JwtToken(AccessToken accessToken, Instant expiresAt, Instant creat
      * @since 1.0.0
      */
     public String getAccessTokenValue() {
-        return accessToken.getValue();
+        return accessToken.value();
     }
 }

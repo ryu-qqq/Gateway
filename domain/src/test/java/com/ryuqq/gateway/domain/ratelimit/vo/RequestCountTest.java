@@ -22,7 +22,7 @@ class RequestCountTest {
 
             // then
             assertThat(count).isNotNull();
-            assertThat(count.getValue()).isEqualTo(50);
+            assertThat(count.value()).isEqualTo(50);
         }
 
         @Test
@@ -32,7 +32,7 @@ class RequestCountTest {
             RequestCount count = RequestCount.of(0);
 
             // then
-            assertThat(count.getValue()).isEqualTo(0);
+            assertThat(count.value()).isEqualTo(0);
         }
 
         @Test
@@ -55,7 +55,7 @@ class RequestCountTest {
             RequestCount count = RequestCount.zero();
 
             // then
-            assertThat(count.getValue()).isEqualTo(0);
+            assertThat(count.value()).isEqualTo(0);
         }
     }
 
@@ -73,9 +73,9 @@ class RequestCountTest {
             RequestCount incremented = count.increment();
 
             // then
-            assertThat(incremented.getValue()).isEqualTo(51);
+            assertThat(incremented.value()).isEqualTo(51);
             // 원본은 불변
-            assertThat(count.getValue()).isEqualTo(50);
+            assertThat(count.value()).isEqualTo(50);
         }
 
         @Test
@@ -88,7 +88,7 @@ class RequestCountTest {
             RequestCount incremented = count.increment();
 
             // then
-            assertThat(incremented.getValue()).isEqualTo(1);
+            assertThat(incremented.value()).isEqualTo(1);
         }
     }
 

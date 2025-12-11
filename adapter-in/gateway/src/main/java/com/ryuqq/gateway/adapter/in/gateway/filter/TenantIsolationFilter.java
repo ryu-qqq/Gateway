@@ -50,10 +50,12 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
 
     private static final String USER_ID_ATTRIBUTE = "userId";
     private static final String TENANT_ID_ATTRIBUTE = "tenantId";
+    private static final String ORGANIZATION_ID_ATTRIBUTE = "organizationId";
     private static final String TENANT_CONTEXT_ATTRIBUTE = "tenantContext";
     private static final String MFA_REQUIRED_ATTRIBUTE = "mfaRequired";
     private static final String ROLES_ATTRIBUTE = "roles";
     private static final String X_TENANT_ID_HEADER = "X-Tenant-Id";
+    private static final String X_ORGANIZATION_ID_HEADER = "X-Organization-Id";
     private static final String X_ROLES_HEADER = "X-Roles";
 
     private final GetTenantConfigUseCase getTenantConfigUseCase;
@@ -74,6 +76,7 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String userId = exchange.getAttribute(USER_ID_ATTRIBUTE);
         String tenantId = exchange.getAttribute(TENANT_ID_ATTRIBUTE);
+        String organizationId = exchange.getAttribute(ORGANIZATION_ID_ATTRIBUTE);
         Set<String> roles = exchange.getAttribute(ROLES_ATTRIBUTE);
 
         // JWT 인증 필터에서 설정되지 않은 경우 (비인증 요청)
@@ -94,21 +97,33 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
                                     .put(MFA_REQUIRED_ATTRIBUTE, tenantConfig.isMfaRequired());
 
                             log.debug(
-                                    "Tenant context loaded: tenantId={}, mfaRequired={}, userId={}",
+                                    "Tenant context loaded: tenantId={}, organizationId={}, mfaRequired={}, userId={}",
                                     tenantId,
+                                    organizationId,
                                     tenantConfig.isMfaRequired(),
                                     userId);
 
                             // Request Header에 추가 (Backend Service로 전달)
-                            ServerHttpRequest mutatedRequest =
+                            ServerHttpRequest.Builder requestBuilder =
                                     exchange.getRequest()
                                             .mutate()
                                             .header(X_TENANT_ID_HEADER, tenantId)
-                                            .header(X_ROLES_HEADER, serializeToJson(roles))
-                                            .build();
+                                            .header(X_ROLES_HEADER, serializeToJson(roles));
 
-                            // Response Header에도 X-Tenant-Id 추가 (클라이언트에게 반환)
+                            // organizationId가 있는 경우에만 헤더 추가
+                            if (organizationId != null) {
+                                requestBuilder.header(X_ORGANIZATION_ID_HEADER, organizationId);
+                            }
+
+                            ServerHttpRequest mutatedRequest = requestBuilder.build();
+
+                            // Response Header에도 X-Tenant-Id, X-Organization-Id 추가 (클라이언트에게 반환)
                             exchange.getResponse().getHeaders().add(X_TENANT_ID_HEADER, tenantId);
+                            if (organizationId != null) {
+                                exchange.getResponse()
+                                        .getHeaders()
+                                        .add(X_ORGANIZATION_ID_HEADER, organizationId);
+                            }
 
                             ServerWebExchange mutatedExchange =
                                     exchange.mutate().request(mutatedRequest).build();

@@ -12,6 +12,7 @@
 * **CQRS Command 담당**: 쓰기(CUD) 전용 Port
 * **DTO 패키지 분리**: Command/Response는 dto 패키지에 정의
 * **Transaction 경계**: Service 구현체에서 `@Transactional` 적용
+* **반환 타입**: Response DTO 또는 **void** (CQRS 순수 패턴)
 
 ---
 
@@ -60,9 +61,9 @@ application/order/
 
 ## 4) 템플릿 코드
 
-### UseCase Interface
+### UseCase Interface (Response 반환)
 ```java
-package com.ryuqq.application.{bc}.port.in;
+package com.ryuqq.application.{bc}.port.in.command;
 
 import com.ryuqq.application.{bc}.dto.command.{Action}{Bc}Command;
 import com.ryuqq.application.{bc}.dto.response.{Bc}Response;
@@ -86,6 +87,37 @@ public interface {Action}{Bc}UseCase {
     {Bc}Response execute({Action}{Bc}Command command);
 }
 ```
+
+### UseCase Interface (void 반환 - CQRS 순수 패턴)
+```java
+package com.ryuqq.application.{bc}.port.in.command;
+
+import com.ryuqq.application.{bc}.dto.command.Delete{Bc}Command;
+
+/**
+ * Delete {Bc} UseCase (Command)
+ *
+ * <p>삭제/확인 등 결과 반환이 필요없는 경우 void 반환</p>
+ *
+ * @author development-team
+ * @since 1.0.0
+ */
+public interface Delete{Bc}UseCase {
+
+    /**
+     * {Bc} 삭제
+     *
+     * @param command 삭제 명령
+     */
+    void execute(Delete{Bc}Command command);
+}
+```
+
+> **void 반환 사용 시기:**
+> - 삭제 작업 (DeleteXxxUseCase)
+> - 확인/승인 작업 (ConfirmXxxUseCase, ApproveXxxUseCase)
+> - 알림/발송 작업 (SendXxxUseCase)
+> - 결과 조회가 필요 없는 경우
 
 ---
 

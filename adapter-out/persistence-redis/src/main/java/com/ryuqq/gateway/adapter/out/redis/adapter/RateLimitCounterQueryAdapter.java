@@ -38,7 +38,7 @@ public class RateLimitCounterQueryAdapter implements RateLimitCounterQueryPort {
      */
     @Override
     public Mono<Long> getCurrentCount(RateLimitKey key) {
-        return rateLimitRedisRepository.getCount(key.getValue());
+        return rateLimitRedisRepository.getCount(key.value());
     }
 
     /**
@@ -49,6 +49,6 @@ public class RateLimitCounterQueryAdapter implements RateLimitCounterQueryPort {
      */
     @Override
     public Mono<Long> getTtlSeconds(RateLimitKey key) {
-        return rateLimitRedisRepository.getTtl(key.getValue());
+        return rateLimitRedisRepository.getTtl(key.value());
     }
 }

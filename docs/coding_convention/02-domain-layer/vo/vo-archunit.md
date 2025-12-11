@@ -9,16 +9,17 @@
 ## 1️⃣ 검증 규칙 개요
 
 ### Value Object 검증 규칙
-1. ✅ **Record 사용 필수**
-2. ✅ **정적 팩토리 메서드 (of) 필수**
+1. ✅ **Record 사용 필수** (Enum VO 제외)
+2. ✅ **정적 팩토리 메서드 (of) 필수** (Enum VO 제외)
 3. ✅ **ID VO는 forNew() 필수**
-4. ✅ **ID VO는 isNew() 필수**
+4. ✅ **Long ID VO는 isNew() 필수** (UUID ID는 제외)
 5. ❌ **Lombok 어노테이션 절대 금지**
 6. ❌ **JPA 어노테이션 절대 금지**
 7. ❌ **Spring 어노테이션 절대 금지**
 8. ❌ **create*() 메서드 절대 금지**
+9. ✅ **Enum VO는 displayName() 필수**
 
-**총 8개 규칙** (필수 4개, 금지 4개)
+**총 9개 규칙** (필수 5개, 금지 4개)
 
 ---
 
@@ -57,9 +58,11 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
  *
  * <p><strong>검증 규칙</strong>:</p>
  * <ul>
- *   <li>Record 사용 필수</li>
- *   <li>정적 팩토리 메서드 (of) 필수</li>
+ *   <li>Record 사용 필수 (Enum VO 제외)</li>
+ *   <li>정적 팩토리 메서드 (of) 필수 (Enum VO 제외)</li>
  *   <li>ID VO는 forNew() 추가 필수</li>
+ *   <li>Long ID VO는 isNew() 필수 (UUID ID 제외)</li>
+ *   <li>Enum VO는 displayName() 필수</li>
  *   <li>Lombok 금지</li>
  *   <li>JPA 어노테이션 금지</li>
  *   <li>Spring 어노테이션 금지</li>
@@ -82,35 +85,37 @@ class VOArchTest {
     }
 
     /**
-     * 규칙 1: Value Object는 Record여야 한다
+     * 규칙 1: Value Object는 Record여야 한다 (Enum 제외)
      */
     @Test
-    @DisplayName("[필수] Value Object는 Record로 구현되어야 한다")
+    @DisplayName("[필수] Value Object는 Record로 구현되어야 한다 (Enum 제외)")
     void valueObjectsShouldBeRecords() {
         ArchRule rule = classes()
             .that().resideInAPackage("..vo..")
+            .and().areNotEnums()  // Enum VO 제외
             .and().haveSimpleNameNotContaining("Fixture")
             .and().haveSimpleNameNotContaining("Mother")
             .and().haveSimpleNameNotContaining("Test")
             .should(beRecords())
-            .because("Value Object는 Java 21 Record로 구현해야 합니다");
+            .because("Value Object는 Java 21 Record로 구현해야 합니다 (Enum VO 제외)");
 
         rule.check(classes);
     }
 
     /**
-     * 규칙 2: Value Object는 of() 메서드를 가져야 한다
+     * 규칙 2: Value Object는 of() 메서드를 가져야 한다 (Enum 제외)
      */
     @Test
-    @DisplayName("[필수] Value Object는 of() 정적 팩토리 메서드를 가져야 한다")
+    @DisplayName("[필수] Value Object는 of() 정적 팩토리 메서드를 가져야 한다 (Enum 제외)")
     void valueObjectsShouldHaveOfMethod() {
         ArchRule rule = classes()
             .that().resideInAPackage("..vo..")
+            .and().areNotEnums()  // Enum VO 제외
             .and().haveSimpleNameNotContaining("Fixture")
             .and().haveSimpleNameNotContaining("Mother")
             .and().haveSimpleNameNotContaining("Test")
             .should(haveStaticMethodWithName("of"))
-            .because("Value Object는 of() 정적 팩토리 메서드로 생성해야 합니다");
+            .because("Value Object는 of() 정적 팩토리 메서드로 생성해야 합니다 (Enum VO 제외)");
 
         rule.check(classes);
     }
@@ -134,19 +139,22 @@ class VOArchTest {
     }
 
     /**
-     * 규칙 4: ID VO는 isNew() 메서드를 가져야 한다
+     * 규칙 4: Long 타입 ID VO는 isNew() 메서드를 가져야 한다 (UUID ID 제외)
+     *
+     * <p>Long 타입 ID VO (Auto Increment)만 isNew() 필수.
+     * UUID 타입 ID VO는 항상 값이 존재하므로 isNew() 불필요.</p>
      */
     @Test
-    @DisplayName("[필수] ID Value Object는 isNew() 메서드를 가져야 한다")
-    void idValueObjectsShouldHaveIsNewMethod() {
+    @DisplayName("[필수] Long 타입 ID VO는 isNew() 메서드를 가져야 한다 (UUID ID 제외)")
+    void longIdValueObjectsShouldHaveIsNewMethod() {
         ArchRule rule = classes()
             .that().resideInAPackage("..vo..")
             .and().haveSimpleNameEndingWith("Id")
             .and().haveSimpleNameNotContaining("Fixture")
             .and().haveSimpleNameNotContaining("Mother")
             .and().haveSimpleNameNotContaining("Test")
-            .should(haveMethodWithName("isNew"))
-            .because("ID Value Object는 isNew() 메서드로 null 여부를 확인해야 합니다");
+            .should(haveLongFieldAndIsNewMethod())
+            .because("Long 타입 ID VO는 isNew() 메서드로 null 여부를 확인해야 합니다 (UUID ID 제외)");
 
         rule.check(classes);
     }
@@ -219,6 +227,24 @@ class VOArchTest {
             .and().haveSimpleNameNotContaining("Test")
             .should(notHaveMethodsWithNameStartingWith("create"))
             .because("Value Object는 create*() 대신 of(), forNew()를 사용해야 합니다");
+
+        rule.check(classes);
+    }
+
+    /**
+     * 규칙 9: Enum VO는 displayName() 메서드를 가져야 한다
+     */
+    @Test
+    @DisplayName("[필수] Enum VO는 displayName() 메서드를 가져야 한다")
+    void enumValueObjectsShouldHaveDisplayNameMethod() {
+        ArchRule rule = classes()
+            .that().resideInAPackage("..vo..")
+            .and().areEnums()
+            .and().haveSimpleNameNotContaining("Fixture")
+            .and().haveSimpleNameNotContaining("Mother")
+            .and().haveSimpleNameNotContaining("Test")
+            .should(haveMethodWithName("displayName"))
+            .because("Enum VO는 displayName() 메서드로 화면 표시용 이름을 제공해야 합니다");
 
         rule.check(classes);
     }
@@ -309,6 +335,48 @@ class VOArchTest {
                         );
                         events.add(SimpleConditionEvent.violated(javaClass, message));
                     });
+            }
+        };
+    }
+
+    /**
+     * Long 타입 필드를 가진 ID VO가 isNew() 메서드를 가지는지 검증
+     *
+     * <p>Long 타입 ID VO (Auto Increment)만 isNew() 필수.
+     * String 타입 (UUID) ID VO는 항상 값이 존재하므로 isNew() 불필요.</p>
+     */
+    private static ArchCondition<JavaClass> haveLongFieldAndIsNewMethod() {
+        return new ArchCondition<JavaClass>("have Long field and isNew() method") {
+            @Override
+            public void check(JavaClass javaClass, ConditionEvents events) {
+                // Long 타입 필드가 있는지 확인 (value 또는 id 필드)
+                boolean hasLongField = javaClass.getAllFields().stream()
+                    .anyMatch(field -> field.getRawType().getName().equals("java.lang.Long")
+                        || field.getRawType().getName().equals("long"));
+
+                // String 타입 필드만 있으면 (UUID ID) isNew() 불필요
+                boolean hasStringFieldOnly = javaClass.getAllFields().stream()
+                    .anyMatch(field -> field.getRawType().getName().equals("java.lang.String"))
+                    && !hasLongField;
+
+                // String 타입 (UUID) ID VO는 isNew() 불필요하므로 검증 통과
+                if (hasStringFieldOnly) {
+                    return;
+                }
+
+                // Long 타입 ID VO는 isNew() 메서드 필수
+                if (hasLongField) {
+                    boolean hasIsNewMethod = javaClass.getAllMethods().stream()
+                        .anyMatch(method -> method.getName().equals("isNew"));
+
+                    if (!hasIsNewMethod) {
+                        String message = String.format(
+                            "Long ID VO %s must have isNew() method (UUID ID VOs are exempt)",
+                            javaClass.getName()
+                        );
+                        events.add(SimpleConditionEvent.violated(javaClass, message));
+                    }
+                }
             }
         };
     }
@@ -415,19 +483,19 @@ Class com.ryuqq.domain.order.vo.OrderId does not have a public static method nam
 
 ---
 
-### 규칙 4: ID VO는 isNew() 필수
+### 규칙 4: Long ID VO는 isNew() 필수 (UUID ID 제외)
 
 ```java
 @Test
-void idValueObjectsShouldHaveIsNewMethod() {
+void longIdValueObjectsShouldHaveIsNewMethod() {
     ArchRule rule = classes()
         .that().resideInAPackage("..vo..")
         .and().haveSimpleNameEndingWith("Id")
         .and().haveSimpleNameNotContaining("Fixture")
         .and().haveSimpleNameNotContaining("Mother")
         .and().haveSimpleNameNotContaining("Test")
-        .should(haveMethodWithName("isNew"))
-        .because("ID Value Object는 isNew() 메서드로 null 여부를 확인해야 합니다");
+        .should(haveLongFieldAndIsNewMethod())
+        .because("Long 타입 ID VO는 isNew() 메서드로 null 여부를 확인해야 합니다 (UUID ID 제외)");
 
     rule.check(classes);
 }
@@ -435,11 +503,18 @@ void idValueObjectsShouldHaveIsNewMethod() {
 
 **검증 내용**:
 - 클래스 이름이 "Id"로 끝남
-- isNew() 메서드 존재
+- Long 타입 필드가 있으면 isNew() 메서드 필수
+- **String 타입 (UUID) ID VO는 isNew() 불필요** (항상 값 존재)
+
+**Long ID vs UUID ID 구분**:
+| 타입 | 필드 타입 | isNew() | 이유 |
+|------|----------|---------|------|
+| Long ID | Long | 필수 | DB가 ID 생성 (Auto Increment) |
+| UUID ID | String | 불필요 | Application이 ID 생성 (항상 값 존재) |
 
 **위반 시**:
 ```
-Class com.ryuqq.domain.order.vo.OrderId does not have a method named 'isNew'
+Long ID VO com.ryuqq.domain.order.vo.OrderId must have isNew() method (UUID ID VOs are exempt)
 ```
 
 ---
@@ -475,6 +550,56 @@ void valueObjectsShouldNotHaveCreateMethod() {
 **위반 시**:
 ```
 Class com.ryuqq.domain.order.vo.Money has method createMoney starting with 'create' which is prohibited
+```
+
+---
+
+### 규칙 9: Enum VO는 displayName() 필수
+
+```java
+@Test
+void enumValueObjectsShouldHaveDisplayNameMethod() {
+    ArchRule rule = classes()
+        .that().resideInAPackage("..vo..")
+        .and().areEnums()
+        .and().haveSimpleNameNotContaining("Fixture")
+        .and().haveSimpleNameNotContaining("Mother")
+        .and().haveSimpleNameNotContaining("Test")
+        .should(haveMethodWithName("displayName"))
+        .because("Enum VO는 displayName() 메서드로 화면 표시용 이름을 제공해야 합니다");
+
+    rule.check(classes);
+}
+```
+
+**검증 내용**:
+- `..vo..` 패키지의 Enum 클래스
+- displayName() 메서드 존재
+
+**올바른 예시**:
+```java
+public enum OrderStatus {
+    PENDING("주문 대기"),
+    CONFIRMED("주문 확정"),
+    SHIPPED("배송 중"),
+    DELIVERED("배송 완료"),
+    CANCELLED("주문 취소");
+
+    private final String displayName;
+
+    OrderStatus(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String displayName() {  // ✅ 필수
+        return displayName;
+    }
+}
+```
+
+**위반 시**:
+```
+Class com.ryuqq.domain.order.vo.OrderStatus does not have a method named 'displayName'
 ```
 
 ---
@@ -541,6 +666,32 @@ valueObjectsShouldNotHaveCreateMethod() FAILED
 
 ---
 
+### ❌ 실패 예시 6: Long ID VO에 isNew() 없음
+
+```
+longIdValueObjectsShouldHaveIsNewMethod() FAILED
+    Rule: classes should have Long field and isNew() method
+    Violation: Long ID VO <OrderId> must have isNew() method (UUID ID VOs are exempt)
+
+➡️ 해결: public boolean isNew() { return value == null; } 추가
+```
+
+**참고**: UUID ID VO (String 타입)는 이 규칙에서 자동 제외됩니다.
+
+---
+
+### ❌ 실패 예시 7: Enum VO에 displayName() 없음
+
+```
+enumValueObjectsShouldHaveDisplayNameMethod() FAILED
+    Rule: classes should have method with name displayName
+    Violation: Class <OrderStatus> does not have a method named 'displayName'
+
+➡️ 해결: public String displayName() { return displayName; } 추가
+```
+
+---
+
 ## 6️⃣ 빌드 통합
 
 ### Gradle 설정
@@ -570,15 +721,22 @@ ArchUnit 테스트가 실패하면 **빌드가 실패**하여 규칙 위반을 �
 
 ArchUnit 테스트 작성 후 다음을 확인:
 
-### Value Object 규칙 (8개)
-- [ ] Record 사용 필수
-- [ ] of() 메서드 필수
+### Value Object 규칙 (9개)
+- [ ] Record 사용 필수 (Enum VO 제외)
+- [ ] of() 메서드 필수 (Enum VO 제외)
 - [ ] ID VO는 forNew() 필수
-- [ ] ID VO는 isNew() 필수
+- [ ] **Long ID VO는 isNew() 필수** (UUID ID 제외)
 - [ ] Lombok 금지
 - [ ] JPA 어노테이션 금지
 - [ ] Spring 어노테이션 금지
 - [ ] create*() 메서드 금지
+- [ ] **Enum VO는 displayName() 필수**
+
+### ID VO 유형별 확인
+| 유형 | 필드 타입 | forNew() | isNew() |
+|------|----------|----------|---------|
+| Long ID (Auto Increment) | Long | ✅ 필수 (null 반환) | ✅ 필수 |
+| UUID ID (Application 생성) | String | ✅ 필수 (UUID 반환) | ❌ 불필요 |
 
 ### 통합 확인
 - [ ] `./gradlew test` 실행 성공

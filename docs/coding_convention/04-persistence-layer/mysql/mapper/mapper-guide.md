@@ -1,6 +1,8 @@
 # JPA Entity Mapper 가이드
 
 > **목적**: JPA Entity와 Domain 간 변환 Mapper 패턴 및 규칙
+>
+> 📌 **Zero-Tolerance**: Lombok 금지, Static 메서드 금지, 비즈니스 로직 금지
 
 ---
 
@@ -174,6 +176,43 @@ public class ExampleEntityMapper {
 - 의존성 관리 용이
 - 테스트 작성 용이 (Mock 가능)
 
+### 원칙 6: Lombok 사용 금지
+
+```java
+// ✅ Plain Java 사용
+@Component
+public class OrderJpaEntityMapper {
+
+    public OrderJpaEntityMapper() {
+        // 기본 생성자 (의존성 없으면 비어있어도 됨)
+    }
+
+    public OrderJpaEntity toEntity(Order domain) { ... }
+    public Order toDomain(OrderJpaEntity entity) { ... }
+}
+
+// ❌ Lombok 금지
+@Component
+@RequiredArgsConstructor  // ❌ Lombok 금지!
+public class OrderJpaEntityMapper {
+    // ...
+}
+```
+
+**금지되는 Lombok 어노테이션**:
+
+| 어노테이션 | 금지 이유 |
+|-----------|----------|
+| `@Data` | Getter/Setter/equals/hashCode 자동 생성 금지 |
+| `@Getter` | 명시적 코드 작성 원칙 |
+| `@Setter` | Mapper는 Setter 불필요 |
+| `@Value` | Lombok 불변 객체 금지 |
+| `@Builder` | 명시적 생성 패턴 사용 |
+| `@AllArgsConstructor` | 명시적 생성자 작성 |
+| `@NoArgsConstructor` | 명시적 생성자 작성 |
+| `@RequiredArgsConstructor` | 명시적 생성자 작성 |
+| `@UtilityClass` | Mapper는 Spring Bean이어야 함 |
+
 ---
 
 ## 3️⃣ 템플릿 패턴
@@ -181,10 +220,10 @@ public class ExampleEntityMapper {
 ### 템플릿 1: BaseAuditEntity 상속 경우
 
 ```java
-package com.ryuqq.adapter.out.persistence.{module}.mapper;
+package com.company.adapter.out.persistence.{module}.mapper;
 
-import com.ryuqq.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
-import com.ryuqq.domain.{module}.{Domain};
+import com.company.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
+import com.company.domain.{module}.{Domain};
 
 import org.springframework.stereotype.Component;
 
@@ -274,10 +313,10 @@ public class {Domain}JpaEntityMapper {
 ### 템플릿 2: SoftDeletableEntity 상속 경우
 
 ```java
-package com.ryuqq.adapter.out.persistence.{module}.mapper;
+package com.company.adapter.out.persistence.{module}.mapper;
 
-import com.ryuqq.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
-import com.ryuqq.domain.{module}.{Domain};
+import com.company.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
+import com.company.domain.{module}.{Domain};
 
 import org.springframework.stereotype.Component;
 
@@ -344,10 +383,10 @@ public class {Domain}JpaEntityMapper {
 ### 템플릿 3: 상속 없음 (생성/수정 시간 미관리)
 
 ```java
-package com.ryuqq.adapter.out.persistence.{module}.mapper;
+package com.company.adapter.out.persistence.{module}.mapper;
 
-import com.ryuqq.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
-import com.ryuqq.domain.{module}.{Domain};
+import com.company.adapter.out.persistence.{module}.entity.{Domain}JpaEntity;
+import com.company.domain.{module}.{Domain};
 
 import org.springframework.stereotype.Component;
 
@@ -734,5 +773,5 @@ Mapper 작성 시:
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-12
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-04
+**버전**: 1.1.0

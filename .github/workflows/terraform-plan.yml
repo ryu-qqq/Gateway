@@ -1,0 +1,129 @@
+name: Terraform Plan
+
+on:
+  workflow_dispatch: # 수동 트리거만 허용 (Atlantis가 PR 기반 IaC 변경 담당)
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        module:
+          - name: ecr
+            dir: terraform/ecr
+          - name: ecs-cluster
+            dir: terraform/ecs-cluster
+          - name: elasticache
+            dir: terraform/elasticache
+          - name: ecs-gateway
+            dir: terraform/ecs-gateway
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        timeout-minutes: 2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-northeast-2
+          role-duration-seconds: 3600
+          role-session-name: GitHubActions-Gateway-TerraformPlan
+
+      - name: Terraform Format Check - ${{ matrix.module.name }}
+        working-directory: ${{ matrix.module.dir }}
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init - ${{ matrix.module.name }}
+        working-directory: ${{ matrix.module.dir }}
+        run: terraform init
+
+      - name: Terraform Validate - ${{ matrix.module.name }}
+        working-directory: ${{ matrix.module.dir }}
+        run: terraform validate
+
+      - name: Terraform Plan - ${{ matrix.module.name }}
+        id: plan
+        working-directory: ${{ matrix.module.dir }}
+        run: |
+          set +e
+          terraform plan -no-color -out=tfplan
+          PLAN_EXIT_CODE=$?
+          terraform show -no-color tfplan > plan-${{ matrix.module.name }}.txt
+          exit $PLAN_EXIT_CODE
+        continue-on-error: true
+
+      - name: Upload Plan Artifact - ${{ matrix.module.name }}
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: plan-${{ matrix.module.name }}
+          path: ${{ matrix.module.dir }}/plan-${{ matrix.module.name }}.txt
+          retention-days: 5
+
+  comment-plan:
+    name: Comment Plan Results
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Download All Plan Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: plans
+
+      - name: Comment Plan on PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const modules = ['ecr', 'ecs-cluster', 'elasticache', 'ecs-gateway'];
+            let planSummary = `#### Connectly Gateway Terraform Plan 📋\n\n`;
+            planSummary += `**Environment**: Production\n`;
+            planSummary += `**Modules**: ${modules.length}\n\n`;
+
+            for (const module of modules) {
+              try {
+                const planPath = path.join('plans', `plan-${module}`, `plan-${module}.txt`);
+                const plan = fs.readFileSync(planPath, 'utf8');
+
+                planSummary += `<details><summary>📦 ${module}</summary>\n\n`;
+                planSummary += `\`\`\`terraform\n${plan}\n\`\`\`\n\n`;
+                planSummary += `</details>\n\n`;
+              } catch (error) {
+                planSummary += `<details><summary>⚠️ ${module} - Error</summary>\n\n`;
+                planSummary += `Unable to read plan file: ${error.message}\n\n`;
+                planSummary += `</details>\n\n`;
+              }
+            }
+
+            planSummary += `\n*Pushed by: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*\n\n`;
+            planSummary += `---\n`;
+            planSummary += `**Next Steps:**\n`;
+            planSummary += `1. Review the Terraform plan above\n`;
+            planSummary += `2. Approve this PR if changes look correct\n`;
+            planSummary += `3. Merge to trigger deployment\n`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: planSummary
+            });

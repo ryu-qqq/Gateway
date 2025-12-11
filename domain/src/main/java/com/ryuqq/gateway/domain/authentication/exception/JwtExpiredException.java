@@ -35,9 +35,7 @@ public final class JwtExpiredException extends DomainException {
      * @since 1.0.0
      */
     public JwtExpiredException(String accessToken) {
-        super(
-                AuthenticationErrorCode.JWT_EXPIRED.getCode(),
-                "JWT token has expired: " + accessToken);
+        super(AuthenticationErrorCode.JWT_EXPIRED, "accessToken: " + accessToken);
     }
 
     /**
@@ -49,8 +47,6 @@ public final class JwtExpiredException extends DomainException {
      * @since 1.0.0
      */
     public JwtExpiredException() {
-        super(
-                AuthenticationErrorCode.JWT_EXPIRED.getCode(),
-                AuthenticationErrorCode.JWT_EXPIRED.getMessage());
+        super(AuthenticationErrorCode.JWT_EXPIRED);
     }
 }

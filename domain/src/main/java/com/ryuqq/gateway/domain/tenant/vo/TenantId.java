@@ -20,13 +20,14 @@ import java.util.regex.Pattern;
  *
  * <pre>{@code
  * TenantId tenantId = TenantId.of("tenant-1");
- * String value = tenantId.getValue(); // "tenant-1"
+ * String value = tenantId.value(); // "tenant-1"
  * }</pre>
  *
+ * @param value 테넌트 ID 문자열
  * @author development-team
  * @since 1.0.0
  */
-public final class TenantId {
+public record TenantId(String value) {
 
     /** "tenant-{숫자}" 형식 검증 정규식 */
     private static final Pattern TENANT_PATTERN = Pattern.compile("^tenant-\\d+$");
@@ -37,10 +38,12 @@ public final class TenantId {
                     "^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$",
                     Pattern.CASE_INSENSITIVE);
 
-    private final String value;
-
-    private TenantId(String value) {
-        this.value = value;
+    /** Compact Constructor (검증 로직) */
+    public TenantId {
+        Objects.requireNonNull(value, "TenantId cannot be null");
+        if (value.isBlank()) {
+            throw new IllegalArgumentException("TenantId cannot be blank");
+        }
     }
 
     /**
@@ -107,17 +110,6 @@ public final class TenantId {
     }
 
     /**
-     * 테넌트 ID 값 반환
-     *
-     * @return 테넌트 ID 문자열
-     * @author development-team
-     * @since 1.0.0
-     */
-    public String getValue() {
-        return value;
-    }
-
-    /**
      * UUID 형식인지 확인
      *
      * @return UUID 형식이면 true
@@ -137,23 +129,6 @@ public final class TenantId {
      */
     public boolean isTenantNumberFormat() {
         return TENANT_PATTERN.matcher(value).matches();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        TenantId tenantId = (TenantId) o;
-        return Objects.equals(value, tenantId.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
     }
 
     @Override

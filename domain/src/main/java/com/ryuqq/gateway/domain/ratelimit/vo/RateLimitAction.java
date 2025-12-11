@@ -24,35 +24,37 @@ public enum RateLimitAction {
      *
      * <p>429 Too Many Requests 응답 반환
      */
-    REJECT(429, "Too Many Requests - Reject the request"),
+    REJECT(429, "Too Many Requests - Reject the request", "요청 거부"),
 
     /**
      * IP 차단
      *
      * <p>악의적인 IP를 30분간 차단
      */
-    BLOCK_IP(403, "Forbidden - Block IP for 30 minutes"),
+    BLOCK_IP(403, "Forbidden - Block IP for 30 minutes", "IP 차단"),
 
     /**
      * 계정 잠금
      *
      * <p>계정을 30분간 잠금
      */
-    LOCK_ACCOUNT(403, "Forbidden - Lock account for 30 minutes"),
+    LOCK_ACCOUNT(403, "Forbidden - Lock account for 30 minutes", "계정 잠금"),
 
     /**
      * Token 무효화
      *
      * <p>Refresh Token을 무효화하고 재로그인 요구
      */
-    REVOKE_TOKEN(429, "Too Many Requests - Revoke refresh token");
+    REVOKE_TOKEN(429, "Too Many Requests - Revoke refresh token", "토큰 무효화");
 
     private final int httpStatus;
     private final String description;
+    private final String displayName;
 
-    RateLimitAction(int httpStatus, String description) {
+    RateLimitAction(int httpStatus, String description, String displayName) {
         this.httpStatus = httpStatus;
         this.description = description;
+        this.displayName = displayName;
     }
 
     /**
@@ -71,5 +73,16 @@ public enum RateLimitAction {
      */
     public String getDescription() {
         return description;
+    }
+
+    /**
+     * 표시용 이름 반환
+     *
+     * @return 표시용 이름
+     * @author development-team
+     * @since 1.0.0
+     */
+    public String displayName() {
+        return displayName;
     }
 }

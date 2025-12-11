@@ -108,9 +108,9 @@ public class TenantConfigMapper {
         }
 
         return new SessionConfigEntity(
-                sessionConfig.getMaxActiveSessions(),
-                sessionConfig.getAccessTokenTTLSeconds(),
-                sessionConfig.getRefreshTokenTTLSeconds());
+                sessionConfig.maxActiveSessions(),
+                sessionConfig.accessTokenTTLSeconds(),
+                sessionConfig.refreshTokenTTLSeconds());
     }
 
     /** TenantRateLimitConfigEntity → TenantRateLimitConfig */
@@ -131,6 +131,6 @@ public class TenantConfigMapper {
         }
 
         return new TenantRateLimitConfigEntity(
-                rateLimitConfig.getLoginAttemptsPerHour(), rateLimitConfig.getOtpRequestsPerHour());
+                rateLimitConfig.loginAttemptsPerHour(), rateLimitConfig.otpRequestsPerHour());
     }
 }

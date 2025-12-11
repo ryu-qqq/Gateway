@@ -22,7 +22,7 @@ class RateLimitKeyTest {
 
             // then
             assertThat(key).isNotNull();
-            assertThat(key.getValue()).isEqualTo("gateway:rate_limit:endpoint:/api/v1/orders:GET");
+            assertThat(key.value()).isEqualTo("gateway:rate_limit:endpoint:/api/v1/orders:GET");
         }
 
         @Test
@@ -61,7 +61,7 @@ class RateLimitKeyTest {
             RateLimitKey key = RateLimitKey.of(LimitType.ENDPOINT, "/api/v1/orders", "GET");
 
             // then
-            assertThat(key.getValue()).isEqualTo("gateway:rate_limit:endpoint:/api/v1/orders:GET");
+            assertThat(key.value()).isEqualTo("gateway:rate_limit:endpoint:/api/v1/orders:GET");
         }
 
         @Test
@@ -71,7 +71,7 @@ class RateLimitKeyTest {
             RateLimitKey key = RateLimitKey.of(LimitType.USER, "user-123");
 
             // then
-            assertThat(key.getValue()).isEqualTo("gateway:rate_limit:user:user-123");
+            assertThat(key.value()).isEqualTo("gateway:rate_limit:user:user-123");
         }
 
         @Test
@@ -81,7 +81,7 @@ class RateLimitKeyTest {
             RateLimitKey key = RateLimitKey.of(LimitType.IP, "192.168.1.1");
 
             // then
-            assertThat(key.getValue()).isEqualTo("gateway:rate_limit:ip:192.168.1.1");
+            assertThat(key.value()).isEqualTo("gateway:rate_limit:ip:192.168.1.1");
         }
 
         @Test
@@ -91,7 +91,7 @@ class RateLimitKeyTest {
             RateLimitKey key = RateLimitKey.of(LimitType.OTP, "01012345678");
 
             // then
-            assertThat(key.getValue()).isEqualTo("gateway:rate_limit:otp:01012345678");
+            assertThat(key.value()).isEqualTo("gateway:rate_limit:otp:01012345678");
         }
 
         @Test
@@ -101,7 +101,7 @@ class RateLimitKeyTest {
             RateLimitKey key = RateLimitKey.of(LimitType.LOGIN, "192.168.1.1");
 
             // then
-            assertThat(key.getValue()).isEqualTo("gateway:rate_limit:login:192.168.1.1");
+            assertThat(key.value()).isEqualTo("gateway:rate_limit:login:192.168.1.1");
         }
 
         @Test
@@ -111,7 +111,7 @@ class RateLimitKeyTest {
             RateLimitKey key = RateLimitKey.of(LimitType.TOKEN_REFRESH, "user-123");
 
             // then
-            assertThat(key.getValue()).isEqualTo("gateway:rate_limit:token_refresh:user-123");
+            assertThat(key.value()).isEqualTo("gateway:rate_limit:token_refresh:user-123");
         }
 
         @Test
@@ -121,7 +121,7 @@ class RateLimitKeyTest {
             RateLimitKey key = RateLimitKey.of(LimitType.INVALID_JWT, "192.168.1.1");
 
             // then
-            assertThat(key.getValue()).isEqualTo("gateway:rate_limit:invalid_jwt:192.168.1.1");
+            assertThat(key.value()).isEqualTo("gateway:rate_limit:invalid_jwt:192.168.1.1");
         }
     }
 

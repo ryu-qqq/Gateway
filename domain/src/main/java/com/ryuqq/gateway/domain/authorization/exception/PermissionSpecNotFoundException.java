@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.authorization.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-import java.util.Map;
 
 /**
  * PermissionSpecNotFoundException - Permission Spec 미정의 예외
@@ -13,30 +12,53 @@ import java.util.Map;
  * @author development-team
  * @since 1.0.0
  */
-public class PermissionSpecNotFoundException extends DomainException {
+public final class PermissionSpecNotFoundException extends DomainException {
 
     private final String path;
     private final String method;
 
+    /**
+     * Constructor - Path와 Method로 예외 생성
+     *
+     * @param path 요청 경로
+     * @param method HTTP 메서드
+     */
     public PermissionSpecNotFoundException(String path, String method) {
         super(
-                AuthorizationErrorCode.PERMISSION_SPEC_NOT_FOUND.getCode(),
-                buildMessage(path, method),
-                Map.of("path", path, "method", method));
+                AuthorizationErrorCode.PERMISSION_SPEC_NOT_FOUND,
+                buildDetail(path, method));
         this.path = path;
         this.method = method;
     }
 
+    /**
+     * Constructor - 기본 예외 생성
+     */
+    public PermissionSpecNotFoundException() {
+        super(AuthorizationErrorCode.PERMISSION_SPEC_NOT_FOUND);
+        this.path = null;
+        this.method = null;
+    }
+
+    /**
+     * 요청 경로 반환
+     *
+     * @return 요청 경로
+     */
     public String path() {
         return path;
     }
 
+    /**
+     * HTTP 메서드 반환
+     *
+     * @return HTTP 메서드
+     */
     public String method() {
         return method;
     }
 
-    private static String buildMessage(String path, String method) {
-        return String.format(
-                "Permission spec not found for endpoint: %s %s (Default Deny)", method, path);
+    private static String buildDetail(String path, String method) {
+        return String.format("%s %s (Default Deny)", method, path);
     }
 }

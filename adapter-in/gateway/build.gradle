@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'java-test-fixtures'
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
 }
 
 description = 'Adapter-In Gateway Module - Spring Cloud Gateway Filter Layer'
@@ -53,4 +54,39 @@ dependencies {
     testImplementation rootProject.libs.spring.boot.starter.test
     testImplementation rootProject.libs.reactor.test
     testImplementation rootProject.libs.spring.restdocs.webtestclient
+}
+
+// ========================================
+// RestDocs / Asciidoctor Configuration
+// ========================================
+ext {
+    snippetsDir = file('build/generated-snippets')
+}
+
+test {
+    outputs.dir snippetsDir
+}
+
+asciidoctor {
+    dependsOn test
+    inputs.dir snippetsDir
+    configurations 'asciidoctorExt'
+    baseDirFollowsSourceFile()
+    attributes 'snippets': snippetsDir
+}
+
+// Copy asciidoctor output to src/main/resources for serving via DocsController
+// Run: ./gradlew :adapter-in:gateway:copyDocs
+task copyDocs(type: Copy) {
+    dependsOn asciidoctor
+    from "${asciidoctor.outputDir}"
+    into "src/main/resources/static/docs"
+}
+
+configurations {
+    asciidoctorExt
+}
+
+dependencies {
+    asciidoctorExt 'org.springframework.restdocs:spring-restdocs-asciidoctor'
 }

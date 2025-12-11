@@ -202,7 +202,11 @@ class {VoName}Test {
 
 ---
 
-### 2-2) ID VO 템플릿 (OrderId, CustomerId 등)
+### 2-2) Long ID VO 템플릿 (Auto Increment - OrderId 등)
+
+> **특징**: DB가 ID 생성 (Auto Increment)
+> **forNew()**: null 반환
+> **isNew()**: 필수 (null 여부 확인)
 
 ```java
 package com.ryuqq.domain.{bc}.vo;
@@ -215,11 +219,11 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.*;
 
 /**
- * {IdName} ID Value Object 단위 테스트
+ * {IdName} Long ID Value Object 단위 테스트
  *
  * <p>테스트 전략:</p>
  * <ul>
- *   <li>forNew() null 생성 (Auto Increment)</li>
+ *   <li>forNew() null 생성 (Auto Increment, DB가 ID 생성)</li>
  *   <li>isNew() 체크</li>
  *   <li>양수 검증</li>
  * </ul>
@@ -230,7 +234,7 @@ import static org.assertj.core.api.Assertions.*;
 @Tag("unit")
 @Tag("domain")
 @Tag("vo")
-@DisplayName("{IdName} ID VO 단위 테스트")
+@DisplayName("{IdName} Long ID VO 단위 테스트")
 class {IdName}Test {
 
     @Nested
@@ -349,7 +353,338 @@ class {IdName}Test {
 
 ---
 
-### 2-3) Multi-field VO 템플릿 (Address 등)
+### 2-3) UUID ID VO 템플릿 (Application 생성 - UserId 등)
+
+> **특징**: Application이 ID 생성 (UUIDv7)
+> **forNew()**: UUID 반환 (항상 값 존재)
+> **isNew()**: 불필요 (항상 값 존재)
+
+```java
+package com.ryuqq.domain.{bc}.vo;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.*;
+
+/**
+ * {IdName} UUID ID Value Object 단위 테스트
+ *
+ * <p>테스트 전략:</p>
+ * <ul>
+ *   <li>forNew() UUIDv7 생성 (Application이 ID 생성)</li>
+ *   <li>UUID 형식 검증</li>
+ *   <li>null 금지 (항상 값 존재)</li>
+ * </ul>
+ *
+ * <p>Note: UUID ID는 isNew() 메서드가 없습니다 (항상 값 존재)</p>
+ *
+ * @author development-team
+ * @since 1.0.0
+ */
+@Tag("unit")
+@Tag("domain")
+@Tag("vo")
+@DisplayName("{IdName} UUID ID VO 단위 테스트")
+class {IdName}Test {
+
+    @Nested
+    @DisplayName("정적 팩토리 메서드 테스트")
+    class FactoryMethodTests {
+
+        @Test
+        @DisplayName("forNew() - UUIDv7 값을 가진 ID VO가 생성되어야 한다")
+        void forNew_ShouldCreateVOWithUUIDValue() {
+            // When
+            UserId userId = UserId.forNew();
+
+            // Then
+            assertThat(userId).isNotNull();
+            assertThat(userId.value()).isNotNull();
+            assertThat(userId.value()).isNotBlank();
+            // UUID 형식 검증 (36자: 8-4-4-4-12)
+            assertThat(userId.value()).matches(
+                "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            );
+        }
+
+        @Test
+        @DisplayName("forNew() - 매 호출마다 다른 UUID가 생성되어야 한다")
+        void forNew_ShouldCreateDifferentUUIDsEachTime() {
+            // When
+            UserId userId1 = UserId.forNew();
+            UserId userId2 = UserId.forNew();
+
+            // Then
+            assertThat(userId1.value()).isNotEqualTo(userId2.value());
+        }
+
+        @Test
+        @DisplayName("of() - 올바른 UUID 값을 가진 ID VO가 생성되어야 한다")
+        void of_WithValidValue_ShouldCreateVO() {
+            // Given
+            String value = "01234567-89ab-cdef-0123-456789abcdef";
+
+            // When
+            UserId userId = UserId.of(value);
+
+            // Then
+            assertThat(userId).isNotNull();
+            assertThat(userId.value()).isEqualTo(value);
+        }
+
+        @Test
+        @DisplayName("of() - null 값이면 예외가 발생해야 한다")
+        void of_WithNullValue_ShouldThrowException() {
+            // When & Then
+            assertThatThrownBy(() -> UserId.of(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("null일 수 없습니다");
+        }
+
+        @Test
+        @DisplayName("of() - 빈 문자열이면 예외가 발생해야 한다")
+        void of_WithBlankValue_ShouldThrowException() {
+            // When & Then
+            assertThatThrownBy(() -> UserId.of(""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("빈 문자열일 수 없습니다");
+
+            assertThatThrownBy(() -> UserId.of("  "))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("빈 문자열일 수 없습니다");
+        }
+    }
+
+    @Nested
+    @DisplayName("Compact Constructor 검증 테스트")
+    class CompactConstructorTests {
+
+        @Test
+        @DisplayName("UUID 형식이 아니면 예외가 발생해야 한다")
+        void of_WithInvalidUUIDFormat_ShouldThrowException() {
+            // When & Then
+            assertThatThrownBy(() -> UserId.of("invalid-uuid"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("UUID 형식이어야 합니다");
+
+            assertThatThrownBy(() -> UserId.of("12345"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("UUID 형식이어야 합니다");
+        }
+    }
+
+    @Nested
+    @DisplayName("equals/hashCode 테스트")
+    class EqualsAndHashCodeTests {
+
+        @Test
+        @DisplayName("같은 값을 가진 UUID ID VO는 equals()로 동등해야 한다")
+        void equals_WithSameValue_ShouldBeEqual() {
+            // Given
+            String uuidValue = "01234567-89ab-cdef-0123-456789abcdef";
+            UserId userId1 = UserId.of(uuidValue);
+            UserId userId2 = UserId.of(uuidValue);
+
+            // When & Then
+            assertThat(userId1).isEqualTo(userId2);
+            assertThat(userId1.hashCode()).isEqualTo(userId2.hashCode());
+        }
+
+        @Test
+        @DisplayName("forNew()로 생성한 UUID ID는 서로 다르다")
+        void equals_WithDifferentForNew_ShouldNotBeEqual() {
+            // Given
+            UserId userId1 = UserId.forNew();
+            UserId userId2 = UserId.forNew();
+
+            // When & Then
+            assertThat(userId1).isNotEqualTo(userId2);
+        }
+    }
+}
+```
+
+**Long ID vs UUID ID 비교**:
+| 항목 | Long ID (Auto Increment) | UUID ID (UUIDv7) |
+|------|--------------------------|------------------|
+| 필드 타입 | Long | String |
+| forNew() 반환 | null | UUID 문자열 |
+| isNew() 메서드 | 필수 (null 여부 확인) | 없음 (항상 값 존재) |
+| ID 생성 주체 | DB (Auto Increment) | Application (UUIDv7) |
+| 외부 노출 | 순차 증가 (보안 취약) | 랜덤 (보안 강함) |
+| MySQL 저장 | BIGINT | BINARY(16) |
+
+---
+
+### 2-4) Enum VO 템플릿 (OrderStatus 등)
+
+> **특징**: Enum 기반 상태/타입 표현
+> **displayName()**: 필수 (화면 표시용)
+> **Record가 아님**: of() 메서드 불필요
+
+```java
+package com.ryuqq.domain.{bc}.vo;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.*;
+
+/**
+ * OrderStatus Enum Value Object 단위 테스트
+ *
+ * <p>테스트 전략:</p>
+ * <ul>
+ *   <li>displayName() 화면 표시명 검증</li>
+ *   <li>상태 체크 메서드 검증 (isActive, isFinal 등)</li>
+ *   <li>모든 Enum 값 검증 (누락 방지)</li>
+ * </ul>
+ *
+ * @author development-team
+ * @since 1.0.0
+ */
+@Tag("unit")
+@Tag("domain")
+@Tag("vo")
+@DisplayName("OrderStatus Enum VO 단위 테스트")
+class OrderStatusTest {
+
+    @Nested
+    @DisplayName("displayName() 테스트")
+    class DisplayNameTests {
+
+        @Test
+        @DisplayName("PENDING은 '주문 대기'를 반환해야 한다")
+        void pending_ShouldReturnCorrectDisplayName() {
+            assertThat(OrderStatus.PENDING.displayName()).isEqualTo("주문 대기");
+        }
+
+        @Test
+        @DisplayName("CONFIRMED는 '주문 확정'을 반환해야 한다")
+        void confirmed_ShouldReturnCorrectDisplayName() {
+            assertThat(OrderStatus.CONFIRMED.displayName()).isEqualTo("주문 확정");
+        }
+
+        @Test
+        @DisplayName("SHIPPED는 '배송 중'을 반환해야 한다")
+        void shipped_ShouldReturnCorrectDisplayName() {
+            assertThat(OrderStatus.SHIPPED.displayName()).isEqualTo("배송 중");
+        }
+
+        @Test
+        @DisplayName("DELIVERED는 '배송 완료'를 반환해야 한다")
+        void delivered_ShouldReturnCorrectDisplayName() {
+            assertThat(OrderStatus.DELIVERED.displayName()).isEqualTo("배송 완료");
+        }
+
+        @Test
+        @DisplayName("CANCELLED는 '주문 취소'를 반환해야 한다")
+        void cancelled_ShouldReturnCorrectDisplayName() {
+            assertThat(OrderStatus.CANCELLED.displayName()).isEqualTo("주문 취소");
+        }
+
+        @Test
+        @DisplayName("모든 상태는 displayName()이 null이 아니어야 한다")
+        void allStatuses_ShouldHaveNonNullDisplayName() {
+            for (OrderStatus status : OrderStatus.values()) {
+                assertThat(status.displayName())
+                    .as("Status %s should have non-null displayName", status)
+                    .isNotNull()
+                    .isNotBlank();
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상태 체크 메서드 테스트")
+    class StatusCheckTests {
+
+        @Test
+        @DisplayName("isActive() - 활성 상태인 경우 true를 반환해야 한다")
+        void isActive_WithActiveStatus_ShouldReturnTrue() {
+            assertThat(OrderStatus.PENDING.isActive()).isTrue();
+            assertThat(OrderStatus.CONFIRMED.isActive()).isTrue();
+            assertThat(OrderStatus.SHIPPED.isActive()).isTrue();
+        }
+
+        @Test
+        @DisplayName("isActive() - 종료 상태인 경우 false를 반환해야 한다")
+        void isActive_WithFinalStatus_ShouldReturnFalse() {
+            assertThat(OrderStatus.DELIVERED.isActive()).isFalse();
+            assertThat(OrderStatus.CANCELLED.isActive()).isFalse();
+        }
+
+        @Test
+        @DisplayName("isFinal() - 종료 상태인 경우 true를 반환해야 한다")
+        void isFinal_WithFinalStatus_ShouldReturnTrue() {
+            assertThat(OrderStatus.DELIVERED.isFinal()).isTrue();
+            assertThat(OrderStatus.CANCELLED.isFinal()).isTrue();
+        }
+
+        @Test
+        @DisplayName("isFinal() - 진행 중 상태인 경우 false를 반환해야 한다")
+        void isFinal_WithActiveStatus_ShouldReturnFalse() {
+            assertThat(OrderStatus.PENDING.isFinal()).isFalse();
+            assertThat(OrderStatus.CONFIRMED.isFinal()).isFalse();
+            assertThat(OrderStatus.SHIPPED.isFinal()).isFalse();
+        }
+
+        @Test
+        @DisplayName("isCancellable() - 취소 가능 상태인 경우 true를 반환해야 한다")
+        void isCancellable_WithCancellableStatus_ShouldReturnTrue() {
+            assertThat(OrderStatus.PENDING.isCancellable()).isTrue();
+            assertThat(OrderStatus.CONFIRMED.isCancellable()).isTrue();
+        }
+
+        @Test
+        @DisplayName("isCancellable() - 취소 불가 상태인 경우 false를 반환해야 한다")
+        void isCancellable_WithNonCancellableStatus_ShouldReturnFalse() {
+            assertThat(OrderStatus.SHIPPED.isCancellable()).isFalse();
+            assertThat(OrderStatus.DELIVERED.isCancellable()).isFalse();
+            assertThat(OrderStatus.CANCELLED.isCancellable()).isFalse();
+        }
+    }
+
+    @Nested
+    @DisplayName("Enum 값 검증 테스트")
+    class EnumValuesTests {
+
+        @Test
+        @DisplayName("OrderStatus는 5개의 상태를 가져야 한다")
+        void orderStatus_ShouldHaveFiveValues() {
+            assertThat(OrderStatus.values()).hasSize(5);
+        }
+
+        @Test
+        @DisplayName("모든 상태 값이 존재해야 한다")
+        void allStatuses_ShouldExist() {
+            assertThat(OrderStatus.valueOf("PENDING")).isNotNull();
+            assertThat(OrderStatus.valueOf("CONFIRMED")).isNotNull();
+            assertThat(OrderStatus.valueOf("SHIPPED")).isNotNull();
+            assertThat(OrderStatus.valueOf("DELIVERED")).isNotNull();
+            assertThat(OrderStatus.valueOf("CANCELLED")).isNotNull();
+        }
+    }
+}
+```
+
+**Enum VO vs Record VO 차이점**:
+| 항목 | Enum VO | Record VO |
+|------|---------|-----------|
+| 기반 | enum | record |
+| of() 메서드 | 불필요 (Enum.valueOf 사용) | 필수 |
+| displayName() | 필수 | 선택적 |
+| 인스턴스 수 | 고정 (열거 값 개수) | 무제한 |
+| equals/hashCode | 자동 (싱글톤) | 자동 (값 기반) |
+
+---
+
+### 2-5) Multi-field VO 템플릿 (Address 등)
 
 ```java
 package com.ryuqq.domain.{bc}.vo;
@@ -489,7 +824,7 @@ class AddressTest {
 
 ---
 
-### 2-4) Composite VO 템플릿 (FullAddress 등)
+### 2-6) Composite VO 템플릿 (FullAddress 등)
 
 ```java
 package com.ryuqq.domain.{bc}.vo;
@@ -1031,15 +1366,27 @@ assertThat(full1).isEqualTo(full2);
 
 | VO 유형 | @Nested 클래스 구성 | 특징 |
 |---------|---------------------|------|
-| **ID VO** | FactoryMethodTests, CompactConstructorTests, IsNewMethodTests, EqualsAndHashCodeTests | forNew(), isNew() 필수 |
+| **Long ID VO** | FactoryMethodTests, CompactConstructorTests, IsNewMethodTests, EqualsAndHashCodeTests | forNew()→null, isNew() 필수 |
+| **UUID ID VO** | FactoryMethodTests, CompactConstructorTests, EqualsAndHashCodeTests | forNew()→UUID, isNew() 없음 |
+| **Enum VO** | DisplayNameTests, StatusCheckTests, EnumValuesTests | displayName() 필수, of() 없음 |
 | **Simple VO** | FactoryMethodTests, CompactConstructorTests, BusinessMethodTests, EqualsAndHashCodeTests, ConstantTests | 연산/비교 메서드 중심 |
 | **Multi-field VO** | FactoryMethodTests, (필드별) ValidationTests, BusinessMethodTests, EqualsAndHashCodeTests | 각 필드별 @Nested 분리 |
 | **Composite VO** | FactoryMethodTests, CompactConstructorTests, BusinessMethodTests, EqualsAndHashCodeTests | null 체크만, 조합 로직 |
 
-### ID VO (OrderId, CustomerId)
+### Long ID VO (OrderId - Auto Increment)
 - **패턴 1**: 양수 검증, null 거부 (of에서)
 - **패턴 2**: forNew() null 생성, isNew() 체크
 - **패턴 5**: null 기준 equals
+
+### UUID ID VO (UserId - UUIDv7)
+- **패턴 1**: UUID 형식 검증, null/빈문자열 거부
+- **패턴 2**: forNew() UUID 생성, 매번 다른 값
+- **패턴 5**: 값 기준 equals (forNew()는 항상 다름)
+
+### Enum VO (OrderStatus)
+- **패턴 3**: 상태 체크 메서드 (isActive, isFinal)
+- **패턴 4**: 상태 검증 (displayName, 모든 값 검증)
+- **패턴 5**: 싱글톤 equals (Enum 기본 동작)
 
 ### Simple VO (Money, Email, Price, ExpiryDate)
 - **패턴 1**: 도메인 규칙 검증 (범위, 포맷, 길이)
@@ -1205,11 +1552,26 @@ Value Object 테스트 작성 후 다음을 확인:
 - [ ] 도메인 규칙 위반 테스트
 - [ ] equals/hashCode 테스트
 
-### ID VO 추가 체크
+### Long ID VO 추가 체크 (Auto Increment)
 - [ ] forNew() null 생성 테스트
 - [ ] isNew() 메서드 테스트
 - [ ] 양수 검증 테스트
 - [ ] **@Nested IsNewMethodTests** 존재
+
+### UUID ID VO 추가 체크 (UUIDv7)
+- [ ] forNew() UUID 생성 테스트
+- [ ] 매 호출마다 다른 UUID 생성 테스트
+- [ ] UUID 형식 검증 테스트
+- [ ] null/빈 문자열 금지 테스트
+- [ ] **isNew() 메서드 없음** (항상 값 존재)
+
+### Enum VO 추가 체크
+- [ ] displayName() 메서드 테스트
+- [ ] 모든 Enum 값의 displayName() null 아님 테스트
+- [ ] 상태 체크 메서드 테스트 (isActive, isFinal 등)
+- [ ] Enum 값 개수 검증 테스트
+- [ ] **@Nested DisplayNameTests** 존재
+- [ ] **@Nested StatusCheckTests** 존재 (상태 체크 메서드 있는 경우)
 
 ### Simple VO 추가 체크
 - [ ] 비즈니스 메서드 테스트 (연산, 비교, 검증)

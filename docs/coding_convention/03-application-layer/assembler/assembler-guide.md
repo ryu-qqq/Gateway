@@ -1,22 +1,60 @@
-# Assembler — **DTO ↔ Domain 변환 전용**
+# Assembler — **Domain → Response 변환 전용**
 
-> Assembler는 **DTO와 Domain 간 변환만** 담당하는 단순 변환기입니다.
+> Assembler는 **Domain 객체를 Response DTO로 변환**하는 단일 책임 컴포넌트입니다.
 >
-> 비즈니스 로직 없이 **필드 매핑만** 수행합니다.
+> **업계 표준**: [Sairyss/domain-driven-hexagon](https://github.com/Sairyss/domain-driven-hexagon), Martin Fowler PoEAA 패턴 준수
 
 ---
 
-## 1) 핵심 역할
+## 1) 핵심 원칙 (Zero-Tolerance)
 
-* **Command → Domain**: CUD 요청 DTO를 Domain 객체로 변환
-* **Query → Criteria**: 조회 조건 DTO를 Domain 검색 조건으로 변환
-* **Domain → Response**: Domain 객체를 Response DTO로 변환
+### Assembler의 단일 책임
+
+| 역할 | 담당 컴포넌트 | Assembler 사용 |
+|-----|-------------|---------------|
+| Request DTO → Command | Controller (Adapter) | ❌ |
+| **Command → Domain** | **CommandFactory** | ❌ |
+| **Bundle 생성** | **CommandFactory** | ❌ |
+| **Domain → Response DTO** | **Assembler** | ✅ |
+
+### 왜 Domain → Response만 담당하는가?
+
+**Martin Fowler, PoEAA**:
+> "Usually an **assembler** is used on the server side to **transfer data between the DTO and any domain objects**."
+
+**Implementing DDD (Vaughn Vernon)**:
+> "The Application Service will use Repositories to read the necessary Aggregate instances and then **delegate to a DTO Assembler to map the attributes of the DTO**."
+
+**핵심 이유**:
+1. **역할 분리**: Command → Domain은 CommandFactory 책임
+2. **순수성 유지**: Assembler는 Port 의존 없이 순수 변환만
+3. **단방향 변환**: 인바운드(Factory) / 아웃바운드(Assembler) 분리
+
+---
+
+## 2) 핵심 역할
+
+* **Domain → Response 변환**: Domain 객체를 Response DTO로 변환
+* **List 변환**: `List<Domain>` → `List<Response>`
+* **Nested Response 조립**: 복잡한 Response 구조 조립
 * **단순 변환만**: 비즈니스 로직 포함 금지, 필드 매핑만
+* **DB 조회 금지**: Port/Repository 의존 절대 금지
 * **Bean 등록**: `@Component`로 등록
 
+### 금지사항
+
+| 금지 항목 | 이유 | 담당 컴포넌트 |
+|----------|------|-------------|
+| **Command → Domain 변환** | 인바운드 변환 | CommandFactory |
+| **Bundle 생성** | 여러 객체 묶음 | CommandFactory |
+| **Port/Repository 의존** | 순수성 깨짐 | UseCase |
+| **비즈니스 로직** | 단일 책임 위반 | Domain / Policy |
+| **@Transactional** | UseCase 책임 | UseCase |
+| **PageResponse 조립** | 페이징 메타데이터 | UseCase |
+
 ---
 
-## 2) 패키지 구조
+## 3) 패키지 구조
 
 ```
 application/{bc}/assembler/
@@ -25,7 +63,7 @@ application/{bc}/assembler/
 
 ---
 
-## 3) 기본 구조
+## 4) 기본 구조
 
 ```java
 package com.ryuqq.application.{bc}.assembler;
@@ -33,34 +71,47 @@ package com.ryuqq.application.{bc}.assembler;
 import org.springframework.stereotype.Component;
 import java.util.List;
 
+/**
+ * {Bc} Assembler - Domain → Response 변환 전용
+ *
+ * <p>Assembler는 Domain 객체를 Response DTO로 변환하는 단일 책임을 가집니다.</p>
+ * <p>Command → Domain 변환은 CommandFactory에서 처리합니다.</p>
+ *
+ * @see <a href="https://github.com/Sairyss/domain-driven-hexagon">domain-driven-hexagon</a>
+ */
 @Component
 public class {Bc}Assembler {
 
     /**
-     * Command → Domain
-     */
-    public {Bc} toDomain({Action}{Bc}Command command) {
-        // 필드 매핑만
-    }
-
-    /**
-     * Query → Criteria (Domain 검색 조건)
-     */
-    public {Bc}Criteria toCriteria(Search{Bc}Query query) {
-        // 필드 매핑만
-    }
-
-    /**
-     * Domain → Response
+     * Domain → Response 변환
      */
     public {Bc}Response toResponse({Bc} domain) {
-        // 필드 매핑만
+        return new {Bc}Response(
+            domain.id().value(),           // Record 스타일 getter
+            domain.status().name(),
+            domain.createdAt()
+        );
+    }
+
+    /**
+     * Domain → Detail Response 변환
+     */
+    public {Bc}DetailResponse toDetailResponse({Bc} domain) {
+        return new {Bc}DetailResponse(
+            domain.id().value(),
+            domain.status().name(),
+            // 중첩 객체 변환
+            domain.createdAt()
+        );
     }
 
     /**
      * List 변환
      */
     public List<{Bc}Response> toResponseList(List<{Bc}> domains) {
+        if (domains == null || domains.isEmpty()) {
+            return List.of();
+        }
         return domains.stream()
             .map(this::toResponse)
             .toList();
@@ -70,254 +121,187 @@ public class {Bc}Assembler {
 
 ---
 
-## 4) Command → Domain 변환
+## 5) Domain → Response 변환
 
 ### 기본 패턴
-```java
-/**
- * Command → Domain
- */
-public Order toDomain(PlaceOrderCommand command) {
-    return Order.forNew(
-        OrderId.forNew(),
-        CustomerId.of(command.customerId()),
-        Money.of(command.amount()),
-        Address.of(command.deliveryAddress())
-    );
-}
-```
 
-### Nested Record 변환
-```java
-public Order toDomain(PlaceOrderCommand command) {
-    List<OrderItem> items = command.items().stream()
-        .map(item -> OrderItem.of(
-            ProductId.of(item.productId()),
-            Quantity.of(item.quantity()),
-            Money.of(item.unitPrice())
-        ))
-        .toList();
-
-    return Order.forNew(
-        OrderId.forNew(),
-        CustomerId.of(command.customerId()),
-        items
-    );
-}
-```
-
-### Do / Don't
-
-```java
-// ✅ Good: 필드 매핑만
-public Order toDomain(PlaceOrderCommand command) {
-    return Order.forNew(
-        OrderId.forNew(),
-        Money.of(command.amount())
-    );
-    // ✅ OrderStatus는 forNew() 내부에서 설정
-}
-
-// ❌ Bad: 상태 설정 금지
-public Order toDomain(PlaceOrderCommand command) {
-    return Order.forNew(
-        OrderId.forNew(),
-        Money.of(command.amount()),
-        OrderStatus.PLACED  // ← Domain 생성자가 처리!
-    );
-}
-
-// ❌ Bad: 비즈니스 메서드 호출 금지
-public Order toDomain(PlaceOrderCommand command) {
-    Order order = Order.forNew(...);
-    order.validate();  // ← UseCase에서!
-    order.place();     // ← UseCase에서!
-    return order;
-}
-```
-
----
-
-## 5) Query → Criteria 변환
-
-### 기본 패턴
-```java
-/**
- * Query → Criteria (Domain 검색 조건)
- */
-public OrderSearchCriteria toCriteria(SearchOrdersQuery query) {
-    return OrderSearchCriteria.of(
-        query.customerId(),
-        query.status(),
-        query.startDate(),
-        query.endDate(),
-        query.sortBy(),
-        query.sortDirection()
-    );
-}
-```
-
-### 정렬 조건 변환
-```java
-public OrderSearchCriteria toCriteria(SearchOrdersQuery query) {
-    return OrderSearchCriteria.builder()
-        .customerId(query.customerId())
-        .status(query.status())
-        .startDate(query.startDate())
-        .endDate(query.endDate())
-        .sortBy(query.sortBy())           // 정렬 필드
-        .sortDirection(query.sortDirection()) // 정렬 방향
-        .build();
-}
-```
-
-### 페이징 조건 변환
-```java
-// Offset 페이징
-public OrderSearchCriteria toCriteria(SearchOrdersQuery query) {
-    return OrderSearchCriteria.of(
-        query.customerId(),
-        query.status(),
-        query.page(),    // Offset 페이징
-        query.size()
-    );
-}
-
-// No-Offset (커서) 페이징
-public OrderSearchCriteria toCriteria(SearchOrdersCursorQuery query) {
-    return OrderSearchCriteria.of(
-        query.lastOrderId(),  // 커서
-        query.status(),
-        query.size()
-    );
-}
-```
-
-### Do / Don't
-
-```java
-// ✅ Good: 필드 매핑만
-public OrderSearchCriteria toCriteria(SearchOrdersQuery query) {
-    return OrderSearchCriteria.of(
-        query.customerId(),
-        query.status()
-    );
-}
-
-// ❌ Bad: 기본값 설정 금지
-public OrderSearchCriteria toCriteria(SearchOrdersQuery query) {
-    return OrderSearchCriteria.of(
-        query.customerId(),
-        query.status() != null ? query.status() : "PLACED"  // ← REST API에서!
-    );
-}
-
-// ❌ Bad: 비즈니스 로직 금지
-public OrderSearchCriteria toCriteria(SearchOrdersQuery query) {
-    if (query.startDate().isAfter(query.endDate())) {  // ← UseCase에서!
-        throw new IllegalArgumentException();
-    }
-    return OrderSearchCriteria.of(...);
-}
-```
-
----
-
-## 6) Domain → Response 변환
-
-### 기본 패턴
 ```java
 /**
  * Domain → Response
  */
 public OrderResponse toResponse(Order order) {
     return new OrderResponse(
-        order.getIdValue(),      // ✅ Law of Demeter 준수
-        order.getAmountValue(),
-        order.getStatusName(),
-        order.getCreatedAt()
+        order.id().value(),              // ✅ Record 스타일 getter
+        order.customerId().value(),
+        order.totalAmount().value(),
+        order.status().name(),
+        order.createdAt()
     );
 }
 ```
 
 ### Nested Response 변환
+
 ```java
-public OrderDetailResponse toResponse(Order order) {
+public OrderDetailResponse toDetailResponse(Order order) {
     return new OrderDetailResponse(
-        order.getIdValue(),
-        toCustomerInfo(order.getCustomer()),
-        toLineItems(order.getLineItems()),
-        order.getTotalAmountValue(),
-        order.getStatusName(),
-        order.getOrderedAt()
+        order.id().value(),
+        toCustomerInfo(order),           // 중첩 객체 변환
+        toLineItems(order.lineItems()),
+        order.totalAmount().value(),
+        order.status().name(),
+        order.createdAt()
     );
 }
 
-private OrderDetailResponse.CustomerInfo toCustomerInfo(Customer customer) {
+/**
+ * 중첩 객체 변환 (private helper)
+ */
+private OrderDetailResponse.CustomerInfo toCustomerInfo(Order order) {
     return new OrderDetailResponse.CustomerInfo(
-        customer.getIdValue(),
-        customer.getName(),
-        customer.getEmail()
+        order.customerId().value(),
+        order.customerName()             // Domain이 제공하는 값
     );
 }
 
-private List<OrderDetailResponse.LineItem> toLineItems(List<OrderItem> items) {
+private List<OrderDetailResponse.LineItem> toLineItems(List<OrderLineItem> items) {
     return items.stream()
         .map(item -> new OrderDetailResponse.LineItem(
-            item.getIdValue(),
-            item.getProductName(),
-            item.getQuantity(),
-            item.getUnitPriceValue()
+            item.id().value(),
+            item.productName(),
+            item.quantity().value(),
+            item.unitPrice().value()
         ))
         .toList();
 }
 ```
 
+### 여러 Domain → Response 조립
+
+```java
+/**
+ * 여러 Domain 객체를 조합하여 Response 생성
+ *
+ * <p>주의: 조회는 UseCase에서 수행하고, Assembler는 조립만 담당</p>
+ */
+public OrderSummaryResponse toSummaryResponse(Order order, Member member) {
+    return new OrderSummaryResponse(
+        order.id().value(),
+        order.totalAmount().value(),
+        member.name(),                   // UseCase에서 조회한 Member
+        order.status().name()
+    );
+}
+```
+
 ### List 변환
+
 ```java
 /**
  * List<Domain> → List<Response>
  */
 public List<OrderResponse> toResponseList(List<Order> orders) {
+    if (orders == null || orders.isEmpty()) {
+        return List.of();
+    }
     return orders.stream()
         .map(this::toResponse)
         .toList();
 }
 ```
 
-### Do / Don't
+---
+
+## 6) Do / Don't
+
+### ❌ Bad Examples
 
 ```java
-// ✅ Good: Law of Demeter 준수
-public OrderResponse toResponse(Order order) {
-    return new OrderResponse(
-        order.getIdValue(),      // ✅ 체이닝 없음
-        order.getAmountValue()
+// ❌ Bad: Command → Domain 변환 (CommandFactory가 담당!)
+public Order toDomain(PlaceOrderCommand command) {
+    return Order.forNew(
+        OrderId.generate(),
+        Money.of(command.amount())
     );
 }
 
-// ❌ Bad: Getter 체이닝 금지
+// ❌ Bad: Port 의존 (순수성 깨짐!)
+@Component
+public class OrderAssembler {
+    private final MemberQueryPort memberQueryPort;  // ❌ 금지!
+
+    public OrderResponse toResponse(Order order) {
+        Member member = memberQueryPort.findById(order.memberId());  // ❌
+        return new OrderResponse(...);
+    }
+}
+
+// ❌ Bad: 비즈니스 로직 포함
 public OrderResponse toResponse(Order order) {
+    BigDecimal tax = order.totalAmount().value()
+        .multiply(BigDecimal.valueOf(0.1));  // ❌ 계산 로직!
     return new OrderResponse(
-        order.getId().value(),     // ← Law of Demeter 위반!
-        order.getAmount().value()
+        order.id().value(),
+        order.totalAmount().value().add(tax)  // ❌
     );
 }
 
-// ❌ Bad: 계산 로직 금지
+// ❌ Bad: Getter 체이닝 (Law of Demeter 위반)
 public OrderResponse toResponse(Order order) {
-    BigDecimal tax = order.getAmountValue().multiply(0.1);  // ← Domain에서!
     return new OrderResponse(
-        order.getIdValue(),
-        order.getAmountValue().add(tax)
+        order.id().value(),       // ✅ OK
+        order.customer().address().city()  // ❌ 체이닝!
     );
 }
 
-// ❌ Bad: 편의 메서드 호출 금지
+// ❌ Bad: PageResponse 조립 (UseCase가 담당!)
+public PageResponse<OrderResponse> toPageResponse(List<Order> orders, long total) {
+    return new PageResponse<>(toResponseList(orders), total);  // ❌
+}
+```
+
+### ✅ Good Examples
+
+```java
+// ✅ Good: Domain → Response 변환만
+@Component
+public class OrderAssembler {
+
+    public OrderResponse toResponse(Order order) {
+        return new OrderResponse(
+            order.id().value(),
+            order.customerId().value(),
+            order.totalAmount().value(),
+            order.status().name(),
+            order.createdAt()
+        );
+    }
+
+    public List<OrderResponse> toResponseList(List<Order> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return List.of();
+        }
+        return orders.stream()
+            .map(this::toResponse)
+            .toList();
+    }
+}
+
+// ✅ Good: 여러 Domain 조립 (UseCase에서 조회 후 전달)
+public OrderSummaryResponse toSummaryResponse(Order order, Member member) {
+    return new OrderSummaryResponse(
+        order.id().value(),
+        order.totalAmount().value(),
+        member.name(),
+        order.status().name()
+    );
+}
+
+// ✅ Good: Domain이 제공하는 계산 값 사용
 public OrderResponse toResponse(Order order) {
     return new OrderResponse(
-        order.getIdValue(),
-        order.isCompleted() ? "완료" : "진행중"  // ← UseCase에서 처리!
+        order.id().value(),
+        order.totalAmountWithTax().value()  // Domain이 계산 제공
     );
 }
 ```
@@ -326,94 +310,70 @@ public OrderResponse toResponse(Order order) {
 
 ## 7) 실전 예시
 
-### OrderAssembler
+### OrderAssembler (업계 표준 패턴)
+
 ```java
 package com.ryuqq.application.order.assembler;
 
+import com.ryuqq.application.order.dto.response.OrderResponse;
+import com.ryuqq.application.order.dto.response.OrderDetailResponse;
+import com.ryuqq.domain.order.aggregate.order.Order;
+import com.ryuqq.domain.order.aggregate.order.OrderLineItem;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 
+/**
+ * Order Assembler - Domain → Response 변환 전용
+ *
+ * <p>Assembler는 Domain 객체를 Response DTO로 변환하는 단일 책임을 가집니다.</p>
+ *
+ * <p><strong>참고</strong>: Command → Domain 변환은
+ * {@code OrderCommandFactory}에서 처리합니다.</p>
+ *
+ * @see <a href="https://github.com/Sairyss/domain-driven-hexagon">domain-driven-hexagon</a>
+ */
 @Component
 public class OrderAssembler {
 
     /**
-     * Command → Domain
-     */
-    public Order toDomain(PlaceOrderCommand command) {
-        List<OrderItem> items = command.items().stream()
-            .map(item -> OrderItem.of(
-                ProductId.of(item.productId()),
-                Quantity.of(item.quantity()),
-                Money.of(item.unitPrice())
-            ))
-            .toList();
-
-        return Order.forNew(
-            OrderId.forNew(),
-            CustomerId.of(command.customerId()),
-            items,
-            Address.of(command.deliveryAddress())
-        );
-    }
-
-    /**
-     * Query → Criteria
-     */
-    public OrderSearchCriteria toCriteria(SearchOrdersQuery query) {
-        return OrderSearchCriteria.of(
-            query.customerId(),
-            query.status(),
-            query.startDate(),
-            query.endDate(),
-            query.sortBy(),
-            query.sortDirection(),
-            query.page(),
-            query.size()
-        );
-    }
-
-    /**
-     * Domain → Response
+     * Domain → Response 변환
      */
     public OrderResponse toResponse(Order order) {
         return new OrderResponse(
-            order.getIdValue(),
-            order.getCustomerIdValue(),
-            order.getTotalAmountValue(),
-            order.getStatusName(),
-            order.getOrderedAt()
+            order.id().value(),
+            order.customerId().value(),
+            order.totalAmount().value(),
+            order.status().name(),
+            order.createdAt()
         );
     }
 
     /**
-     * Domain → DetailResponse
+     * Domain → Detail Response 변환
      */
     public OrderDetailResponse toDetailResponse(Order order) {
         return new OrderDetailResponse(
-            order.getIdValue(),
-            toCustomerInfo(order.getCustomer()),
-            toLineItems(order.getLineItems()),
-            order.getTotalAmountValue(),
-            order.getStatusName(),
-            order.getOrderedAt()
+            order.id().value(),
+            order.customerId().value(),
+            toLineItems(order.lineItems()),
+            order.totalAmount().value(),
+            order.status().name(),
+            order.createdAt()
         );
     }
 
-    private OrderDetailResponse.CustomerInfo toCustomerInfo(Customer customer) {
-        return new OrderDetailResponse.CustomerInfo(
-            customer.getIdValue(),
-            customer.getName(),
-            customer.getEmail()
-        );
-    }
-
-    private List<OrderDetailResponse.LineItem> toLineItems(List<OrderItem> items) {
+    /**
+     * LineItem 목록 변환 (private helper)
+     */
+    private List<OrderDetailResponse.LineItem> toLineItems(List<OrderLineItem> items) {
         return items.stream()
             .map(item -> new OrderDetailResponse.LineItem(
-                item.getIdValue(),
-                item.getProductName(),
-                item.getQuantity(),
-                item.getUnitPriceValue()
+                item.id().value(),
+                item.productId().value(),
+                item.productName(),
+                item.quantity().value(),
+                item.unitPrice().value()
             ))
             .toList();
     }
@@ -422,6 +382,9 @@ public class OrderAssembler {
      * List 변환
      */
     public List<OrderResponse> toResponseList(List<Order> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return List.of();
+        }
         return orders.stream()
             .map(this::toResponse)
             .toList();
@@ -429,34 +392,157 @@ public class OrderAssembler {
 }
 ```
 
+### UseCase에서 Assembler 사용
+
+```java
+@Service
+public class GetOrderService implements GetOrderUseCase {
+
+    private final OrderQueryPort orderQueryPort;
+    private final OrderAssembler assembler;
+
+    public GetOrderService(OrderQueryPort orderQueryPort, OrderAssembler assembler) {
+        this.orderQueryPort = orderQueryPort;
+        this.assembler = assembler;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderDetailResponse execute(Long orderId) {
+        // 1. 조회
+        Order order = orderQueryPort.findById(OrderId.of(orderId))
+            .orElseThrow(() -> new OrderNotFoundException(orderId));
+
+        // 2. Domain → Response 변환 (Assembler 위임)
+        return assembler.toDetailResponse(order);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<OrderResponse> search(OrderSearchQuery query) {
+        // 1. 조회
+        Page<Order> orderPage = orderQueryPort.search(query);
+
+        // 2. List 변환 (Assembler 위임)
+        List<OrderResponse> responses = assembler.toResponseList(orderPage.getContent());
+
+        // 3. PageResponse 조립 (UseCase 책임)
+        return PageResponse.of(responses, orderPage.getTotalElements());
+    }
+}
+```
+
 ---
 
-## 8) 금지사항
+## 8) Command → Domain 변환은 어디서?
 
-* **비즈니스 로직**: 검증, 계산, 상태 설정 금지
-* **Getter 체이닝**: `order.getId().value()` 금지
-* **Static 메서드**: 반드시 `@Component` Bean 등록
-* **Port 의존성**: Repository 등 주입 금지
-* **기본값 설정**: REST API Layer 책임
-* **PageResponse 조립**: UseCase 책임 (Assembler는 List 변환만)
+### CommandFactory 패턴 (권장)
+
+```java
+/**
+ * Order CommandFactory - Command → Domain 변환 담당
+ *
+ * <p>순수 변환만 수행, Port 의존 없음</p>
+ *
+ * @see CommandFactory Guide
+ */
+@Component
+public class OrderCommandFactory {
+
+    /**
+     * Command → Domain 변환
+     */
+    public Order create(PlaceOrderCommand command) {
+        List<OrderItem> items = command.items().stream()
+            .map(this::createOrderItem)
+            .toList();
+
+        return Order.forNew(
+            new CustomerId(command.customerId()),
+            items
+        );
+    }
+
+    private OrderItem createOrderItem(OrderItemCommand itemCommand) {
+        return OrderItem.forNew(
+            new ProductId(itemCommand.productId()),
+            new Quantity(itemCommand.quantity()),
+            new Money(itemCommand.unitPrice())
+        );
+    }
+
+    /**
+     * Bundle 생성
+     */
+    public OrderPersistBundle createBundle(Order order, String eventType) {
+        OutboxEvent outboxEvent = OutboxEvent.forNew(
+            "Order", null, eventType, order.toEventPayload()
+        );
+        return new OrderPersistBundle(order, outboxEvent);
+    }
+}
+```
+
+### Factory vs Assembler 요약
+
+| 구분 | CommandFactory | Assembler |
+|------|---------------|-----------|
+| **방향** | Command → Domain (인바운드) | Domain → Response (아웃바운드) |
+| **메서드** | `create*()` | `toResponse()` |
+| **역할** | 객체 생성, Bundle 생성 | 응답 변환 |
 
 ---
 
-## 9) 체크리스트
+## 9) 업계 레퍼런스
 
+### Sairyss/domain-driven-hexagon (⭐ 12k+)
+
+```typescript
+// user.mapper.ts - Mapper 3종 메서드
+@Injectable()
+export class UserMapper implements Mapper<UserEntity, UserModel, UserResponseDto> {
+
+  toPersistence(entity: UserEntity): UserModel { ... }  // Domain → DB
+  toDomain(record: UserModel): UserEntity { ... }       // DB → Domain
+  toResponse(entity: UserEntity): UserResponseDto { ... } // Domain → Response
+
+  // ❌ Command → Domain 메서드 없음!
+}
+```
+
+### Martin Fowler - PoEAA
+
+> "A DTO Assembler has the single responsibility of mapping (as in Mapper)
+> the attributes from the Aggregate(s) to the DTO."
+
+---
+
+## 10) 체크리스트
+
+Assembler 작성 시:
 - [ ] `@Component` 어노테이션 적용
 - [ ] 패키지: `application.{bc}.assembler`
-- [ ] Command → Domain 변환 메서드
-- [ ] Query → Criteria 변환 메서드
-- [ ] Domain → Response 변환 메서드
+- [ ] **Domain → Response 변환 메서드만** (toDomain 금지!)
+- [ ] List 변환 메서드 (`toResponseList`)
 - [ ] 비즈니스 로직 포함하지 않음
-- [ ] Getter 체이닝 사용하지 않음
-- [ ] Port 의존성 주입하지 않음
+- [ ] Port/Repository 의존하지 않음
+- [ ] Getter 체이닝 사용하지 않음 (Law of Demeter)
+- [ ] PageResponse 조립하지 않음 (UseCase 책임)
 - [ ] Static 메서드 사용하지 않음
 - [ ] Lombok 사용하지 않음
+- [ ] @Transactional 사용하지 않음
+
+---
+
+## 11) 관련 문서
+
+- **[Application Layer Guide](../application-guide.md)** - 전체 흐름 및 컴포넌트 구조
+- **[CommandFactory Guide](../factory/command/command-factory-guide.md)** - Command → Domain, Bundle 생성
+- **[Assembler Test Guide](./assembler-test-guide.md)** - Assembler 테스트 가이드
+- **[Assembler ArchUnit](./assembler-archunit.md)** - ArchUnit 자동 검증 규칙
 
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-13
-**버전**: 2.0.0 (Command/Query/Response 명확화)
+**최종 수정일**: 2025-12-04
+**버전**: 3.2.0 (CommandFactory 분리, Domain → Response 전용)

@@ -22,7 +22,7 @@ class RateLimitExceededExceptionTest {
 
             // then
             assertThat(exception).isNotNull();
-            assertThat(exception.code()).isEqualTo("RATE-001");
+            assertThat(exception.getCode()).isEqualTo("RATE-001");
             assertThat(exception.getMessage())
                     .isEqualTo("Too many requests. Please try again later.");
         }
@@ -35,22 +35,22 @@ class RateLimitExceededExceptionTest {
 
             // then
             assertThat(exception).isNotNull();
-            assertThat(exception.code()).isEqualTo("RATE-001");
-            assertThat(exception.getLimit()).isEqualTo(100);
-            assertThat(exception.getRemaining()).isEqualTo(0);
-            assertThat(exception.getRetryAfterSeconds()).isEqualTo(60);
+            assertThat(exception.getCode()).isEqualTo("RATE-001");
+            assertThat(exception.limit()).isEqualTo(100);
+            assertThat(exception.remaining()).isEqualTo(0);
+            assertThat(exception.retryAfterSeconds()).isEqualTo(60);
         }
 
         @Test
-        @DisplayName("args에 limit, remaining, retryAfterSeconds 포함")
-        void shouldIncludeArgsInException() {
+        @DisplayName("개별 필드 접근자를 통해 limit, remaining, retryAfterSeconds 확인")
+        void shouldAccessFieldsThroughGetters() {
             // when
             RateLimitExceededException exception = new RateLimitExceededException(100, 0, 60);
 
             // then
-            assertThat(exception.args()).containsEntry("limit", 100);
-            assertThat(exception.args()).containsEntry("remaining", 0);
-            assertThat(exception.args()).containsEntry("retryAfterSeconds", 60);
+            assertThat(exception.limit()).isEqualTo(100);
+            assertThat(exception.remaining()).isEqualTo(0);
+            assertThat(exception.retryAfterSeconds()).isEqualTo(60);
         }
     }
 
@@ -90,7 +90,7 @@ class RateLimitExceededExceptionTest {
             RateLimitExceededException exception = new RateLimitExceededException();
 
             // when & then
-            assertThat(exception.code())
+            assertThat(exception.getCode())
                     .isEqualTo(RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getCode());
             assertThat(exception.getMessage())
                     .isEqualTo(RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getMessage());

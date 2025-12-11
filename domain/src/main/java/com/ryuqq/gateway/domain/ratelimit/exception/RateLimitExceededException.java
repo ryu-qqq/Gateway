@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.ratelimit.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-import java.util.Map;
 
 /**
  * RateLimitExceededException - Rate Limit 초과 예외
@@ -23,18 +22,20 @@ import java.util.Map;
  */
 public final class RateLimitExceededException extends DomainException {
 
+    private static final int DEFAULT_RETRY_AFTER_SECONDS = 60;
+
     private final int limit;
     private final int remaining;
     private final int retryAfterSeconds;
 
-    /** 기본 생성자 */
+    /**
+     * 기본 생성자
+     */
     public RateLimitExceededException() {
-        super(
-                RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getCode(),
-                RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getMessage());
+        super(RateLimitErrorCode.RATE_LIMIT_EXCEEDED);
         this.limit = 0;
         this.remaining = 0;
-        this.retryAfterSeconds = 60;
+        this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
 
     /**
@@ -46,12 +47,8 @@ public final class RateLimitExceededException extends DomainException {
      */
     public RateLimitExceededException(int limit, int remaining, int retryAfterSeconds) {
         super(
-                RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getCode(),
-                RateLimitErrorCode.RATE_LIMIT_EXCEEDED.getMessage(),
-                Map.of(
-                        "limit", limit,
-                        "remaining", remaining,
-                        "retryAfterSeconds", retryAfterSeconds));
+                RateLimitErrorCode.RATE_LIMIT_EXCEEDED,
+                buildDetail(limit, remaining, retryAfterSeconds));
         this.limit = limit;
         this.remaining = remaining;
         this.retryAfterSeconds = retryAfterSeconds;
@@ -62,7 +59,7 @@ public final class RateLimitExceededException extends DomainException {
      *
      * @return 최대 허용 요청 수
      */
-    public int getLimit() {
+    public int limit() {
         return limit;
     }
 
@@ -71,7 +68,7 @@ public final class RateLimitExceededException extends DomainException {
      *
      * @return 남은 요청 수
      */
-    public int getRemaining() {
+    public int remaining() {
         return remaining;
     }
 
@@ -80,7 +77,11 @@ public final class RateLimitExceededException extends DomainException {
      *
      * @return 재시도 가능 시간
      */
-    public int getRetryAfterSeconds() {
+    public int retryAfterSeconds() {
         return retryAfterSeconds;
+    }
+
+    private static String buildDetail(int limit, int remaining, int retryAfterSeconds) {
+        return String.format("limit=%d, remaining=%d, retryAfterSeconds=%d", limit, remaining, retryAfterSeconds);
     }
 }

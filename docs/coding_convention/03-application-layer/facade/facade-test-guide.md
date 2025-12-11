@@ -1,167 +1,304 @@
-# Facade 테스트 가이드
+# Facade Test Guide — **단위 테스트**
 
-> **목적**: Facade의 단위 테스트 전략 (Mock 기반)
-
----
-
-## 1️⃣ 테스트 전략
-
-### 테스트 대상
-Facade는 **여러 Transaction Manager 조합**만 검증합니다:
-
-```
-✅ 테스트 항목:
-1. 여러 Manager 호출 순서 검증
-2. Manager 조합 로직 검증
-3. 트랜잭션 조율 검증
-4. 반환값 전달 검증
-5. 비즈니스 로직 없음 검증
-```
-
-### 테스트 범위
-- ✅ 단위 테스트 (Mock 사용)
-- ✅ Manager 호출 위임 검증
-- ✅ 호출 순서 검증
-- ✅ 빠른 실행 (밀리초 단위)
-- ❌ Spring Context 로딩 금지
-- ❌ 비즈니스 로직 테스트 금지 (Domain Test로 분리)
-- ❌ 트랜잭션 실제 동작 테스트 금지 (Integration Test로)
+> Facade는 **여러 Transaction Manager 조합**을 담당합니다.
+>
+> **순수 조율 로직**이므로 **Mock 기반 단위 테스트**를 작성합니다.
 
 ---
 
-## 2️⃣ 기본 템플릿
+## 1) 테스트 전략
 
-```java
-package com.ryuqq.application.{bc}.facade;
+| 테스트 유형 | 목적 | 범위 |
+|------------|------|------|
+| **단위 테스트** | Manager 조합 검증 | Facade만 (Mock Manager) |
 
-import com.ryuqq.application.{bc}.manager.{Bc}TransactionManager;
-import com.ryuqq.application.outbox.manager.OutboxTransactionManager;
-import com.ryuqq.domain.{bc}.{Bc};
-import com.ryuqq.domain.{bc}.{Bc}Id;
-import com.ryuqq.domain.outbox.OutboxEvent;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.InOrder;
+### 테스트 포인트
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.inOrder;
+| 항목 | 검증 내용 |
+|------|----------|
+| **Manager 호출 순서** | 올바른 순서로 Manager 호출 |
+| **Manager 조합** | 2개 이상 Manager 조합 |
+| **반환값 전달** | 첫 번째 Manager 결과 반환 |
+| **ID Enrichment** | 영속화 후 ID 전달 |
+| **호출 횟수** | 각 Manager 정확히 1번 호출 |
 
-/**
- * {Bc} Facade 단위 테스트
- *
- * @author development-team
- * @since 1.0.0
- */
-@Tag("unit")
-@Tag("facade")
-@Tag("application-layer")
-@ExtendWith(MockitoExtension.class)
-@DisplayName("{Bc} Facade 단위 테스트")
-class {Bc}FacadeTest {
+---
 
-    @Mock
-    private {Bc}TransactionManager {bc}Manager;
+## 2) 테스트 구조
 
-    @Mock
-    private OutboxTransactionManager outboxManager;
-
-    @InjectMocks
-    private {Bc}Facade facade;
-
-    @Test
-    @DisplayName("여러 Manager를 올바른 순서로 호출해야 한다")
-    void saveWithOutbox_ShouldCallManagersInOrder() {
-        // Given
-        {Bc} {bc} = {Bc}.forNew(/* domain fields */);
-        {Bc} saved{Bc} = {Bc}.forExisting({Bc}Id.of(1L), /* fields */);
-
-        given({bc}Manager.save(any({Bc}.class)))
-            .willReturn(saved{Bc});
-
-        given(outboxManager.save(any(OutboxEvent.class)))
-            .willReturn(any(OutboxEvent.class));
-
-        // When
-        facade.saveWithOutbox({bc}, "EventType");
-
-        // Then - 호출 순서 검증
-        InOrder inOrder = inOrder({bc}Manager, outboxManager);
-        inOrder.verify({bc}Manager).save({bc});
-        inOrder.verify(outboxManager).save(any(OutboxEvent.class));
-    }
-
-    @Test
-    @DisplayName("첫 번째 Manager의 결과를 반환해야 한다")
-    void saveWithOutbox_ShouldReturnFirstManagerResult() {
-        // Given
-        {Bc} {bc} = {Bc}.forNew(/* domain fields */);
-        {Bc} saved{Bc} = {Bc}.forExisting({Bc}Id.of(1L), /* fields */);
-
-        given({bc}Manager.save(any({Bc}.class)))
-            .willReturn(saved{Bc});
-
-        given(outboxManager.save(any(OutboxEvent.class)))
-            .willReturn(any(OutboxEvent.class));
-
-        // When
-        {Bc} result = facade.saveWithOutbox({bc}, "EventType");
-
-        // Then
-        assertThat(result).isEqualTo(saved{Bc});
-        assertThat(result.getIdValue()).isEqualTo(1L);
-    }
-}
+```
+application/
+└─ src/
+   ├─ main/java/
+   │  └─ com/ryuqq/application/{bc}/facade/
+   │      └─ {Bc}Facade.java
+   └─ test/java/
+      └─ com/ryuqq/application/{bc}/facade/
+          └─ {Bc}FacadeTest.java
 ```
 
 ---
 
-## 3️⃣ 실전 예시 (Order + Outbox)
+## 3) 단위 테스트 예시
+
+### 기본 테스트
 
 ```java
 package com.ryuqq.application.order.facade;
 
+import com.ryuqq.application.order.dto.bundle.OrderPersistBundle;
 import com.ryuqq.application.order.manager.OrderTransactionManager;
+import com.ryuqq.application.order.manager.OrderHistoryTransactionManager;
 import com.ryuqq.application.outbox.manager.OutboxTransactionManager;
-import com.ryuqq.domain.order.Order;
-import com.ryuqq.domain.order.OrderId;
-import com.ryuqq.domain.order.Money;
+import com.ryuqq.domain.order.aggregate.Order;
+import com.ryuqq.domain.order.aggregate.OrderHistory;
+import com.ryuqq.domain.order.vo.OrderId;
 import com.ryuqq.domain.outbox.OutboxEvent;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.InOrder;
 
-import java.math.BigDecimal;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.times;
 
-/**
- * Order Facade 단위 테스트
- *
- * @author development-team
- * @since 1.0.0
- */
 @Tag("unit")
 @Tag("facade")
 @Tag("application-layer")
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Order Facade 단위 테스트")
+@DisplayName("OrderFacade 단위 테스트")
 class OrderFacadeTest {
 
+    @Mock
+    private OrderTransactionManager orderManager;
+
+    @Mock
+    private OrderHistoryTransactionManager historyManager;
+
+    @Mock
+    private OutboxTransactionManager outboxManager;
+
+    @InjectMocks
+    private OrderFacade facade;
+
+    @Nested
+    @DisplayName("persistOrderWithHistoryAndOutbox 테스트")
+    class PersistOrderWithHistoryAndOutboxTest {
+
+        @Test
+        @DisplayName("여러 Manager를 올바른 순서로 호출해야 한다")
+        void shouldCallManagersInOrder() {
+            // given
+            Order order = createTestOrder();
+            OrderHistory history = createTestHistory();
+            OutboxEvent outboxEvent = createTestOutboxEvent();
+
+            Order savedOrder = createSavedOrder(1L);
+            given(orderManager.persist(any(Order.class))).willReturn(savedOrder);
+
+            // when
+            facade.persistOrderWithHistoryAndOutbox(order, history, outboxEvent);
+
+            // then - 호출 순서 검증
+            InOrder inOrder = inOrder(orderManager, historyManager, outboxManager);
+            inOrder.verify(orderManager).persist(order);
+            inOrder.verify(historyManager).persist(any(OrderHistory.class));
+            inOrder.verify(outboxManager).persist(any(OutboxEvent.class));
+        }
+
+        @Test
+        @DisplayName("OrderManager의 결과를 반환해야 한다")
+        void shouldReturnOrderManagerResult() {
+            // given
+            Order order = createTestOrder();
+            OrderHistory history = createTestHistory();
+            OutboxEvent outboxEvent = createTestOutboxEvent();
+
+            Order savedOrder = createSavedOrder(1L);
+            given(orderManager.persist(any(Order.class))).willReturn(savedOrder);
+
+            // when
+            Order result = facade.persistOrderWithHistoryAndOutbox(order, history, outboxEvent);
+
+            // then
+            assertThat(result).isEqualTo(savedOrder);
+            assertThat(result.id().value()).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("각 Manager를 정확히 1번씩 호출해야 한다")
+        void shouldCallEachManagerOnce() {
+            // given
+            Order order = createTestOrder();
+            OrderHistory history = createTestHistory();
+            OutboxEvent outboxEvent = createTestOutboxEvent();
+
+            Order savedOrder = createSavedOrder(1L);
+            given(orderManager.persist(any(Order.class))).willReturn(savedOrder);
+
+            // when
+            facade.persistOrderWithHistoryAndOutbox(order, history, outboxEvent);
+
+            // then
+            then(orderManager).should(times(1)).persist(order);
+            then(historyManager).should(times(1)).persist(any(OrderHistory.class));
+            then(outboxManager).should(times(1)).persist(any(OutboxEvent.class));
+        }
+
+        @Test
+        @DisplayName("저장된 Order의 ID를 History에 전달해야 한다")
+        void shouldPassOrderIdToHistory() {
+            // given
+            Order order = createTestOrder();
+            OrderHistory history = createTestHistory();
+            OutboxEvent outboxEvent = createTestOutboxEvent();
+
+            Order savedOrder = createSavedOrder(1L);
+            given(orderManager.persist(any(Order.class))).willReturn(savedOrder);
+
+            // when
+            facade.persistOrderWithHistoryAndOutbox(order, history, outboxEvent);
+
+            // then
+            then(historyManager).should().persist(argThat(h ->
+                h.getOrderId().value().equals(1L)
+            ));
+        }
+
+        @Test
+        @DisplayName("저장된 Order의 ID를 OutboxEvent에 전달해야 한다")
+        void shouldPassOrderIdToOutboxEvent() {
+            // given
+            Order order = createTestOrder();
+            OrderHistory history = createTestHistory();
+            OutboxEvent outboxEvent = createTestOutboxEvent();
+
+            Order savedOrder = createSavedOrder(1L);
+            given(orderManager.persist(any(Order.class))).willReturn(savedOrder);
+
+            // when
+            facade.persistOrderWithHistoryAndOutbox(order, history, outboxEvent);
+
+            // then
+            then(outboxManager).should().persist(argThat(event ->
+                event.getAggregateId().equals(1L)
+            ));
+        }
+    }
+
+    @Nested
+    @DisplayName("persistOrderBundle 테스트")
+    class PersistOrderBundleTest {
+
+        @Test
+        @DisplayName("Bundle의 Order를 영속화하고 ID를 할당해야 한다")
+        void shouldPersistBundleAndAssignId() {
+            // given
+            OrderPersistBundle bundle = createTestBundle();
+            Order savedOrder = createSavedOrder(1L);
+
+            given(orderManager.persist(any(Order.class))).willReturn(savedOrder);
+
+            // when
+            Order result = facade.persistOrderBundle(bundle);
+
+            // then
+            assertThat(result.id().value()).isEqualTo(1L);
+        }
+
+        @Test
+        @DisplayName("Bundle Enrichment 후 관련 객체를 영속화해야 한다")
+        void shouldEnrichBundleAndPersist() {
+            // given
+            OrderPersistBundle bundle = createTestBundle();
+            Order savedOrder = createSavedOrder(1L);
+
+            given(orderManager.persist(any(Order.class))).willReturn(savedOrder);
+
+            // when
+            facade.persistOrderBundle(bundle);
+
+            // then
+            then(orderManager).should().persist(bundle.order());
+            then(historyManager).should().persist(any(OrderHistory.class));
+            then(outboxManager).should().persist(argThat(event ->
+                event.getAggregateId().equals(1L)
+            ));
+        }
+    }
+
+    // ==================== Helper Methods ====================
+
+    private Order createTestOrder() {
+        // 테스트용 Order 생성 (ID 없음)
+        return Order.forNew(/* ... */);
+    }
+
+    private Order createSavedOrder(Long id) {
+        // 저장된 Order (ID 있음)
+        return Order.forExisting(new OrderId(id), /* ... */);
+    }
+
+    private OrderHistory createTestHistory() {
+        return OrderHistory.forNew(/* ... */);
+    }
+
+    private OutboxEvent createTestOutboxEvent() {
+        return OutboxEvent.forNew("Order", null, "OrderPlaced", "{}");
+    }
+
+    private OrderPersistBundle createTestBundle() {
+        return new OrderPersistBundle(
+            createTestOrder(),
+            createTestHistory(),
+            createTestOutboxEvent()
+        );
+    }
+}
+```
+
+---
+
+## 4) 테스트 체크리스트
+
+### Manager 조합 검증
+- [ ] 2개 이상 Manager Mock 주입
+- [ ] 올바른 호출 순서 (InOrder)
+- [ ] 각 Manager 정확히 1번 호출
+
+### ID Enrichment 검증
+- [ ] 첫 번째 Manager 결과의 ID 획득
+- [ ] 관련 객체에 ID 전달 (History, OutboxEvent)
+- [ ] Bundle enrichWithId() 호출 검증
+
+### 반환값 검증
+- [ ] 첫 번째 Manager 결과 반환
+- [ ] ID가 할당된 Domain 반환
+
+### 금지 사항 검증
+- [ ] 비즈니스 로직 없음
+- [ ] 객체 생성 없음 (Factory 책임)
+
+---
+
+## 5) Do / Don't
+
+### ✅ Good
+
+```java
+// ✅ Good: Mock 기반 단위 테스트
+@ExtendWith(MockitoExtension.class)
+class OrderFacadeTest {
     @Mock
     private OrderTransactionManager orderManager;
 
@@ -170,461 +307,100 @@ class OrderFacadeTest {
 
     @InjectMocks
     private OrderFacade facade;
-
-    @Test
-    @DisplayName("여러 Manager를 올바른 순서로 호출해야 한다")
-    void saveOrderWithOutbox_ShouldCallManagersInOrder() {
-        // Given
-        Order order = Order.forNew(
-            OrderId.forNew(),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        Order savedOrder = Order.forExisting(
-            OrderId.of(1L),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        given(orderManager.save(any(Order.class)))
-            .willReturn(savedOrder);
-
-        given(outboxManager.save(any(OutboxEvent.class)))
-            .willReturn(any(OutboxEvent.class));
-
-        // When
-        facade.saveOrderWithOutbox(order, "OrderCreated");
-
-        // Then - 호출 순서 검증
-        InOrder inOrder = inOrder(orderManager, outboxManager);
-        inOrder.verify(orderManager).save(order);
-        inOrder.verify(outboxManager).save(any(OutboxEvent.class));
-    }
-
-    @Test
-    @DisplayName("OrderManager의 결과를 반환해야 한다")
-    void saveOrderWithOutbox_ShouldReturnOrderManagerResult() {
-        // Given
-        Order order = Order.forNew(
-            OrderId.forNew(),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        Order savedOrder = Order.forExisting(
-            OrderId.of(1L),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        given(orderManager.save(any(Order.class)))
-            .willReturn(savedOrder);
-
-        given(outboxManager.save(any(OutboxEvent.class)))
-            .willReturn(any(OutboxEvent.class));
-
-        // When
-        Order result = facade.saveOrderWithOutbox(order, "OrderCreated");
-
-        // Then
-        assertThat(result).isEqualTo(savedOrder);
-        assertThat(result.getIdValue()).isEqualTo(1L);
-    }
-
-    @Test
-    @DisplayName("OrderManager와 OutboxManager를 정확히 1번씩 호출해야 한다")
-    void saveOrderWithOutbox_ShouldCallEachManagerOnce() {
-        // Given
-        Order order = Order.forNew(
-            OrderId.forNew(),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        Order savedOrder = Order.forExisting(
-            OrderId.of(1L),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        given(orderManager.save(any(Order.class)))
-            .willReturn(savedOrder);
-
-        given(outboxManager.save(any(OutboxEvent.class)))
-            .willReturn(any(OutboxEvent.class));
-
-        // When
-        facade.saveOrderWithOutbox(order, "OrderCreated");
-
-        // Then
-        then(orderManager).should(times(1)).save(order);
-        then(outboxManager).should(times(1)).save(any(OutboxEvent.class));
-    }
-
-    @Test
-    @DisplayName("저장된 Order의 ID를 사용하여 OutboxEvent를 생성해야 한다")
-    void saveOrderWithOutbox_ShouldUseOrderIdForOutboxEvent() {
-        // Given
-        Order order = Order.forNew(
-            OrderId.forNew(),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        Order savedOrder = Order.forExisting(
-            OrderId.of(1L),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        given(orderManager.save(any(Order.class)))
-            .willReturn(savedOrder);
-
-        given(outboxManager.save(any(OutboxEvent.class)))
-            .willReturn(any(OutboxEvent.class));
-
-        // When
-        facade.saveOrderWithOutbox(order, "OrderCreated");
-
-        // Then
-        then(outboxManager).should().save(argThat(event ->
-            event.getAggregateId().equals(1L) &&
-            event.getEventType().equals("OrderCreated")
-        ));
-    }
-
-    @Test
-    @DisplayName("비즈니스 로직 없이 Manager 호출만 해야 한다")
-    void saveOrderWithOutbox_ShouldNotContainBusinessLogic() {
-        // Given
-        Order order = Order.forNew(
-            OrderId.forNew(),
-            Money.of(BigDecimal.valueOf(50000))
-        );
-
-        given(orderManager.save(any(Order.class)))
-            .willReturn(order);
-
-        given(outboxManager.save(any(OutboxEvent.class)))
-            .willReturn(any(OutboxEvent.class));
-
-        // When
-        facade.saveOrderWithOutbox(order, "OrderCreated");
-
-        // Then
-        // ✅ Manager 호출만 검증 (비즈니스 로직 없음)
-        then(orderManager).should(times(1)).save(order);
-        then(outboxManager).should(times(1)).save(any(OutboxEvent.class));
-        then(orderManager).shouldHaveNoMoreInteractions();
-        then(outboxManager).shouldHaveNoMoreInteractions();
-    }
 }
+
+// ✅ Good: 호출 순서 검증
+InOrder inOrder = inOrder(orderManager, historyManager, outboxManager);
+inOrder.verify(orderManager).persist(order);
+inOrder.verify(historyManager).persist(any());
+inOrder.verify(outboxManager).persist(any());
+
+// ✅ Good: ID Enrichment 검증
+then(outboxManager).should().persist(argThat(event ->
+    event.getAggregateId().equals(1L)
+));
+
+// ✅ Good: persist* 메서드 테스트
+facade.persistOrderBundle(bundle);
+facade.persistOrderWithHistoryAndOutbox(order, history, event);
 ```
 
----
-
-## 4️⃣ Do / Don't
-
-### ❌ Bad Examples
+### ❌ Bad
 
 ```java
-// ❌ Spring Context 로딩
+// ❌ Bad: Spring Context 로딩
 @SpringBootTest
-class OrderFacadeTest {
-    // Spring Context 로딩 불필요! (단위 테스트)
-}
+class OrderFacadeTest { ... }
 
-// ❌ 실제 Manager 사용
-class OrderFacadeTest {
-    private OrderTransactionManager orderManager = new OrderTransactionManager(...);
-    // Mock 사용해야 함!
-}
+// ❌ Bad: 실제 Manager 사용
+private OrderTransactionManager orderManager = new OrderTransactionManager(...);
 
-// ❌ 비즈니스 로직 테스트
-@Test
-void saveOrderWithOutbox_WithBusinessLogic() {
-    Order order = Order.forNew(...);
-    order.place();  // 비즈니스 로직은 Domain Test로!
+// ❌ Bad: 비즈니스 로직 테스트 (Domain Test로)
+order.place();
+facade.persistOrderBundle(bundle);
 
-    facade.saveOrderWithOutbox(order, "OrderCreated");
-}
-
-// ❌ 트랜잭션 실제 동작 테스트
-@Test
+// ❌ Bad: 트랜잭션 실제 동작 테스트 (Integration Test로)
 @Transactional
-void saveOrderWithOutbox_ShouldRollbackOnException() {
-    // 트랜잭션 실제 동작은 Integration Test로!
-}
+void persistOrder_ShouldRollbackOnException() { ... }
 
-// ❌ 단일 Manager만 호출
-@Test
-void saveOrder_WithSingleManager() {
-    facade.saveOrder(order);  // ❌ 단일 Manager는 UseCase에서 직접!
-}
+// ❌ Bad: 단일 Manager만 테스트 (Facade 필요 없음)
+facade.persistOrder(order);  // Manager 직접 호출해야 함
 
-// ❌ UseCase 호출
-@Test
-void processOrder_WithUseCases() {
-    // ❌ Facade는 Manager를 조합! UseCase 조합 금지!
-    facade.processOrder(command);
-}
+// ❌ Bad: save* 메서드명 (persist* 사용)
+facade.saveOrderWithOutbox(order, event);  // ❌
 ```
 
-### ✅ Good Examples
+---
+
+## 6) Fixture 활용
 
 ```java
-// ✅ Mock 기반 단위 테스트
-@Tag("unit")
-@Tag("facade")
-@Tag("application-layer")
-@ExtendWith(MockitoExtension.class)
+import com.ryuqq.fixture.domain.OrderFixture;
+import com.ryuqq.fixture.domain.OrderHistoryFixture;
+import com.ryuqq.fixture.application.OrderPersistBundleFixture;
+
+@DisplayName("OrderFacade 단위 테스트")
 class OrderFacadeTest {
-    @Mock
-    private OrderTransactionManager orderManager;
 
-    @Mock
-    private OutboxTransactionManager outboxManager;
+    @Test
+    @DisplayName("Bundle을 영속화한다")
+    void shouldPersistBundle() {
+        // given
+        OrderPersistBundle bundle = OrderPersistBundleFixture.create();
+        Order savedOrder = OrderFixture.withId(1L);
 
-    @InjectMocks
-    private OrderFacade facade;
-}
+        given(orderManager.persist(any(Order.class))).willReturn(savedOrder);
 
-// ✅ Manager 호출 순서 검증
-@Test
-void saveOrderWithOutbox_ShouldCallManagersInOrder() {
-    given(orderManager.save(any(Order.class)))
-        .willReturn(savedOrder);
-    given(outboxManager.save(any(OutboxEvent.class)))
-        .willReturn(any(OutboxEvent.class));
+        // when
+        Order result = facade.persistOrderBundle(bundle);
 
-    facade.saveOrderWithOutbox(order, "OrderCreated");
-
-    InOrder inOrder = inOrder(orderManager, outboxManager);
-    inOrder.verify(orderManager).save(order);
-    inOrder.verify(outboxManager).save(any(OutboxEvent.class));
-}
-
-// ✅ 반환값 전달 검증
-@Test
-void saveOrderWithOutbox_ShouldReturnFirstManagerResult() {
-    given(orderManager.save(any(Order.class)))
-        .willReturn(savedOrder);
-
-    Order result = facade.saveOrderWithOutbox(order, "OrderCreated");
-
-    assertThat(result).isEqualTo(savedOrder);
-}
-
-// ✅ 여러 Manager 호출 검증
-@Test
-void saveOrderWithOutbox_ShouldCallBothManagers() {
-    facade.saveOrderWithOutbox(order, "OrderCreated");
-
-    then(orderManager).should(times(1)).save(order);
-    then(outboxManager).should(times(1)).save(any(OutboxEvent.class));
+        // then
+        assertThat(result.id().value()).isEqualTo(1L);
+    }
 }
 ```
 
 ---
 
-## 5️⃣ 테스트 시나리오
+## 7) Integration Test와의 관계
 
-### Manager 호출 순서 검증
-```java
-@Test
-@DisplayName("OrderManager → OutboxManager 순서로 호출해야 한다")
-void saveOrderWithOutbox_ShouldCallManagersInCorrectOrder() {
-    // Given
-    Order order = Order.forNew(
-        OrderId.forNew(),
-        Money.of(BigDecimal.valueOf(50000))
-    );
-
-    Order savedOrder = Order.forExisting(
-        OrderId.of(1L),
-        Money.of(BigDecimal.valueOf(50000))
-    );
-
-    given(orderManager.save(any(Order.class)))
-        .willReturn(savedOrder);
-
-    given(outboxManager.save(any(OutboxEvent.class)))
-        .willReturn(any(OutboxEvent.class));
-
-    // When
-    facade.saveOrderWithOutbox(order, "OrderCreated");
-
-    // Then - InOrder로 순서 검증
-    InOrder inOrder = inOrder(orderManager, outboxManager);
-    inOrder.verify(orderManager).save(order);
-    inOrder.verify(outboxManager).save(any(OutboxEvent.class));
-}
-```
-
-### 반환값 전달 검증
-```java
-@Test
-@DisplayName("첫 번째 Manager(OrderManager)의 결과를 반환해야 한다")
-void saveOrderWithOutbox_ShouldReturnOrderManagerResult() {
-    // Given
-    Order order = Order.forNew(
-        OrderId.forNew(),
-        Money.of(BigDecimal.valueOf(50000))
-    );
-
-    Order savedOrder = Order.forExisting(
-        OrderId.of(1L),
-        Money.of(BigDecimal.valueOf(50000))
-    );
-
-    given(orderManager.save(any(Order.class)))
-        .willReturn(savedOrder);
-
-    given(outboxManager.save(any(OutboxEvent.class)))
-        .willReturn(any(OutboxEvent.class));
-
-    // When
-    Order result = facade.saveOrderWithOutbox(order, "OrderCreated");
-
-    // Then
-    assertThat(result).isEqualTo(savedOrder);
-    assertThat(result.getIdValue()).isEqualTo(1L);
-}
-```
-
-### Manager 호출 횟수 검증
-```java
-@Test
-@DisplayName("각 Manager를 정확히 1번씩만 호출해야 한다")
-void saveOrderWithOutbox_ShouldCallEachManagerOnce() {
-    // Given
-    Order order = Order.forNew(
-        OrderId.forNew(),
-        Money.of(BigDecimal.valueOf(50000))
-    );
-
-    given(orderManager.save(any(Order.class)))
-        .willReturn(order);
-
-    given(outboxManager.save(any(OutboxEvent.class)))
-        .willReturn(any(OutboxEvent.class));
-
-    // When
-    facade.saveOrderWithOutbox(order, "OrderCreated");
-
-    // Then
-    then(orderManager).should(times(1)).save(order);
-    then(outboxManager).should(times(1)).save(any(OutboxEvent.class));
-    then(orderManager).shouldHaveNoMoreInteractions();
-    then(outboxManager).shouldHaveNoMoreInteractions();
-}
-```
-
-### 파라미터 전달 검증
-```java
-@Test
-@DisplayName("저장된 Order의 ID를 OutboxEvent에 전달해야 한다")
-void saveOrderWithOutbox_ShouldPassOrderIdToOutbox() {
-    // Given
-    Order order = Order.forNew(
-        OrderId.forNew(),
-        Money.of(BigDecimal.valueOf(50000))
-    );
-
-    Order savedOrder = Order.forExisting(
-        OrderId.of(1L),
-        Money.of(BigDecimal.valueOf(50000))
-    );
-
-    given(orderManager.save(any(Order.class)))
-        .willReturn(savedOrder);
-
-    given(outboxManager.save(any(OutboxEvent.class)))
-        .willReturn(any(OutboxEvent.class));
-
-    // When
-    facade.saveOrderWithOutbox(order, "OrderCreated");
-
-    // Then
-    then(outboxManager).should().save(argThat(event ->
-        event.getAggregateId().equals(1L) &&
-        event.getEventType().equals("OrderCreated")
-    ));
-}
-```
+| 구분 | 단위 테스트 (이 문서) | 통합 테스트 |
+|------|----------------------|-------------|
+| **목적** | Manager 조합 검증 | 트랜잭션 동작 검증 |
+| **방식** | Mock 기반 | 실제 DB 사용 |
+| **속도** | 밀리초 | 초 단위 |
+| **검증 항목** | 호출 순서, ID 전달 | Commit/Rollback |
 
 ---
 
-## 6️⃣ 체크리스트
+## 8) 관련 문서
 
-Facade 테스트 작성 시:
-- [ ] `@Tag("unit")`, `@Tag("facade")`, `@Tag("application-layer")` 필수
-- [ ] `@ExtendWith(MockitoExtension.class)` 사용
-- [ ] `@Mock` Manager 주입 (2개 이상)
-- [ ] `@InjectMocks` Facade 주입
-- [ ] Manager 호출 순서 검증 (InOrder)
-- [ ] 반환값 전달 검증
-- [ ] 각 Manager 호출 횟수 검증 (times(1))
-- [ ] 파라미터 전달 검증 (argThat)
-- [ ] 여러 Manager 조합 검증
-- [ ] Spring Context 로딩 금지
-- [ ] 실제 Manager 사용 금지
-- [ ] 비즈니스 로직 테스트 금지
-- [ ] 트랜잭션 실제 동작 테스트 금지 (Integration Test로)
-- [ ] 단일 Manager 호출 금지 (UseCase에서 직접)
-- [ ] UseCase 조합 금지 (Facade는 Manager만)
-
----
-
-## 7️⃣ 성능 고려사항
-
-### 빠른 실행
-```java
-@Test
-@DisplayName("Facade 테스트는 밀리초 단위로 실행되어야 한다")
-void facade_ShouldExecuteQuickly() {
-    // Given
-    long startTime = System.currentTimeMillis();
-
-    Order order = Order.forNew(
-        OrderId.forNew(),
-        Money.of(BigDecimal.valueOf(50000))
-    );
-
-    given(orderManager.save(any(Order.class)))
-        .willReturn(order);
-
-    given(outboxManager.save(any(OutboxEvent.class)))
-        .willReturn(any(OutboxEvent.class));
-
-    // When
-    facade.saveOrderWithOutbox(order, "OrderCreated");
-
-    // Then
-    long duration = System.currentTimeMillis() - startTime;
-    assertThat(duration).isLessThan(10);  // 10ms 이하
-}
-```
-
----
-
-## 8️⃣ Integration Test와의 관계
-
-### 단위 테스트 (여기서 다룸)
-- ✅ Manager 호출 순서 검증
-- ✅ Manager 조합 로직 검증
-- ✅ Mock 기반
-- ✅ 빠른 실행 (밀리초)
-
-### Integration Test (별도 문서)
-- ✅ 트랜잭션 실제 동작 검증
-- ✅ Rollback 검증
-- ✅ 실제 DB 사용 (Testcontainers)
-- ⚠️ 느린 실행 (초 단위)
-
----
-
-## 📖 관련 문서
-
-- **[Facade Guide](facade-guide.md)** - Facade 구현 가이드
-- **[Transaction Manager Test Guide](../manager/transaction-manager-test-guide.md)** - Transaction Manager 테스트 가이드
-- **[UseCase Test Guide](../testing/01_usecase-unit-test.md)** - UseCase 테스트 가이드
+- **[Facade Guide](./facade-guide.md)** - Facade 구현 가이드
+- **[Facade ArchUnit](./facade-archunit.md)** - 아키텍처 규칙
+- **[Transaction Manager Test Guide](../manager/transaction-manager-test-guide.md)** - Manager 테스트
 
 ---
 
 **작성자**: Development Team
-**최종 수정일**: 2025-11-13
-**버전**: 1.0.0
+**최종 수정일**: 2025-12-04
+**버전**: 2.0.0

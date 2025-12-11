@@ -24,7 +24,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).isEqualTo("JWT token is invalid: " + reason);
         }
 
@@ -35,7 +35,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException();
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).isEqualTo("JWT token is invalid");
         }
 
@@ -49,7 +49,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).isEqualTo("JWT token is invalid: ");
         }
 
@@ -63,8 +63,9 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
-            assertThat(exception.getMessage()).isEqualTo("JWT token is invalid: null");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
+            // DomainException은 detail이 null이면 기본 메시지만 사용
+            assertThat(exception.getMessage()).isEqualTo("JWT token is invalid");
         }
     }
 
@@ -79,8 +80,8 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException("test reason");
 
             // when & then
-            assertThat(exception.code()).isEqualTo(AuthenticationErrorCode.JWT_INVALID.getCode());
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo(AuthenticationErrorCode.JWT_INVALID.getCode());
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
         }
 
         @Test
@@ -90,7 +91,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException();
 
             // when & then
-            assertThat(exception.code()).isEqualTo(AuthenticationErrorCode.JWT_INVALID.getCode());
+            assertThat(exception.getCode()).isEqualTo(AuthenticationErrorCode.JWT_INVALID.getCode());
         }
     }
 
@@ -173,7 +174,7 @@ class JwtInvalidExceptionTest {
             try {
                 throw new JwtInvalidException("Invalid signature");
             } catch (JwtInvalidException e) {
-                assertThat(e.code()).isEqualTo("AUTH-002");
+                assertThat(e.getCode()).isEqualTo("AUTH-002");
                 assertThat(e.getMessage()).contains("Invalid signature");
             }
         }
@@ -207,7 +208,7 @@ class JwtInvalidExceptionTest {
                 throw new JwtInvalidException("test");
             } catch (DomainException e) {
                 caught = true;
-                caughtCode = e.code();
+                caughtCode = e.getCode();
             }
 
             // then
@@ -230,7 +231,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).contains("format");
         }
 
@@ -244,7 +245,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).contains("Signature");
         }
 
@@ -258,7 +259,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).contains("Missing required claim");
         }
 
@@ -272,7 +273,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).contains("algorithm");
         }
 
@@ -286,7 +287,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).contains("kid");
         }
 
@@ -300,7 +301,7 @@ class JwtInvalidExceptionTest {
             JwtInvalidException exception = new JwtInvalidException(reason);
 
             // then
-            assertThat(exception.code()).isEqualTo("AUTH-002");
+            assertThat(exception.getCode()).isEqualTo("AUTH-002");
             assertThat(exception.getMessage()).contains("null or blank");
         }
     }

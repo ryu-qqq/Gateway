@@ -61,7 +61,7 @@ public class RecordFailureService implements RecordFailureUseCase {
         RateLimitKey key = RateLimitKey.of(command.limitType(), command.identifier());
 
         return rateLimitCounterCommandPort
-                .incrementAndGet(key, policy.getWindow())
+                .incrementAndGet(key, policy.window())
                 .flatMap(currentCount -> handleExceedIfNecessary(currentCount, policy, command))
                 .then();
     }

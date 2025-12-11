@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.domain.ratelimit.exception;
 
 import com.ryuqq.gateway.domain.common.exception.DomainException;
-import java.util.Map;
 
 /**
  * IpBlockedException - IP 차단 예외
@@ -29,9 +28,11 @@ public final class IpBlockedException extends DomainException {
     private final String ipAddress;
     private final int retryAfterSeconds;
 
-    /** 기본 생성자 */
+    /**
+     * 기본 생성자
+     */
     public IpBlockedException() {
-        super(RateLimitErrorCode.IP_BLOCKED.getCode(), RateLimitErrorCode.IP_BLOCKED.getMessage());
+        super(RateLimitErrorCode.IP_BLOCKED);
         this.ipAddress = null;
         this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
@@ -42,12 +43,7 @@ public final class IpBlockedException extends DomainException {
      * @param ipAddress 차단된 IP 주소
      */
     public IpBlockedException(String ipAddress) {
-        super(
-                RateLimitErrorCode.IP_BLOCKED.getCode(),
-                RateLimitErrorCode.IP_BLOCKED.getMessage(),
-                Map.of(
-                        "ipAddress", ipAddress,
-                        "retryAfterSeconds", DEFAULT_RETRY_AFTER_SECONDS));
+        super(RateLimitErrorCode.IP_BLOCKED, buildDetail(ipAddress, DEFAULT_RETRY_AFTER_SECONDS));
         this.ipAddress = ipAddress;
         this.retryAfterSeconds = DEFAULT_RETRY_AFTER_SECONDS;
     }
@@ -59,12 +55,7 @@ public final class IpBlockedException extends DomainException {
      * @param retryAfterSeconds 재시도 가능 시간 (초)
      */
     public IpBlockedException(String ipAddress, int retryAfterSeconds) {
-        super(
-                RateLimitErrorCode.IP_BLOCKED.getCode(),
-                RateLimitErrorCode.IP_BLOCKED.getMessage(),
-                Map.of(
-                        "ipAddress", ipAddress,
-                        "retryAfterSeconds", retryAfterSeconds));
+        super(RateLimitErrorCode.IP_BLOCKED, buildDetail(ipAddress, retryAfterSeconds));
         this.ipAddress = ipAddress;
         this.retryAfterSeconds = retryAfterSeconds;
     }
@@ -74,7 +65,7 @@ public final class IpBlockedException extends DomainException {
      *
      * @return IP 주소
      */
-    public String getIpAddress() {
+    public String ipAddress() {
         return ipAddress;
     }
 
@@ -83,7 +74,11 @@ public final class IpBlockedException extends DomainException {
      *
      * @return 재시도 가능 시간
      */
-    public int getRetryAfterSeconds() {
+    public int retryAfterSeconds() {
         return retryAfterSeconds;
+    }
+
+    private static String buildDetail(String ipAddress, int retryAfterSeconds) {
+        return String.format("ipAddress=%s, retryAfterSeconds=%d", ipAddress, retryAfterSeconds);
     }
 }

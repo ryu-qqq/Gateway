@@ -17,23 +17,21 @@ import com.ryuqq.gateway.domain.common.exception.DomainException;
  * @author development-team
  * @since 1.0.0
  */
-public class RefreshTokenMissingException extends DomainException {
+public final class RefreshTokenMissingException extends DomainException {
 
     /**
-     * Constructor - 메시지로 예외 생성
+     * Constructor - 상세 정보로 예외 생성
      *
-     * @param message 상세 에러 메시지
+     * @param detail 상세 정보
      */
-    public RefreshTokenMissingException(String message) {
-        super(AuthenticationErrorCode.REFRESH_TOKEN_MISSING.getCode(), message);
+    public RefreshTokenMissingException(String detail) {
+        super(AuthenticationErrorCode.REFRESH_TOKEN_MISSING, detail);
     }
 
     /**
-     * 에러 코드 조회
-     *
-     * @return AuthenticationErrorCode.REFRESH_TOKEN_MISSING
+     * Constructor - 기본 예외 생성
      */
-    public AuthenticationErrorCode getErrorCode() {
-        return AuthenticationErrorCode.REFRESH_TOKEN_MISSING;
+    public RefreshTokenMissingException() {
+        super(AuthenticationErrorCode.REFRESH_TOKEN_MISSING);
     }
 }

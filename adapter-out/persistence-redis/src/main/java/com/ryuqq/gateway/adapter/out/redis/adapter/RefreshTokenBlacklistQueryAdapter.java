@@ -40,6 +40,6 @@ public class RefreshTokenBlacklistQueryAdapter implements RefreshTokenBlacklistQ
     @Override
     public Mono<Boolean> isBlacklisted(String tenantId, RefreshToken refreshToken) {
         return refreshTokenBlacklistRedisRepository.isBlacklisted(
-                tenantId, refreshToken.getValue());
+                tenantId, refreshToken.value());
     }
 }

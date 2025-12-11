@@ -42,7 +42,7 @@ public class RefreshTokenBlacklistCommandAdapter implements RefreshTokenBlacklis
     @Override
     public Mono<Void> addToBlacklist(String tenantId, RefreshToken refreshToken, long ttlSeconds) {
         return refreshTokenBlacklistRedisRepository
-                .addToBlacklist(tenantId, refreshToken.getValue(), Duration.ofSeconds(ttlSeconds))
+                .addToBlacklist(tenantId, refreshToken.value(), Duration.ofSeconds(ttlSeconds))
                 .then();
     }
 }

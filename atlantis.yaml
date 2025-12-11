@@ -1,0 +1,58 @@
+# ============================================================================
+# Connectly Gateway - Atlantis Configuration
+# ============================================================================
+# PR-based Terraform automation for Connectly Gateway infrastructure
+# ============================================================================
+
+version: 3
+
+automerge: false
+delete_source_branch_on_merge: false
+# Disable parallel plan to prevent plugin cache conflicts
+parallel_plan: false
+parallel_apply: false
+
+projects:
+  # ============================================================================
+  # Container Registry
+  # ============================================================================
+
+  # ECR repository for gateway
+  - name: gateway-ecr-prod
+    dir: terraform/ecr
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars", "../*.tf"]
+      enabled: true
+
+  # ============================================================================
+  # Core Infrastructure
+  # ============================================================================
+
+  # ECS Cluster (dedicated for gateway)
+  - name: gateway-ecs-cluster-prod
+    dir: terraform/ecs-cluster
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars", "../*.tf"]
+      enabled: true
+
+  # ElastiCache (Redis)
+  - name: gateway-elasticache-prod
+    dir: terraform/elasticache
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars", "../*.tf"]
+      enabled: true
+
+  # ============================================================================
+  # Application Infrastructure
+  # ============================================================================
+
+  # ECS Service for gateway (ALB + Auto Scaling)
+  - name: gateway-ecs-gateway-prod
+    dir: terraform/ecs-gateway
+    workspace: default
+    autoplan:
+      when_modified: ["*.tf", "*.tfvars", "../*.tf"]
+      enabled: true
