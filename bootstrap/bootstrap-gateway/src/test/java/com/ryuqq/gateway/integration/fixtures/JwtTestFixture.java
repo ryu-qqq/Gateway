@@ -143,13 +143,14 @@ public final class JwtTestFixture {
             JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(DEFAULT_KID).build();
 
             JWTClaimsSet claimsSet =
+                    // AuthHub JWT claim 이름: tid, oid, permission_hash, mfa_verified (snake_case)
                     new JWTClaimsSet.Builder()
                             .subject("user-123")
                             .issuer(DEFAULT_ISSUER)
                             .claim("roles", List.of("USER"))
-                            .claim("tenantId", DEFAULT_TENANT_ID)
-                            .claim("organizationId", DEFAULT_ORGANIZATION_ID)
-                            .claim("permissionHash", DEFAULT_PERMISSION_HASH)
+                            .claim("tid", DEFAULT_TENANT_ID)
+                            .claim("oid", DEFAULT_ORGANIZATION_ID)
+                            .claim("permission_hash", DEFAULT_PERMISSION_HASH)
                             .expirationTime(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                             .issueTime(Date.from(Instant.now()))
                             .build();
@@ -253,15 +254,16 @@ public final class JwtTestFixture {
         try {
             JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(DEFAULT_KID).build();
 
+            // AuthHub JWT claim 이름: tid, oid, permission_hash, mfa_verified (snake_case)
             JWTClaimsSet claimsSet =
                     new JWTClaimsSet.Builder()
                             .subject(subject)
                             .issuer(DEFAULT_ISSUER)
                             .claim("roles", roles)
-                            .claim("tenantId", tenantId)
-                            .claim("organizationId", organizationId)
-                            .claim("permissionHash", permissionHash)
-                            .claim("mfaVerified", mfaVerified)
+                            .claim("tid", tenantId)
+                            .claim("oid", organizationId)
+                            .claim("permission_hash", permissionHash)
+                            .claim("mfa_verified", mfaVerified)
                             .expirationTime(Date.from(expiresAt))
                             .issueTime(Date.from(Instant.now()))
                             .build();

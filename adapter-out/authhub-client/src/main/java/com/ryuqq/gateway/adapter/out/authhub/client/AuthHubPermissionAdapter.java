@@ -1,5 +1,7 @@
 package com.ryuqq.gateway.adapter.out.authhub.client;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ryuqq.gateway.application.authorization.port.out.client.AuthHubPermissionClient;
 import com.ryuqq.gateway.domain.authorization.vo.EndpointPermission;
 import com.ryuqq.gateway.domain.authorization.vo.HttpMethod;
@@ -9,6 +11,7 @@ import com.ryuqq.gateway.domain.authorization.vo.PermissionSpec;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,17 +47,25 @@ import reactor.core.publisher.Mono;
 @Component
 public class AuthHubPermissionAdapter implements AuthHubPermissionClient {
 
+    private static final String X_SERVICE_TOKEN_HEADER = "X-Service-Token";
+
     private final WebClient webClient;
     private final AuthHubProperties properties;
+    private final ObjectMapper objectMapper;
 
     public AuthHubPermissionAdapter(
-            @Qualifier("authHubWebClient") WebClient webClient, AuthHubProperties properties) {
+            @Qualifier("authHubWebClient") WebClient webClient,
+            AuthHubProperties properties,
+            ObjectMapper objectMapper) {
         this.webClient = webClient;
         this.properties = properties;
+        this.objectMapper = objectMapper;
     }
 
     /**
-     * Permission Spec 조회 (AuthHub API)
+     * Permission Spec 조회 (AuthHub Internal API)
+     *
+     * <p>X-Service-Token 헤더로 인증합니다.
      *
      * @return Permission Spec
      */
@@ -64,13 +75,56 @@ public class AuthHubPermissionAdapter implements AuthHubPermissionClient {
     public Mono<PermissionSpec> fetchPermissionSpec() {
         return webClient
                 .get()
-                .uri(properties.getPermissionSpecEndpoint())
+                .uri(
+                        uriBuilder ->
+                                uriBuilder
+                                        .path(properties.getPermissionSpecEndpoint())
+                                        .queryParam("serviceName", properties.getServiceName())
+                                        .build())
+                .header(X_SERVICE_TOKEN_HEADER, properties.getServiceToken())
                 .retrieve()
-                .bodyToMono(PermissionSpecResponse.class)
-                .map(this::toPermissionSpec)
+                .bodyToMono(String.class)
+                .map(this::parsePermissionSpecResponse)
                 .onErrorMap(
                         e -> !(e instanceof AuthHubPermissionException),
                         e -> new AuthHubPermissionException("Failed to fetch Permission Spec", e));
+    }
+
+    /**
+     * AuthHub API 응답을 PermissionSpec으로 파싱
+     *
+     * @param responseBody JSON 응답 문자열
+     * @return PermissionSpec
+     */
+    PermissionSpec parsePermissionSpecResponse(String responseBody) {
+        try {
+            AuthHubApiResponse<PermissionSpecData> response =
+                    objectMapper.readValue(
+                            responseBody,
+                            new TypeReference<AuthHubApiResponse<PermissionSpecData>>() {});
+
+            if (!response.success() || response.data() == null) {
+                throw new AuthHubPermissionException("AuthHub returned unsuccessful response");
+            }
+
+            PermissionSpecData data = response.data();
+            List<EndpointPermission> endpoints =
+                    data.endpoints() != null
+                            ? data.endpoints().stream().map(this::toEndpointPermission).toList()
+                            : Collections.emptyList();
+
+            // version을 타임스탬프로 해시해서 Long으로 변환
+            Long versionHash =
+                    data.version() != null
+                            ? (long) data.version().hashCode()
+                            : System.currentTimeMillis();
+
+            return PermissionSpec.of(versionHash, Instant.now(), endpoints);
+        } catch (AuthHubPermissionException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AuthHubPermissionException("Failed to parse Permission Spec response", e);
+        }
     }
 
     /**
@@ -96,23 +150,6 @@ public class AuthHubPermissionAdapter implements AuthHubPermissionClient {
                         e ->
                                 new AuthHubPermissionException(
                                         "Failed to fetch User Permissions: " + userId, e));
-    }
-
-    /**
-     * Permission Spec 응답 → Domain 변환
-     *
-     * @param response API 응답
-     * @return PermissionSpec
-     */
-    PermissionSpec toPermissionSpec(PermissionSpecResponse response) {
-        if (response == null) {
-            throw new AuthHubPermissionException("Empty Permission Spec response");
-        }
-
-        List<EndpointPermission> endpoints =
-                response.permissions().stream().map(this::toEndpointPermission).toList();
-
-        return PermissionSpec.of(response.version(), response.updatedAt(), endpoints);
     }
 
     /**
@@ -182,7 +219,13 @@ public class AuthHubPermissionAdapter implements AuthHubPermissionClient {
                         "User Permissions 조회 실패 (Fallback): " + userId, throwable));
     }
 
-    /** Permission Spec Response DTO */
+    /** AuthHub API 응답 Wrapper DTO */
+    record AuthHubApiResponse<T>(boolean success, T data, String timestamp, String requestId) {}
+
+    /** Permission Spec Data DTO (AuthHub 응답의 data 필드) */
+    record PermissionSpecData(List<EndpointPermissionResponse> endpoints, String version) {}
+
+    /** Permission Spec Response DTO (기존 호환성 유지) */
     record PermissionSpecResponse(
             Long version, Instant updatedAt, List<EndpointPermissionResponse> permissions) {}
 

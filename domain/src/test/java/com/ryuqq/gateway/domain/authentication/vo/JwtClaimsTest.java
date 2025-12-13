@@ -29,6 +29,7 @@ class JwtClaimsTest {
         void shouldCreateJwtClaims() {
             // given
             List<String> roles = List.of("USER", "ADMIN");
+            List<String> permissions = List.of("order:read", "order:write");
             String tenantId = "tenant123";
             String organizationId = "org123";
             String permissionHash = "hash123";
@@ -41,6 +42,7 @@ class JwtClaimsTest {
                             FUTURE_TIME,
                             ISSUED_TIME,
                             roles,
+                            permissions,
                             tenantId,
                             organizationId,
                             permissionHash,
@@ -52,6 +54,7 @@ class JwtClaimsTest {
             assertThat(claims.expiresAt()).isEqualTo(FUTURE_TIME);
             assertThat(claims.issuedAt()).isEqualTo(ISSUED_TIME);
             assertThat(claims.roles()).isEqualTo(roles);
+            assertThat(claims.permissions()).isEqualTo(permissions);
             assertThat(claims.tenantId()).isEqualTo(tenantId);
             assertThat(claims.organizationId()).isEqualTo(organizationId);
             assertThat(claims.permissionHash()).isEqualTo(permissionHash);
@@ -59,7 +62,7 @@ class JwtClaimsTest {
         }
 
         @Test
-        @DisplayName("null roles는 빈 리스트로 초기화")
+        @DisplayName("null roles와 permissions는 빈 리스트로 초기화")
         void shouldInitializeNullRolesToEmptyList() {
             // when
             JwtClaims claims =
@@ -72,10 +75,12 @@ class JwtClaimsTest {
                             null,
                             null,
                             null,
+                            null,
                             false);
 
             // then
             assertThat(claims.roles()).isEmpty();
+            assertThat(claims.permissions()).isEmpty();
             assertThat(claims.tenantId()).isNull();
             assertThat(claims.organizationId()).isNull();
             assertThat(claims.permissionHash()).isNull();
@@ -96,6 +101,7 @@ class JwtClaimsTest {
                             FUTURE_TIME,
                             ISSUED_TIME,
                             originalRoles,
+                            List.of(),
                             null,
                             null,
                             null,
@@ -108,6 +114,33 @@ class JwtClaimsTest {
         }
 
         @Test
+        @DisplayName("permissions는 불변 복사본으로 저장")
+        void shouldCreateImmutableCopyOfPermissions() {
+            // given - mutable List 사용하여 불변성 검증
+            java.util.List<String> originalPermissions = new java.util.ArrayList<>();
+            originalPermissions.add("order:read");
+
+            // when
+            JwtClaims claims =
+                    new JwtClaims(
+                            VALID_SUBJECT,
+                            VALID_ISSUER,
+                            FUTURE_TIME,
+                            ISSUED_TIME,
+                            List.of(),
+                            originalPermissions,
+                            null,
+                            null,
+                            null,
+                            false);
+
+            // then - 원본 수정해도 내부 상태에 영향 없음
+            originalPermissions.add("order:write");
+            assertThat(claims.permissions()).hasSize(1);
+            assertThat(claims.permissions()).containsExactly("order:read");
+        }
+
+        @Test
         @DisplayName("subject가 null이면 예외 발생")
         void shouldThrowExceptionWhenSubjectIsNull() {
             assertThatThrownBy(
@@ -117,6 +150,7 @@ class JwtClaimsTest {
                                             VALID_ISSUER,
                                             FUTURE_TIME,
                                             ISSUED_TIME,
+                                            List.of(),
                                             List.of(),
                                             null,
                                             null,
@@ -137,6 +171,7 @@ class JwtClaimsTest {
                                             FUTURE_TIME,
                                             ISSUED_TIME,
                                             List.of(),
+                                            List.of(),
                                             null,
                                             null,
                                             null,
@@ -155,6 +190,7 @@ class JwtClaimsTest {
                                             null,
                                             FUTURE_TIME,
                                             ISSUED_TIME,
+                                            List.of(),
                                             List.of(),
                                             null,
                                             null,
@@ -175,6 +211,7 @@ class JwtClaimsTest {
                                             FUTURE_TIME,
                                             ISSUED_TIME,
                                             List.of(),
+                                            List.of(),
                                             null,
                                             null,
                                             null,
@@ -194,6 +231,7 @@ class JwtClaimsTest {
                                             null,
                                             ISSUED_TIME,
                                             List.of(),
+                                            List.of(),
                                             null,
                                             null,
                                             null,
@@ -208,7 +246,7 @@ class JwtClaimsTest {
     class StaticFactoryMethodTest {
 
         @Test
-        @DisplayName("of() 메서드로 기본 JwtClaims 생성 (roles 없음)")
+        @DisplayName("of() 메서드로 기본 JwtClaims 생성 (roles, permissions 없음)")
         void shouldCreateJwtClaimsWithBasicInfo() {
             // when
             JwtClaims claims = JwtClaims.of(VALID_SUBJECT, VALID_ISSUER, FUTURE_TIME, ISSUED_TIME);
@@ -219,6 +257,7 @@ class JwtClaimsTest {
             assertThat(claims.expiresAt()).isEqualTo(FUTURE_TIME);
             assertThat(claims.issuedAt()).isEqualTo(ISSUED_TIME);
             assertThat(claims.roles()).isEmpty();
+            assertThat(claims.permissions()).isEmpty();
             assertThat(claims.tenantId()).isNull();
             assertThat(claims.permissionHash()).isNull();
         }
@@ -239,6 +278,35 @@ class JwtClaimsTest {
             assertThat(claims.expiresAt()).isEqualTo(FUTURE_TIME);
             assertThat(claims.issuedAt()).isEqualTo(ISSUED_TIME);
             assertThat(claims.roles()).isEqualTo(roles);
+            assertThat(claims.permissions()).isEmpty();
+            assertThat(claims.tenantId()).isNull();
+            assertThat(claims.permissionHash()).isNull();
+        }
+
+        @Test
+        @DisplayName("of() 메서드로 roles, permissions 포함 JwtClaims 생성")
+        void shouldCreateJwtClaimsWithRolesAndPermissions() {
+            // given
+            List<String> roles = List.of("USER", "ADMIN");
+            List<String> permissions = List.of("order:read", "order:write");
+
+            // when
+            JwtClaims claims =
+                    JwtClaims.of(
+                            VALID_SUBJECT,
+                            VALID_ISSUER,
+                            FUTURE_TIME,
+                            ISSUED_TIME,
+                            roles,
+                            permissions);
+
+            // then
+            assertThat(claims.subject()).isEqualTo(VALID_SUBJECT);
+            assertThat(claims.issuer()).isEqualTo(VALID_ISSUER);
+            assertThat(claims.expiresAt()).isEqualTo(FUTURE_TIME);
+            assertThat(claims.issuedAt()).isEqualTo(ISSUED_TIME);
+            assertThat(claims.roles()).isEqualTo(roles);
+            assertThat(claims.permissions()).isEqualTo(permissions);
             assertThat(claims.tenantId()).isNull();
             assertThat(claims.permissionHash()).isNull();
         }
@@ -248,6 +316,7 @@ class JwtClaimsTest {
         void shouldCreateJwtClaimsWithFullInfo() {
             // given
             List<String> roles = List.of("USER", "ADMIN");
+            List<String> permissions = List.of("order:read", "order:write");
             String tenantId = "tenant123";
             String permissionHash = "hash123";
 
@@ -259,6 +328,7 @@ class JwtClaimsTest {
                             FUTURE_TIME,
                             ISSUED_TIME,
                             roles,
+                            permissions,
                             tenantId,
                             permissionHash);
 
@@ -268,6 +338,7 @@ class JwtClaimsTest {
             assertThat(claims.expiresAt()).isEqualTo(FUTURE_TIME);
             assertThat(claims.issuedAt()).isEqualTo(ISSUED_TIME);
             assertThat(claims.roles()).isEqualTo(roles);
+            assertThat(claims.permissions()).isEqualTo(permissions);
             assertThat(claims.tenantId()).isEqualTo(tenantId);
             assertThat(claims.permissionHash()).isEqualTo(permissionHash);
         }
@@ -369,6 +440,24 @@ class JwtClaimsTest {
 
             // when & then
             assertThatThrownBy(() -> claims.roles().add("ADMIN"))
+                    .isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        @DisplayName("permissions 리스트는 수정할 수 없음")
+        void shouldNotAllowModificationOfPermissions() {
+            // given
+            JwtClaims claims =
+                    JwtClaims.of(
+                            VALID_SUBJECT,
+                            VALID_ISSUER,
+                            FUTURE_TIME,
+                            ISSUED_TIME,
+                            List.of("USER"),
+                            List.of("order:read"));
+
+            // when & then
+            assertThatThrownBy(() -> claims.permissions().add("order:write"))
                     .isInstanceOf(UnsupportedOperationException.class);
         }
     }

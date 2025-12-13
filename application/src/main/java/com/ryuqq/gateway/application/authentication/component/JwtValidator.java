@@ -80,10 +80,13 @@ public class JwtValidator {
                                             ? claims.getIssueTime().toInstant()
                                             : null;
                             List<String> roles = claims.getStringListClaim("roles");
-                            String tenantId = claims.getStringClaim("tenantId");
-                            String organizationId = claims.getStringClaim("organizationId");
-                            String permissionHash = claims.getStringClaim("permissionHash");
-                            Boolean mfaVerifiedClaim = claims.getBooleanClaim("mfaVerified");
+                            List<String> permissions = claims.getStringListClaim("permissions");
+                            // AuthHub JWT claim 이름: tid, oid, permission_hash, mfa_verified
+                            // (snake_case)
+                            String tenantId = claims.getStringClaim("tid");
+                            String organizationId = claims.getStringClaim("oid");
+                            String permissionHash = claims.getStringClaim("permission_hash");
+                            Boolean mfaVerifiedClaim = claims.getBooleanClaim("mfa_verified");
                             boolean mfaVerified = mfaVerifiedClaim != null && mfaVerifiedClaim;
 
                             return JwtClaims.of(
@@ -92,6 +95,7 @@ public class JwtValidator {
                                     expiresAt,
                                     issuedAt,
                                     roles != null ? roles : List.of(),
+                                    permissions != null ? permissions : List.of(),
                                     tenantId,
                                     organizationId,
                                     permissionHash,

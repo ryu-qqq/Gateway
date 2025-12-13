@@ -424,16 +424,17 @@ class JwtValidatorTest {
             builder.claim("roles", roles);
         }
 
+        // AuthHub JWT claim 이름: tid, oid, permission_hash (snake_case)
         if (tenantId != null) {
-            builder.claim("tenantId", tenantId);
+            builder.claim("tid", tenantId);
         }
 
         if (organizationId != null) {
-            builder.claim("organizationId", organizationId);
+            builder.claim("oid", organizationId);
         }
 
         if (permissionHash != null) {
-            builder.claim("permissionHash", permissionHash);
+            builder.claim("permission_hash", permissionHash);
         }
 
         return signJwt(builder.build());

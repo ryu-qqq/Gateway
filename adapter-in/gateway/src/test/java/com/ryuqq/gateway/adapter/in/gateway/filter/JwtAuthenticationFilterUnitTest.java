@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
+import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.dto.response.ValidateJwtResponse;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
@@ -52,15 +53,26 @@ class JwtAuthenticationFilterUnitTest {
 
     @Mock private GatewayFilterChain filterChain;
 
+    @Mock private PublicPathsProperties publicPathsProperties;
+
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private final ObjectMapper objectMapper =
             new ObjectMapper().registerModule(new JavaTimeModule());
 
+    /** 테스트용 Public Paths */
+    private static final List<String> TEST_PUBLIC_PATHS =
+            List.of("/actuator/**", "/api/v1/auth/login", "/api/v1/auth/register");
+
     @BeforeEach
     void setUp() {
+        when(publicPathsProperties.getAllPublicPaths()).thenReturn(TEST_PUBLIC_PATHS);
         jwtAuthenticationFilter =
-                new JwtAuthenticationFilter(validateJwtUseCase, recordFailureUseCase, objectMapper);
+                new JwtAuthenticationFilter(
+                        validateJwtUseCase,
+                        recordFailureUseCase,
+                        objectMapper,
+                        publicPathsProperties);
     }
 
     /** recordFailureUseCase 기본 동작 설정 - 실패 기록이 필요한 테스트에서만 호출 */
@@ -104,6 +116,7 @@ class JwtAuthenticationFilterUnitTest {
                             Instant.now().plusSeconds(3600),
                             Instant.now(),
                             List.of("ROLE_USER"),
+                            List.of("order:read"),
                             "tenant-123",
                             "org-789",
                             "hash-456",
@@ -170,6 +183,7 @@ class JwtAuthenticationFilterUnitTest {
                             Instant.now().plusSeconds(3600),
                             Instant.now(),
                             List.of(),
+                            List.of(),
                             "tenant-123",
                             "org-789",
                             "hash-456",
@@ -207,6 +221,7 @@ class JwtAuthenticationFilterUnitTest {
                             Instant.now().plusSeconds(3600),
                             Instant.now(),
                             expectedRoles,
+                            List.of("order:read", "order:write"),
                             "tenant-123",
                             "org-789",
                             "hash-456",
@@ -249,6 +264,7 @@ class JwtAuthenticationFilterUnitTest {
                             "auth-hub",
                             Instant.now().plusSeconds(3600),
                             Instant.now(),
+                            List.of(),
                             List.of(),
                             "tenant-123",
                             "org-789",

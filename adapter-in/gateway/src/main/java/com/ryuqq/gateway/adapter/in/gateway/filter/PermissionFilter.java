@@ -18,7 +18,6 @@ import org.springframework.core.Ordered;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -42,7 +41,7 @@ import reactor.core.publisher.Mono;
  * @author development-team
  * @since 1.0.0
  */
-@Component
+// @Component  // TODO: Permission Spec 등록 후 활성화
 public class PermissionFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(PermissionFilter.class);
@@ -69,6 +68,12 @@ public class PermissionFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String userId = exchange.getAttribute(USER_ID_ATTRIBUTE);
+
+        // userId가 없으면 (Public API) 권한 검사 스킵
+        if (userId == null) {
+            return chain.filter(exchange);
+        }
+
         String tenantId = exchange.getAttribute(TENANT_ID_ATTRIBUTE);
         String permissionHash = exchange.getAttribute(PERMISSION_HASH_ATTRIBUTE);
         Set<String> roles = exchange.getAttribute(ROLES_ATTRIBUTE);

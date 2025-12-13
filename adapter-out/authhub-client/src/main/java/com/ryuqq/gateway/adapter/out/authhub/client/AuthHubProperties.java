@@ -31,6 +31,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class AuthHubProperties {
 
     private String baseUrl;
+    private String serviceToken;
+    private String serviceName = "gateway";
     private Endpoints endpoints = new Endpoints();
     private WebClientConfig webclient = new WebClientConfig();
     private Retry retry = new Retry();
@@ -42,6 +44,22 @@ public class AuthHubProperties {
 
     public void setBaseUrl(String baseUrl) {
         this.baseUrl = baseUrl;
+    }
+
+    public String getServiceToken() {
+        return serviceToken;
+    }
+
+    public void setServiceToken(String serviceToken) {
+        this.serviceToken = serviceToken;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public Endpoints getEndpoints() {

@@ -18,7 +18,6 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -43,7 +42,7 @@ import reactor.core.publisher.Mono;
  * @author development-team
  * @since 1.0.0
  */
-@Component
+// @Component  // TODO: 테넌트 고도화 시 활성화
 public class TenantIsolationFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(TenantIsolationFilter.class);

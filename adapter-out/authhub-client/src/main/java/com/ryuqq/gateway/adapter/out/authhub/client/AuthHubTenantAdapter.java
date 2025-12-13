@@ -52,8 +52,12 @@ public class AuthHubTenantAdapter implements AuthHubTenantClient {
         this.properties = properties;
     }
 
+    private static final String X_SERVICE_TOKEN_HEADER = "X-Service-Token";
+
     /**
-     * Tenant Config 조회 (AuthHub API)
+     * Tenant Config 조회 (AuthHub Internal API)
+     *
+     * <p>X-Service-Token 헤더로 인증합니다.
      *
      * @param tenantId 테넌트 ID
      * @return TenantConfig Domain Aggregate
@@ -65,6 +69,7 @@ public class AuthHubTenantAdapter implements AuthHubTenantClient {
         return webClient
                 .get()
                 .uri(properties.getTenantConfigEndpoint(), tenantId)
+                .header(X_SERVICE_TOKEN_HEADER, properties.getServiceToken())
                 .retrieve()
                 .bodyToMono(TenantConfigResponse.class)
                 .map(this::toTenantConfig)

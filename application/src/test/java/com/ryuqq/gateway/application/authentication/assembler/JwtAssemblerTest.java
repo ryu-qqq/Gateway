@@ -79,6 +79,7 @@ class JwtAssemblerTest {
                             Instant.now().plusSeconds(3600),
                             Instant.now().minusSeconds(60),
                             List.of("ROLE_USER"),
+                            List.of("order:read"),
                             "tenant-123",
                             "org-789",
                             "hash-456",

@@ -74,6 +74,7 @@ class ValidateJwtServiceTest {
                             Instant.now().plusSeconds(3600),
                             Instant.now().minusSeconds(60),
                             List.of("ROLE_USER"),
+                            List.of("order:read"),
                             "tenant-123",
                             "org-789",
                             "hash-456",
@@ -150,6 +151,7 @@ class ValidateJwtServiceTest {
                             Instant.now().minusSeconds(3600), // 과거 시간 (만료됨)
                             Instant.now().minusSeconds(7200),
                             List.of("ROLE_USER"),
+                            List.of("order:read"),
                             "tenant-123",
                             "org-789",
                             "hash-456",

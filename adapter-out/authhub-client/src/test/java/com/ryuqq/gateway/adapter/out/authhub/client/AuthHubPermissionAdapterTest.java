@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ryuqq.gateway.domain.authorization.vo.PermissionHash;
 import com.ryuqq.gateway.domain.authorization.vo.PermissionSpec;
 import java.time.Instant;
@@ -30,16 +32,18 @@ class AuthHubPermissionAdapterTest {
 
     private WebClient webClient;
     private AuthHubProperties properties;
+    private ObjectMapper objectMapper;
     private AuthHubPermissionAdapter adapter;
 
     @BeforeEach
     void setUp() {
         webClient = mock(WebClient.class);
+        objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         properties = new AuthHubProperties();
         properties.setBaseUrl("http://localhost:9090");
         properties.getEndpoints().setPermissionSpec("/api/v1/permissions/spec");
         properties.getEndpoints().setUserPermissions("/api/v1/permissions/users/{userId}");
-        adapter = new AuthHubPermissionAdapter(webClient, properties);
+        adapter = new AuthHubPermissionAdapter(webClient, properties, objectMapper);
     }
 
     @Nested
@@ -238,40 +242,48 @@ class AuthHubPermissionAdapterTest {
     }
 
     @Nested
-    @DisplayName("toPermissionSpec 메서드")
-    class ToPermissionSpecTest {
+    @DisplayName("parsePermissionSpecResponse 메서드")
+    class ParsePermissionSpecResponseTest {
 
         @Test
-        @DisplayName("null 응답일 때 AuthHubPermissionException을 발생시킨다")
-        void shouldThrowExceptionWhenResponseIsNull() {
+        @DisplayName("null 또는 빈 응답일 때 AuthHubPermissionException을 발생시킨다")
+        void shouldThrowExceptionWhenResponseIsInvalid() {
             // when & then
             org.junit.jupiter.api.Assertions.assertThrows(
                     AuthHubPermissionAdapter.AuthHubPermissionException.class,
-                    () -> adapter.toPermissionSpec(null));
+                    () -> adapter.parsePermissionSpecResponse(null));
         }
 
         @Test
         @DisplayName("정상 응답일 때 PermissionSpec으로 변환한다")
         void shouldConvertToPermissionSpec() {
             // given
-            AuthHubPermissionAdapter.EndpointPermissionResponse epResponse =
-                    new AuthHubPermissionAdapter.EndpointPermissionResponse(
-                            "order-service",
-                            "/api/v1/orders",
-                            "POST",
-                            List.of("order:create"),
-                            List.of("USER"),
-                            false);
-
-            AuthHubPermissionAdapter.PermissionSpecResponse specResponse =
-                    new AuthHubPermissionAdapter.PermissionSpecResponse(
-                            2L, Instant.parse("2024-06-01T00:00:00Z"), List.of(epResponse));
+            String jsonResponse =
+                    """
+                    {
+                        "success": true,
+                        "data": {
+                            "version": "v1.0",
+                            "endpoints": [
+                                {
+                                    "serviceName": "order-service",
+                                    "path": "/api/v1/orders",
+                                    "method": "POST",
+                                    "requiredPermissions": ["order:create"],
+                                    "requiredRoles": ["USER"],
+                                    "isPublic": false
+                                }
+                            ]
+                        },
+                        "timestamp": "2024-01-01T00:00:00Z",
+                        "requestId": "test-request-id"
+                    }
+                    """;
 
             // when
-            PermissionSpec result = adapter.toPermissionSpec(specResponse);
+            PermissionSpec result = adapter.parsePermissionSpecResponse(jsonResponse);
 
             // then
-            assertThat(result.version()).isEqualTo(2L);
             assertThat(result.permissions()).hasSize(1);
             assertThat(result.permissions().getFirst().serviceName()).isEqualTo("order-service");
             assertThat(result.permissions().getFirst().path()).isEqualTo("/api/v1/orders");

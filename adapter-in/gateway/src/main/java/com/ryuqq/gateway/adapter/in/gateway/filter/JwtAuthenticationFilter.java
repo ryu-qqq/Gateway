@@ -6,11 +6,13 @@ import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
+import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
 import com.ryuqq.gateway.application.ratelimit.dto.command.RecordFailureCommand;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.RecordFailureUseCase;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -21,6 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -54,21 +57,32 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String ORGANIZATION_ID_ATTRIBUTE = "organizationId";
     private static final String PERMISSION_HASH_ATTRIBUTE = "permissionHash";
     private static final String ROLES_ATTRIBUTE = "roles";
+    private static final String PERMISSIONS_ATTRIBUTE = "permissions";
     private static final String MFA_VERIFIED_ATTRIBUTE = "mfaVerified";
     private static final String X_USER_ID_HEADER = "X-User-Id";
+    private static final String X_TENANT_ID_HEADER = "X-Tenant-Id";
     private static final String X_ORGANIZATION_ID_HEADER = "X-Organization-Id";
+    private static final String X_USER_ROLES_HEADER = "X-User-Roles";
+    private static final String X_USER_PERMISSIONS_HEADER = "X-User-Permissions";
 
     private final ValidateJwtUseCase validateJwtUseCase;
     private final RecordFailureUseCase recordFailureUseCase;
     private final ObjectMapper objectMapper;
+    private final AntPathMatcher pathMatcher;
+
+    /** JWT 인증을 건너뛸 Public 경로 패턴 (YAML 설정에서 로드) */
+    private final List<String> publicPaths;
 
     public JwtAuthenticationFilter(
             ValidateJwtUseCase validateJwtUseCase,
             RecordFailureUseCase recordFailureUseCase,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            PublicPathsProperties publicPathsProperties) {
         this.validateJwtUseCase = validateJwtUseCase;
         this.recordFailureUseCase = recordFailureUseCase;
         this.objectMapper = objectMapper;
+        this.pathMatcher = new AntPathMatcher();
+        this.publicPaths = publicPathsProperties.getAllPublicPaths();
     }
 
     @Override
@@ -78,6 +92,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        String path = exchange.getRequest().getURI().getPath();
+
+        // Public Path인 경우 JWT 검증 없이 통과
+        if (isPublicPath(path)) {
+            return chain.filter(exchange);
+        }
+
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
 
         // Authorization 헤더가 없거나 Bearer prefix가 없는 경우:
@@ -109,17 +130,37 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
                                     .put(PERMISSION_HASH_ATTRIBUTE, claims.permissionHash());
                             Set<String> rolesSet = new HashSet<>(claims.roles());
                             exchange.getAttributes().put(ROLES_ATTRIBUTE, rolesSet);
+                            Set<String> permissionsSet = new HashSet<>(claims.permissions());
+                            exchange.getAttributes().put(PERMISSIONS_ATTRIBUTE, permissionsSet);
                             exchange.getAttributes()
                                     .put(MFA_VERIFIED_ATTRIBUTE, claims.mfaVerified());
 
-                            // Downstream 서비스로 userId, organizationId 전달 (Header)
+                            // Downstream 서비스로 사용자 정보 전달 (Header)
                             ServerHttpRequest.Builder requestBuilder =
                                     exchange.getRequest().mutate().header(X_USER_ID_HEADER, userId);
 
-                            // organizationId가 있는 경우에만 헤더 추가
+                            // tenantId가 있는 경우 헤더 추가
+                            if (claims.tenantId() != null) {
+                                requestBuilder.header(X_TENANT_ID_HEADER, claims.tenantId());
+                            }
+
+                            // organizationId가 있는 경우 헤더 추가
                             if (claims.organizationId() != null) {
                                 requestBuilder.header(
                                         X_ORGANIZATION_ID_HEADER, claims.organizationId());
+                            }
+
+                            // roles가 있는 경우 콤마로 구분하여 헤더 추가
+                            if (!claims.roles().isEmpty()) {
+                                requestBuilder.header(
+                                        X_USER_ROLES_HEADER, String.join(",", claims.roles()));
+                            }
+
+                            // permissions가 있는 경우 콤마로 구분하여 헤더 추가
+                            if (!claims.permissions().isEmpty()) {
+                                requestBuilder.header(
+                                        X_USER_PERMISSIONS_HEADER,
+                                        String.join(",", claims.permissions()));
                             }
 
                             ServerHttpRequest mutatedRequest = requestBuilder.build();
@@ -160,5 +201,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         } catch (JsonProcessingException e) {
             return exchange.getResponse().setComplete();
         }
+    }
+
+    /**
+     * Public Path 여부 확인
+     *
+     * @param path 요청 경로
+     * @return Public Path이면 true
+     */
+    private boolean isPublicPath(String path) {
+        return publicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
     }
 }

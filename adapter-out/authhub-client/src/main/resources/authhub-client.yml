@@ -10,6 +10,18 @@
 authhub:
   client:
     # ===============================================
+    # Service Identification
+    # ===============================================
+    # Gateway 서비스 이름 (Permission Spec 조회 시 사용)
+    service-name: ${SERVICE_NAME:gateway}
+
+    # ===============================================
+    # Service Token (Internal API 인증용)
+    # ===============================================
+    # AuthHub와 동일한 시크릿 값 공유 (AWS Secrets Manager 등)
+    service-token: ${SERVICE_TOKEN_SECRET:local-dev-service-token-secret}
+
+    # ===============================================
     # Endpoints Configuration
     # ===============================================
     endpoints:
@@ -18,12 +30,12 @@ authhub:
       refresh: /api/v1/auth/refresh
       extract-expired-info: /api/v1/auth/extract-expired-info
 
-      # Tenant endpoints
-      tenant-config: /api/v1/tenants/{tenantId}/config
+      # Tenant endpoints (Internal API)
+      tenant-config: /api/v1/internal/tenants/{tenantId}/config
 
-      # Permission endpoints
-      permission-spec: /api/v1/permissions/spec
-      user-permissions: /api/v1/permissions/users/{userId}
+      # Permission endpoints (Internal API)
+      permission-spec: /api/v1/internal/endpoint-permissions/spec
+      user-permissions: /api/v1/auth/admin/permissions/users/{userId}
 
     # ===============================================
     # WebClient Configuration
