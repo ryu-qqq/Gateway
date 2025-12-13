@@ -64,7 +64,7 @@ spring:
 # ===============================================
 authhub:
   client:
-    base-url: ${AUTHHUB_BASE_URL:http://localhost:9090}
+    base-url: ${AUTHHUB_BASE_URL:http://localhost:8080}
     jwks-endpoint: /api/v1/auth/jwks
     timeout:
       connection: 3000
@@ -108,8 +108,8 @@ gateway:
       # AuthHub Service
       # ============================================
       - id: authhub
-        uri: ${AUTHHUB_URI:http://localhost:9090}
-        port: 9090
+        uri: ${AUTHHUB_URI:http://localhost:8080}
+        port: 8080
         paths:
           - /api/v1/auth/**
           - /api/v1/tenants/**
@@ -218,8 +218,8 @@ gateway:
       enabled: false  # Use static URI
     services:
       - id: authhub
-        uri: http://localhost:9090
-        port: 9090
+        uri: http://localhost:8080
+        port: 8080
         paths:
           - /api/v1/auth/**
           - /api/v1/tenants/**
@@ -275,7 +275,7 @@ spring.data.redis:
 # AuthHub Client (Cloud Map DNS)
 authhub:
   client:
-    base-url: http://authhub.connectly.local:9090
+    base-url: http://authhub.connectly.local:8080
 
 # Gateway Routing with Cloud Map Service Discovery
 gateway:
@@ -286,9 +286,9 @@ gateway:
       default-port: 8080
 
     services:
-      # AuthHub Service (port 9090)
+      # AuthHub Service (port 8080)
       - id: authhub
-        port: 9090
+        port: 8080
         paths:
           - /api/v1/auth/**
           - /api/v1/tenants/**
