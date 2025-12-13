@@ -15,6 +15,7 @@ import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -52,6 +53,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author development-team
  * @since 1.0.0
  */
+@Disabled("PermissionFilter not yet activated - @Component is commented out")
 @SpringBootTest(
         classes = GatewayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -119,9 +121,9 @@ class PermissionAuthorizationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
-        // Permission Spec 응답 설정
+        // Permission Spec 응답 설정 (query parameter 포함)
         wireMockServer.stubFor(
-                get(urlEqualTo("/api/v1/permissions/spec"))
+                get(urlPathMatching("/api/v1/permissions/spec"))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)

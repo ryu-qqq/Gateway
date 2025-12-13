@@ -1,6 +1,7 @@
 package com.ryuqq.gateway.adapter.out.authhub.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -11,6 +12,7 @@ import com.ryuqq.gateway.domain.authorization.vo.PermissionHash;
 import com.ryuqq.gateway.domain.authorization.vo.PermissionSpec;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,6 +43,8 @@ class AuthHubPermissionAdapterTest {
         objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
         properties = new AuthHubProperties();
         properties.setBaseUrl("http://localhost:9090");
+        properties.setServiceToken("test-service-token");
+        properties.setServiceName("gateway");
         properties.getEndpoints().setPermissionSpec("/api/v1/permissions/spec");
         properties.getEndpoints().setUserPermissions("/api/v1/permissions/users/{userId}");
         adapter = new AuthHubPermissionAdapter(webClient, properties, objectMapper);
@@ -55,18 +59,27 @@ class AuthHubPermissionAdapterTest {
         @SuppressWarnings("unchecked")
         void shouldReturnPermissionSpecWhenResponseIsValid() {
             // given
-            AuthHubPermissionAdapter.EndpointPermissionResponse epResponse =
-                    new AuthHubPermissionAdapter.EndpointPermissionResponse(
-                            "order-service",
-                            "/api/v1/orders",
-                            "GET",
-                            List.of("order:read"),
-                            List.of("USER"),
-                            false);
-
-            AuthHubPermissionAdapter.PermissionSpecResponse specResponse =
-                    new AuthHubPermissionAdapter.PermissionSpecResponse(
-                            1L, Instant.parse("2024-01-01T00:00:00Z"), List.of(epResponse));
+            String jsonResponse =
+                    """
+                    {
+                        "success": true,
+                        "data": {
+                            "version": "v1.0",
+                            "endpoints": [
+                                {
+                                    "serviceName": "order-service",
+                                    "path": "/api/v1/orders",
+                                    "method": "GET",
+                                    "requiredPermissions": ["order:read"],
+                                    "requiredRoles": ["USER"],
+                                    "isPublic": false
+                                }
+                            ]
+                        },
+                        "timestamp": "2024-01-01T00:00:00Z",
+                        "requestId": "test-request-id"
+                    }
+                    """;
 
             WebClient.RequestHeadersUriSpec requestHeadersUriSpec =
                     mock(WebClient.RequestHeadersUriSpec.class);
@@ -75,16 +88,16 @@ class AuthHubPermissionAdapterTest {
             WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
             given(webClient.get()).willReturn(requestHeadersUriSpec);
-            given(requestHeadersUriSpec.uri(anyString())).willReturn(requestHeadersSpec);
+            given(requestHeadersUriSpec.uri(any(Function.class))).willReturn(requestHeadersSpec);
+            given(requestHeadersSpec.header(anyString(), anyString()))
+                    .willReturn(requestHeadersSpec);
             given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.bodyToMono(AuthHubPermissionAdapter.PermissionSpecResponse.class))
-                    .willReturn(Mono.just(specResponse));
+            given(responseSpec.bodyToMono(String.class)).willReturn(Mono.just(jsonResponse));
 
             // when & then
             StepVerifier.create(adapter.fetchPermissionSpec())
                     .assertNext(
                             spec -> {
-                                assertThat(spec.version()).isEqualTo(1L);
                                 assertThat(spec.permissions()).hasSize(1);
                                 assertThat(spec.permissions().getFirst().serviceName())
                                         .isEqualTo("order-service");
@@ -106,10 +119,11 @@ class AuthHubPermissionAdapterTest {
             WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
             given(webClient.get()).willReturn(requestHeadersUriSpec);
-            given(requestHeadersUriSpec.uri(anyString())).willReturn(requestHeadersSpec);
+            given(requestHeadersUriSpec.uri(any(Function.class))).willReturn(requestHeadersSpec);
+            given(requestHeadersSpec.header(anyString(), anyString()))
+                    .willReturn(requestHeadersSpec);
             given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.bodyToMono(AuthHubPermissionAdapter.PermissionSpecResponse.class))
-                    .willReturn(Mono.error(originalException));
+            given(responseSpec.bodyToMono(String.class)).willReturn(Mono.error(originalException));
 
             // when & then
             StepVerifier.create(adapter.fetchPermissionSpec())
@@ -141,10 +155,11 @@ class AuthHubPermissionAdapterTest {
             WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
             given(webClient.get()).willReturn(requestHeadersUriSpec);
-            given(requestHeadersUriSpec.uri(anyString())).willReturn(requestHeadersSpec);
+            given(requestHeadersUriSpec.uri(any(Function.class))).willReturn(requestHeadersSpec);
+            given(requestHeadersSpec.header(anyString(), anyString()))
+                    .willReturn(requestHeadersSpec);
             given(requestHeadersSpec.retrieve()).willReturn(responseSpec);
-            given(responseSpec.bodyToMono(AuthHubPermissionAdapter.PermissionSpecResponse.class))
-                    .willReturn(Mono.error(authHubException));
+            given(responseSpec.bodyToMono(String.class)).willReturn(Mono.error(authHubException));
 
             // when & then
             StepVerifier.create(adapter.fetchPermissionSpec())

@@ -23,57 +23,61 @@ public final class PermissionTestFixture {
     }
 
     /**
-     * Permission Spec 응답 JSON 생성
+     * Permission Spec 응답 JSON 생성 (AuthHub API Response 형식)
      *
      * @return Permission Spec JSON
      */
     public static String permissionSpecResponse() {
         return """
                {
-                   "version": 1,
-                   "updatedAt": "%s",
-                   "permissions": [
-                       {
-                           "serviceName": "test-service",
-                           "path": "/test/public",
-                           "method": "GET",
-                           "requiredPermissions": [],
-                           "requiredRoles": [],
-                           "isPublic": true
-                       },
-                       {
-                           "serviceName": "test-service",
-                           "path": "/test/resource",
-                           "method": "GET",
-                           "requiredPermissions": ["resource:read"],
-                           "requiredRoles": [],
-                           "isPublic": false
-                       },
-                       {
-                           "serviceName": "test-service",
-                           "path": "/test/resource",
-                           "method": "POST",
-                           "requiredPermissions": ["resource:write"],
-                           "requiredRoles": [],
-                           "isPublic": false
-                       },
-                       {
-                           "serviceName": "test-service",
-                           "path": "/test/admin",
-                           "method": "GET",
-                           "requiredPermissions": ["admin:*"],
-                           "requiredRoles": ["ADMIN"],
-                           "isPublic": false
-                       },
-                       {
-                           "serviceName": "test-service",
-                           "path": "/test/users/{userId}",
-                           "method": "GET",
-                           "requiredPermissions": ["user:read"],
-                           "requiredRoles": [],
-                           "isPublic": false
-                       }
-                   ]
+                   "success": true,
+                   "data": {
+                       "version": "v1.0",
+                       "endpoints": [
+                           {
+                               "serviceName": "test-service",
+                               "path": "/test/public",
+                               "method": "GET",
+                               "requiredPermissions": [],
+                               "requiredRoles": [],
+                               "isPublic": true
+                           },
+                           {
+                               "serviceName": "test-service",
+                               "path": "/test/resource",
+                               "method": "GET",
+                               "requiredPermissions": ["resource:read"],
+                               "requiredRoles": [],
+                               "isPublic": false
+                           },
+                           {
+                               "serviceName": "test-service",
+                               "path": "/test/resource",
+                               "method": "POST",
+                               "requiredPermissions": ["resource:write"],
+                               "requiredRoles": [],
+                               "isPublic": false
+                           },
+                           {
+                               "serviceName": "test-service",
+                               "path": "/test/admin",
+                               "method": "GET",
+                               "requiredPermissions": ["admin:*"],
+                               "requiredRoles": ["ADMIN"],
+                               "isPublic": false
+                           },
+                           {
+                               "serviceName": "test-service",
+                               "path": "/test/users/{userId}",
+                               "method": "GET",
+                               "requiredPermissions": ["user:read"],
+                               "requiredRoles": [],
+                               "isPublic": false
+                           }
+                       ]
+                   },
+                   "timestamp": "%s",
+                   "requestId": "test-request-id"
                }
                """
                 .formatted(Instant.now().toString());
