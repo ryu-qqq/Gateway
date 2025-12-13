@@ -275,7 +275,7 @@ spring.data.redis:
 # AuthHub Client (Cloud Map DNS)
 authhub:
   client:
-    base-url: http://authhub.connectly.local:8080
+    base-url: http://authhub-web-api-prod.connectly.local:8080
 
 # Gateway Routing with Cloud Map Service Discovery
 gateway:
@@ -288,6 +288,7 @@ gateway:
     services:
       # AuthHub Service (port 8080)
       - id: authhub
+        uri: http://authhub-web-api-prod.connectly.local:8080
         port: 8080
         paths:
           - /api/v1/auth/**
