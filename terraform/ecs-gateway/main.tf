@@ -406,12 +406,12 @@ module "gateway_task_role" {
             }
           },
           {
-            Sid    = "S3ConfigAccess"
+            Sid    = "S3OtelConfigAccess"
             Effect = "Allow"
             Action = [
               "s3:GetObject"
             ]
-            Resource = "arn:aws:s3:::connectly-prod/*"
+            Resource = "arn:aws:s3:::prod-connectly/otel-config/*"
           }
         ]
       })

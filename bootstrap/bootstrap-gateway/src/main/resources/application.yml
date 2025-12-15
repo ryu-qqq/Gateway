@@ -108,7 +108,7 @@ gateway:
       # AuthHub Service
       # ============================================
       - id: authhub
-        uri: ${AUTHHUB_URI:http://localhost:8080}
+        uri: ${AUTH_HUB_URL:http://localhost:8080}
         port: 8080
         paths:
           - /api/v1/auth/**
@@ -218,7 +218,7 @@ gateway:
       enabled: false  # Use static URI
     services:
       - id: authhub
-        uri: http://localhost:8080
+        uri: ${AUTH_HUB_URL:http://localhost:8080}
         port: 8080
         paths:
           - /api/v1/auth/**
