@@ -1,6 +1,7 @@
 package com.ryuqq.gateway.adapter.in.gateway.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
@@ -40,9 +41,7 @@ public class PublicPathsProperties {
         List<String> allPaths = new ArrayList<>(DEFAULT_PUBLIC_PATHS);
 
         for (ServiceConfig service : services) {
-            if (service.getPublicPaths() != null) {
-                allPaths.addAll(service.getPublicPaths());
-            }
+            allPaths.addAll(service.getPublicPaths());
         }
 
         return allPaths;
@@ -63,11 +62,12 @@ public class PublicPathsProperties {
         }
 
         public List<String> getPublicPaths() {
-            return publicPaths;
+            return Collections.unmodifiableList(publicPaths);
         }
 
         public void setPublicPaths(List<String> publicPaths) {
-            this.publicPaths = publicPaths;
+            this.publicPaths =
+                    publicPaths == null ? new ArrayList<>() : new ArrayList<>(publicPaths);
         }
     }
 }

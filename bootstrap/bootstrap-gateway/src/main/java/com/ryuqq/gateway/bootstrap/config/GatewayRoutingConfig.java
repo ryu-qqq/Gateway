@@ -1,5 +1,7 @@
 package com.ryuqq.gateway.bootstrap.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -79,7 +81,7 @@ public class GatewayRoutingConfig {
             log.info("Registering route: {} -> {}", service.getPaths(), uri);
 
             for (String path : service.getPaths()) {
-                String routeId = serviceId + "-" + Math.abs(path.hashCode());
+                String routeId = serviceId + "-" + (path.hashCode() & Integer.MAX_VALUE);
 
                 routes =
                         routes.route(
@@ -206,7 +208,12 @@ public class GatewayRoutingConfig {
         }
     }
 
-    /** Service Route Configuration */
+    /**
+     * Service Route Configuration
+     *
+     * <p>Spring Boot ConfigurationProperties 바인딩을 위한 POJO 클래스입니다.
+     */
+    @SuppressWarnings("PMD.DataClass")
     public static class ServiceRoute {
 
         /** Service identifier (used for Cloud Map DNS name) */
@@ -255,11 +262,11 @@ public class GatewayRoutingConfig {
         }
 
         public List<String> getPaths() {
-            return paths;
+            return Collections.unmodifiableList(paths);
         }
 
         public void setPaths(List<String> paths) {
-            this.paths = paths;
+            this.paths = paths == null ? List.of() : new ArrayList<>(paths);
         }
 
         public boolean isStripPrefix() {
@@ -279,11 +286,11 @@ public class GatewayRoutingConfig {
         }
 
         public List<String> getPublicPaths() {
-            return publicPaths;
+            return Collections.unmodifiableList(publicPaths);
         }
 
         public void setPublicPaths(List<String> publicPaths) {
-            this.publicPaths = publicPaths;
+            this.publicPaths = publicPaths == null ? List.of() : new ArrayList<>(publicPaths);
         }
     }
 }
