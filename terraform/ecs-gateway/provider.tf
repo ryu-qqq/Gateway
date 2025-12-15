@@ -144,7 +144,7 @@ locals {
   public_subnets  = split(",", data.aws_ssm_parameter.public_subnets.value)
   certificate_arn = data.aws_ssm_parameter.certificate_arn.value
   route53_zone_id = data.aws_ssm_parameter.route53_zone_id.value
-  fqdn            = "gateway.set-of.com"
+  fqdn            = "api.set-of.com"
 
   # Redis Configuration
   redis_host = data.aws_ssm_parameter.redis_endpoint.value

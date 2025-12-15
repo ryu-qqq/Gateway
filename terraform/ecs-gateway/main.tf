@@ -3,7 +3,7 @@
 # ========================================
 # API Gateway server with ALB and Auto Scaling
 # Using Infrastructure modules
-# Domain: gateway.set-of.com
+# Domain: api.set-of.com
 # ========================================
 
 # ========================================
