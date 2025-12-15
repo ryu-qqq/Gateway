@@ -126,6 +126,7 @@ class JwtAuthenticationFilterTest {
         // Authorization 헤더가 없는 경우는 Invalid JWT 공격이 아니므로 recordFailure 호출되지 않음
         MockServerHttpRequest request = MockServerHttpRequest.get("/api/test").build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
+        exchange.getAttributes().put(TraceIdFilter.TRACE_ID_ATTRIBUTE, "test-trace-id");
 
         // when
         Mono<Void> result = jwtAuthenticationFilter.filter(exchange, filterChain);
@@ -192,6 +193,7 @@ class JwtAuthenticationFilterTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                         .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
+        exchange.getAttributes().put(TraceIdFilter.TRACE_ID_ATTRIBUTE, "test-trace-id");
 
         ValidateJwtResponse failedResponse = new ValidateJwtResponse(null, false);
         when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))

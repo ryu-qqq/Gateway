@@ -191,8 +191,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
+        String traceId = exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE);
         ErrorInfo error = new ErrorInfo("UNAUTHORIZED", "인증이 필요합니다");
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
+        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error, traceId);
 
         try {
             byte[] bytes = objectMapper.writeValueAsBytes(errorResponse);
