@@ -1,0 +1,104 @@
+version: '3.8'
+
+# ===============================================
+# Connectly Gateway - 로컬 개발 환경
+# ===============================================
+# 사용법:
+# docker-compose -f docker-compose.local.yml up -d
+# ===============================================
+
+services:
+  # ===============================================
+  # Infrastructure Services
+  # ===============================================
+
+  redis:
+    image: redis:7-alpine
+    container_name: gateway-redis
+    ports:
+      - "16379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gateway-network
+
+  # ===============================================
+  # Application Services
+  # ===============================================
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: local-dev/Dockerfile.local
+    container_name: connectly-gateway
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: local
+
+      # Server
+      SERVER_PORT: 8080
+
+      # Redis (비밀번호 없는 로컬 Redis)
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      SPRING_DATA_REDIS_TIMEOUT: 3s
+
+      # AuthHub Client (로컬 AuthHub 서버)
+      AUTHHUB_CLIENT_BASE_URL: http://host.docker.internal:9090
+      AUTHHUB_CLIENT_JWKS_ENDPOINT: /api/v1/auth/jwks
+      AUTHHUB_CLIENT_TIMEOUT_CONNECTION: 3000
+      AUTHHUB_CLIENT_TIMEOUT_RESPONSE: 3000
+
+      # Service Token (AuthHub Internal API 인증)
+      SERVICE_TOKEN_SECRET: local-dev-service-token-secret
+
+      # JWT Configuration
+      JWT_PUBLIC_KEY_CACHE_TTL: 3600
+
+      # Gateway Routing - AuthHub URI
+      AUTHHUB_URI: http://host.docker.internal:9090
+
+      # Logging
+      LOGGING_LEVEL_ROOT: DEBUG
+      LOGGING_LEVEL_COM_RYUQQ_GATEWAY: TRACE
+
+      # JVM Options
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -Djava.security.egd=file:/dev/./urandom
+
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - gateway-network
+    restart: unless-stopped
+
+# ===============================================
+# Networks
+# ===============================================
+networks:
+  gateway-network:
+    driver: bridge
+
+# ===============================================
+# Volumes
+# ===============================================
+volumes:
+  redis_data:

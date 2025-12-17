@@ -306,6 +306,7 @@ gateway:
 
       # FileFlow Service
       - id: fileflow
+        uri: http://fileflow-web-api-prod.connectly.local:8080
         paths:
           - /api/v1/file/**
 

@@ -27,14 +27,9 @@ receivers:
               regex: '(http_.*|jvm_.*|process_.*|system_.*|application_.*|spring_.*|gateway_.*)'
               action: keep
 
-        - job_name: 'otel-collector'
-          scrape_interval: 30s
-          static_configs:
-            - targets: ['localhost:8888']
-          metric_relabel_configs:
-            - source_labels: [__name__]
-              regex: 'otelcol_.*'
-              action: keep
+        # REMOVED: otel-collector self-scrape job
+        # This was causing "out of order sample" errors in AMP when multiple
+        # ECS tasks send metrics with identical service_instance_id=localhost:8888
 
   awsecscontainermetrics:
     collection_interval: 30s

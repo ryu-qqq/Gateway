@@ -1,0 +1,83 @@
+version: '3.8'
+
+# ===============================================
+# Connectly Gateway - AWS 리소스 연결용 로컬 개발 환경
+# ===============================================
+# 사용법:
+# 1. AWS SSM Session Manager로 포트 포워딩 설정
+#    - ElastiCache: aws ssm start-session --target <bastion-id> \
+#        --document-name AWS-StartPortForwardingSessionToRemoteHost \
+#        --parameters '{"host":["<redis-endpoint>"],"portNumber":["6379"],"localPortNumber":["16379"]}'
+# 2. .env 파일 설정 (환경변수)
+# 3. docker-compose -f docker-compose.aws.yml up -d
+# ===============================================
+
+services:
+  # ===============================================
+  # Connectly Gateway (AWS 리소스 연결)
+  # ===============================================
+  gateway:
+    build:
+      context: ..
+      dockerfile: local-dev/Dockerfile.local
+    container_name: gateway
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: local
+
+      # Server
+      SERVER_PORT: 8080
+
+      # Redis (AWS ElastiCache via SSM Port Forwarding)
+      # SSM으로 localhost:16380 -> ElastiCache:6379 포워딩
+      SPRING_DATA_REDIS_HOST: host.docker.internal
+      SPRING_DATA_REDIS_PORT: 16380
+      SPRING_DATA_REDIS_TIMEOUT: 3s
+
+      # AuthHub Client (JWKS Endpoint)
+      AUTHHUB_CLIENT_BASE_URL: ${AUTHHUB_BASE_URL:-http://host.docker.internal:9090}
+      AUTHHUB_CLIENT_JWKS_ENDPOINT: /api/v1/auth/jwks
+      AUTHHUB_CLIENT_TIMEOUT_CONNECTION: 3000
+      AUTHHUB_CLIENT_TIMEOUT_RESPONSE: 3000
+
+      # JWT Configuration
+      JWT_PUBLIC_KEY_CACHE_TTL: 3600
+
+      # Gateway Routing - AuthHub URI
+      AUTHHUB_URI: ${AUTHHUB_BASE_URL:-http://host.docker.internal:9090}
+
+      # AWS Credentials (필요시)
+      AWS_REGION: ${AWS_REGION:-ap-northeast-2}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_SESSION_TOKEN: ${AWS_SESSION_TOKEN:-}
+
+      # Logging
+      LOGGING_LEVEL_ROOT: ${LOG_LEVEL:-INFO}
+      LOGGING_LEVEL_COM_RYUQQ_GATEWAY: ${GATEWAY_LOG_LEVEL:-INFO}
+
+      # JVM Options
+      JAVA_OPTS: >-
+        -XX:+UseContainerSupport
+        -XX:MaxRAMPercentage=75.0
+        -XX:InitialRAMPercentage=50.0
+        -XX:+UseG1GC
+        -Djava.security.egd=file:/dev/./urandom
+
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - gateway-network
+
+networks:
+  gateway-network:
+    driver: bridge
