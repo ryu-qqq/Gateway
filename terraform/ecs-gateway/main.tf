@@ -442,7 +442,8 @@ module "adot_sidecar" {
   app_port                  = 8080
   cluster_name              = data.aws_ecs_cluster.main.cluster_name
   environment               = var.environment
-  config_version            = "20251210" # Cache busting for OTEL config
+  config_bucket             = "prod-connectly"
+  config_version            = "20251215" # Cache busting for OTEL config - updated
 }
 
 # ========================================
