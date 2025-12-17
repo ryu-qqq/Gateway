@@ -20,7 +20,8 @@ import org.springframework.stereotype.Component;
 public class PublicPathsProperties {
 
     /** 기본 Public 경로 (항상 포함) */
-    private static final List<String> DEFAULT_PUBLIC_PATHS = List.of("/actuator/**");
+    private static final List<String> DEFAULT_PUBLIC_PATHS =
+            List.of("/actuator/**", "/**/system/**");
 
     private List<ServiceConfig> services = new ArrayList<>();
 
