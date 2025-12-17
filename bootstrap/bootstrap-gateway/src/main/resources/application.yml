@@ -319,6 +319,7 @@ gateway:
 
       # CrawlingHub Service
       - id: crawling
+        uri: http://crawlinghub-web-api-prod.connectly.local:8080
         paths:
           - /api/v1/crawling/**
 
