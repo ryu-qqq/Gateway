@@ -3,7 +3,7 @@
   "title": "Connectly Gateway - Core Metrics",
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 2,
+  "version": 3,
   "refresh": "10s",
   "tags": ["gateway", "prod", "core"],
   "templating": {
@@ -29,10 +29,11 @@
         "current": { "text": "connectly-gateway", "value": "connectly-gateway" }
       },
       {
-        "name": "instance",
+        "name": "task_id",
+        "label": "ECS Task ID",
         "type": "query",
         "datasource": "$datasource",
-        "query": "label_values(up{job=\"$job\"}, instance)",
+        "query": "label_values(up{job=\"$job\"}, aws_ecs_task_id)",
         "includeAll": true,
         "multi": true
       }
@@ -234,8 +235,8 @@
           "legendFormat": "Total RPS"
         },
         {
-          "expr": "sum by (instance) (rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "{{instance}}"
+          "expr": "sum by (aws_ecs_task_id) (rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
@@ -340,11 +341,11 @@
       "targets": [
         {
           "expr": "jvm_memory_used_bytes{job=\"$job\",area=\"heap\"}",
-          "legendFormat": "Used - {{instance}}"
+          "legendFormat": "Used - {{aws_ecs_task_id}}"
         },
         {
           "expr": "jvm_memory_max_bytes{job=\"$job\",area=\"heap\"}",
-          "legendFormat": "Max - {{instance}}"
+          "legendFormat": "Max - {{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
@@ -360,7 +361,7 @@
       "targets": [
         {
           "expr": "jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\"}",
-          "legendFormat": "Used - {{instance}}"
+          "legendFormat": "Used - {{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
@@ -376,15 +377,15 @@
       "targets": [
         {
           "expr": "jvm_threads_live_threads{job=\"$job\"}",
-          "legendFormat": "Live - {{instance}}"
+          "legendFormat": "Live - {{aws_ecs_task_id}}"
         },
         {
           "expr": "jvm_threads_daemon_threads{job=\"$job\"}",
-          "legendFormat": "Daemon - {{instance}}"
+          "legendFormat": "Daemon - {{aws_ecs_task_id}}"
         },
         {
           "expr": "jvm_threads_peak_threads{job=\"$job\"}",
-          "legendFormat": "Peak - {{instance}}"
+          "legendFormat": "Peak - {{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
@@ -401,7 +402,7 @@
       "targets": [
         {
           "expr": "rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[5m]) / rate(jvm_gc_pause_seconds_count{job=\"$job\"}[5m])",
-          "legendFormat": "{{gc}} - {{instance}}"
+          "legendFormat": "{{gc}} - {{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
@@ -417,7 +418,7 @@
       "targets": [
         {
           "expr": "rate(jvm_gc_pause_seconds_count{job=\"$job\"}[1m]) * 60",
-          "legendFormat": "{{gc}} - {{instance}}"
+          "legendFormat": "{{gc}} - {{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
