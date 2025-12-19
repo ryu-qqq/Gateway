@@ -428,20 +428,21 @@
     {
       "id": 500,
       "type": "row",
-      "title": "🔗 Upstream Services (Gateway Routing)",
+      "title": "🔗 Gateway Routing (by Route ID)",
       "gridPos": { "x": 0, "y": 40, "w": 24, "h": 1 },
       "collapsed": false
     },
     {
       "id": 40,
       "type": "timeseries",
-      "title": "Upstream Request Rate by URI",
+      "title": "Request Rate by Route",
+      "description": "Spring Cloud Gateway route별 요청 처리량",
       "gridPos": { "x": 0, "y": 41, "w": 12, "h": 8 },
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "sum by (uri) (rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "{{uri}}"
+          "expr": "sum by (routeId) (rate(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "{{routeId}}"
         }
       ],
       "fieldConfig": {
@@ -454,13 +455,14 @@
     {
       "id": 41,
       "type": "timeseries",
-      "title": "Upstream Latency P95 by URI",
+      "title": "Latency P95 by Route",
+      "description": "Spring Cloud Gateway route별 P95 응답시간",
       "gridPos": { "x": 12, "y": 41, "w": 12, "h": 8 },
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum by (le, uri) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "{{uri}}"
+          "expr": "histogram_quantile(0.95, sum by (le, routeId) (rate(spring_cloud_gateway_requests_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "{{routeId}}"
         }
       ],
       "fieldConfig": {
@@ -468,6 +470,59 @@
       },
       "options": {
         "legend": { "displayMode": "table", "placement": "right" }
+      }
+    },
+    {
+      "id": 42,
+      "type": "timeseries",
+      "title": "Route Outcome Distribution",
+      "description": "라우팅 결과별 분포 (SUCCESSFUL, CLIENT_ERROR 등)",
+      "gridPos": { "x": 0, "y": 49, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum by (outcome) (rate(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "{{outcome}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "SUCCESSFUL" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "CLIENT_ERROR" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "SERVER_ERROR" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      }
+    },
+    {
+      "id": 43,
+      "type": "table",
+      "title": "Route Status Summary",
+      "description": "라우트별 현재 상태 요약",
+      "gridPos": { "x": 12, "y": 49, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum by (routeId, outcome) (increase(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[5m]))",
+          "legendFormat": "{{routeId}} - {{outcome}}",
+          "format": "table",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "routeId": { "operation": "groupby", "aggregations": [] },
+              "outcome": { "operation": "groupby", "aggregations": [] },
+              "Value": { "operation": "aggregate", "aggregations": ["sum"] }
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "decimals": 0 }
       }
     }
   ]
