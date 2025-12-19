@@ -3,7 +3,7 @@
   "title": "Connectly Gateway - Core Metrics",
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 4,
+  "version": 5,
   "refresh": "10s",
   "tags": ["gateway", "prod", "core"],
   "templating": {
@@ -335,94 +335,107 @@
     {
       "id": 30,
       "type": "timeseries",
-      "title": "JVM Heap Memory",
-      "gridPos": { "x": 0, "y": 24, "w": 8, "h": 8 },
+      "title": "Heap Memory Used",
+      "gridPos": { "x": 0, "y": 24, "w": 6, "h": 6 },
       "datasource": "$datasource",
       "targets": [
         {
           "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\"})",
-          "legendFormat": "Used - {{aws_ecs_task_id}}"
-        },
-        {
-          "expr": "sum by (aws_ecs_task_id) (jvm_memory_max_bytes{job=\"$job\",area=\"heap\"})",
-          "legendFormat": "Max - {{aws_ecs_task_id}}"
+          "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "bytes" }
+        "defaults": { "unit": "bytes", "color": { "mode": "palette-classic" } }
       }
     },
     {
       "id": 31,
       "type": "timeseries",
-      "title": "JVM Non-Heap (Metaspace)",
-      "gridPos": { "x": 8, "y": 24, "w": 8, "h": 8 },
+      "title": "Heap Usage %",
+      "gridPos": { "x": 6, "y": 24, "w": 6, "h": 6 },
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\"})",
-          "legendFormat": "Used - {{aws_ecs_task_id}}"
+          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\"}) / sum by (aws_ecs_task_id) (jvm_memory_max_bytes{job=\"$job\",area=\"heap\"}) * 100",
+          "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "bytes" }
+        "defaults": {
+          "unit": "percent",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        }
       }
     },
     {
       "id": 32,
       "type": "timeseries",
-      "title": "JVM Threads",
-      "gridPos": { "x": 16, "y": 24, "w": 8, "h": 8 },
+      "title": "Non-Heap Memory",
+      "gridPos": { "x": 12, "y": 24, "w": 6, "h": 6 },
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{job=\"$job\"}",
-          "legendFormat": "Live - {{aws_ecs_task_id}}"
-        },
-        {
-          "expr": "jvm_threads_daemon_threads{job=\"$job\"}",
-          "legendFormat": "Daemon - {{aws_ecs_task_id}}"
-        },
-        {
-          "expr": "jvm_threads_peak_threads{job=\"$job\"}",
-          "legendFormat": "Peak - {{aws_ecs_task_id}}"
+          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\"})",
+          "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "short" }
+        "defaults": { "unit": "bytes", "color": { "mode": "palette-classic" } }
       }
     },
     {
       "id": 33,
       "type": "timeseries",
-      "title": "GC Pause Time (Avg)",
-      "description": "Average GC pause time calculated from sum/count",
-      "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 },
+      "title": "Live Threads",
+      "gridPos": { "x": 18, "y": 24, "w": 6, "h": 6 },
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[5m]) / rate(jvm_gc_pause_seconds_count{job=\"$job\"}[5m])",
-          "legendFormat": "{{gc}} - {{aws_ecs_task_id}}"
+          "expr": "jvm_threads_live_threads{job=\"$job\"}",
+          "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "s" }
+        "defaults": { "unit": "short", "color": { "mode": "palette-classic" } }
       }
     },
     {
       "id": 34,
       "type": "timeseries",
-      "title": "GC Count Rate (per minute)",
-      "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 },
+      "title": "GC Pause Time",
+      "gridPos": { "x": 0, "y": 30, "w": 12, "h": 6 },
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_count{job=\"$job\"}[1m]) * 60",
-          "legendFormat": "{{gc}} - {{aws_ecs_task_id}}"
+          "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[5m]))",
+          "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
       "fieldConfig": {
-        "defaults": { "unit": "short", "displayName": "GC/min" }
+        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
+      }
+    },
+    {
+      "id": 35,
+      "type": "timeseries",
+      "title": "GC Count / min",
+      "gridPos": { "x": 12, "y": 30, "w": 12, "h": 6 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_count{job=\"$job\"}[1m])) * 60",
+          "legendFormat": "{{aws_ecs_task_id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "color": { "mode": "palette-classic" } }
       }
     },
 
