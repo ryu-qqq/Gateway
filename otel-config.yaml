@@ -1,6 +1,7 @@
 # AWS Distro for OpenTelemetry (ADOT) Collector Configuration
 # Service: gateway (port 8080)
-# Updated for ADOT v0.45.1
+# Updated for ADOT v0.46.0
+# Fixed: out of order sample error by adding unique instance identification
 
 receivers:
   otlp:
@@ -27,10 +28,6 @@ receivers:
               regex: '(http_.*|jvm_.*|process_.*|system_.*|application_.*|spring_.*|gateway_.*)'
               action: keep
 
-        # REMOVED: otel-collector self-scrape job
-        # This was causing "out of order sample" errors in AMP when multiple
-        # ECS tasks send metrics with identical service_instance_id=localhost:8888
-
   awsecscontainermetrics:
     collection_interval: 30s
 
@@ -44,6 +41,22 @@ processors:
     limit_mib: 410
     spike_limit_mib: 128
 
+  # ECS 태스크 메타데이터 자동 감지 - 각 태스크별 고유 식별자 부여
+  resourcedetection:
+    detectors: [env, ecs]
+    timeout: 5s
+    override: true
+    ecs:
+      resource_attributes:
+        aws.ecs.task.arn:
+          enabled: true
+        aws.ecs.cluster.arn:
+          enabled: true
+        aws.ecs.task.id:
+          enabled: true
+        cloud.availability_zone:
+          enabled: true
+
   resource:
     attributes:
       - key: environment
@@ -56,6 +69,10 @@ processors:
         value: gateway
         action: upsert
 
+  # 메트릭 레이블 변환
+  # Note: resourcedetection이 aws.ecs.task.id를 추가하고
+  # resource_to_telemetry_conversion: true가 이를 메트릭 레이블로 변환
+  # 이렇게 하면 각 ECS 태스크별로 고유한 시계열이 생성됨
   metricstransform:
     transforms:
       - include: ".*"
@@ -116,6 +133,7 @@ service:
         - awsecscontainermetrics
       processors:
         - memory_limiter
+        - resourcedetection  # ECS 태스크 메타데이터 먼저 감지
         - resource
         - metricstransform
         - batch
@@ -127,6 +145,7 @@ service:
         - otlp
       processors:
         - memory_limiter
+        - resourcedetection  # ECS 태스크 메타데이터 먼저 감지
         - resource
         - batch
       exporters:

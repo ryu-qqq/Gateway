@@ -175,6 +175,9 @@ management:
       show-details: when-authorized
 
   metrics:
+    tags:
+      application: ${spring.application.name}
+      environment: ${spring.profiles.active:local}
     export:
       prometheus:
         enabled: true
