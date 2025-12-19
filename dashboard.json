@@ -3,7 +3,7 @@
   "title": "Connectly Gateway - Core Metrics",
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 5,
+  "version": 6,
   "refresh": "10s",
   "tags": ["gateway", "prod", "core"],
   "templating": {
@@ -340,7 +340,7 @@
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\"})",
+          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id!=\"\"}) and on(aws_ecs_task_id) up{job=\"$job\"} == 1",
           "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
@@ -356,7 +356,7 @@
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\"}) / sum by (aws_ecs_task_id) (jvm_memory_max_bytes{job=\"$job\",area=\"heap\"}) * 100",
+          "expr": "(sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id!=\"\"}) / sum by (aws_ecs_task_id) (jvm_memory_max_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id!=\"\"}) * 100) and on(aws_ecs_task_id) up{job=\"$job\"} == 1",
           "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
@@ -382,7 +382,7 @@
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\"})",
+          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\",aws_ecs_task_id!=\"\"}) and on(aws_ecs_task_id) up{job=\"$job\"} == 1",
           "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
@@ -398,7 +398,7 @@
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{job=\"$job\"}",
+          "expr": "jvm_threads_live_threads{job=\"$job\",aws_ecs_task_id!=\"\"} and on(aws_ecs_task_id) up{job=\"$job\"} == 1",
           "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
@@ -414,7 +414,7 @@
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[5m]))",
+          "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_sum{job=\"$job\",aws_ecs_task_id!=\"\"}[5m])) and on(aws_ecs_task_id) up{job=\"$job\"} == 1",
           "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
@@ -430,7 +430,7 @@
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_count{job=\"$job\"}[1m])) * 60",
+          "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_count{job=\"$job\",aws_ecs_task_id!=\"\"}[1m])) * 60 and on(aws_ecs_task_id) up{job=\"$job\"} == 1",
           "legendFormat": "{{aws_ecs_task_id}}"
         }
       ],
