@@ -3,7 +3,7 @@
   "title": "Connectly Gateway - Core Metrics",
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 7,
+  "version": 8,
   "refresh": "10s",
   "tags": ["gateway", "prod", "core"],
   "templating": {
@@ -33,7 +33,7 @@
         "label": "ECS Task ID",
         "type": "query",
         "datasource": "$datasource",
-        "query": "label_values(up{job=\"$job\"} == 1, aws_ecs_task_id)",
+        "query": "label_values(up{job=\"$job\"}, aws_ecs_task_id)",
         "regex": "/.+/",
         "includeAll": true,
         "multi": true,
