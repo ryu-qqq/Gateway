@@ -3,7 +3,7 @@
   "title": "Connectly Gateway - Core Metrics",
   "timezone": "browser",
   "schemaVersion": 38,
-  "version": 3,
+  "version": 4,
   "refresh": "10s",
   "tags": ["gateway", "prod", "core"],
   "templating": {
@@ -340,11 +340,11 @@
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{job=\"$job\",area=\"heap\"}",
+          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\"})",
           "legendFormat": "Used - {{aws_ecs_task_id}}"
         },
         {
-          "expr": "jvm_memory_max_bytes{job=\"$job\",area=\"heap\"}",
+          "expr": "sum by (aws_ecs_task_id) (jvm_memory_max_bytes{job=\"$job\",area=\"heap\"})",
           "legendFormat": "Max - {{aws_ecs_task_id}}"
         }
       ],
@@ -360,7 +360,7 @@
       "datasource": "$datasource",
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\"}",
+          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\"})",
           "legendFormat": "Used - {{aws_ecs_task_id}}"
         }
       ],
