@@ -112,11 +112,6 @@ gateway:
         port: 8080
         paths:
           - /api/v1/auth/**
-          - /api/v1/tenants/**
-          - /api/v1/organizations/**
-          - /api/v1/users/**
-          - /api/v1/roles/**
-          - /api/v1/permissions/**
         public-paths:
           - /api/v1/auth/login
           - /api/v1/auth/refresh
@@ -140,8 +135,6 @@ gateway:
         uri: ${COMMERCE_URI:http://localhost:8081}
         paths:
           - /api/v1/commerce/**
-          - /api/v1/order/**
-          - /api/v1/product/**
         public-paths: []
 
       # ============================================
@@ -222,11 +215,6 @@ gateway:
         port: 8080
         paths:
           - /api/v1/auth/**
-          - /api/v1/tenants/**
-          - /api/v1/organizations/**
-          - /api/v1/users/**
-          - /api/v1/roles/**
-          - /api/v1/permissions/**
         public-paths:
           - /api/v1/auth/login
           - /api/v1/auth/refresh
@@ -292,11 +280,6 @@ gateway:
         port: 8080
         paths:
           - /api/v1/auth/**
-          - /api/v1/tenants/**
-          - /api/v1/organizations/**
-          - /api/v1/users/**
-          - /api/v1/roles/**
-          - /api/v1/permissions/**
         public-paths:
           - /api/v1/auth/login
           - /api/v1/auth/refresh
@@ -312,10 +295,9 @@ gateway:
 
       # Commerce Service
       - id: commerce
+        uri: http://commerce-web-api-prod.connectly.local:8080
         paths:
           - /api/v1/commerce/**
-          - /api/v1/order/**
-          - /api/v1/product/**
 
       # CrawlingHub Service
       - id: crawling
@@ -325,6 +307,7 @@ gateway:
 
       # MarketPlace Service
       - id: marketplace
+        uri: http://marketplace-web-api-prod.connectly.local:8080
         paths:
           - /api/v1/marketplace/**
 
