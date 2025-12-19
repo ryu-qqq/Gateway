@@ -1,0 +1,474 @@
+{
+  "uid": "connectly-gateway-core",
+  "title": "Connectly Gateway - Core Metrics",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 2,
+  "refresh": "10s",
+  "tags": ["gateway", "prod", "core"],
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "AMP-prod", "value": "AMP-prod" }
+      },
+      {
+        "name": "job",
+        "type": "query",
+        "datasource": "$datasource",
+        "query": "label_values(up, job)",
+        "current": { "text": "gateway-metrics", "value": "gateway-metrics" }
+      },
+      {
+        "name": "application",
+        "type": "query",
+        "datasource": "$datasource",
+        "query": "label_values(jvm_memory_used_bytes, application)",
+        "current": { "text": "connectly-gateway", "value": "connectly-gateway" }
+      },
+      {
+        "name": "instance",
+        "type": "query",
+        "datasource": "$datasource",
+        "query": "label_values(up{job=\"$job\"}, instance)",
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 100,
+      "type": "row",
+      "title": "📊 Overview",
+      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Instances UP",
+      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(up{job=\"$job\"})",
+          "legendFormat": "UP"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "green", "value": 2 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total RPS",
+      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "RPS"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "decimals": 1 }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Avg Latency",
+      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"$job\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "Avg"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "P99 Latency",
+      "gridPos": { "x": 12, "y": 1, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "P99"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 2 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Error Rate %",
+      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
+          "legendFormat": "Error %"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Heap Usage %",
+      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "avg(jvm_memory_used_bytes{job=\"$job\",area=\"heap\"} / jvm_memory_max_bytes{job=\"$job\",area=\"heap\"}) * 100",
+          "legendFormat": "Heap %"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 70 },
+              { "color": "red", "value": 85 }
+            ]
+          }
+        }
+      }
+    },
+
+    {
+      "id": 200,
+      "type": "row",
+      "title": "🚀 Traffic & Latency",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Request Rate (RPS)",
+      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "Total RPS"
+        },
+        {
+          "expr": "sum by (instance) (rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Response Time (P50 / P95 / P99)",
+      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "P99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+
+    {
+      "id": 300,
+      "type": "row",
+      "title": "⚠️ Errors & Status Codes",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 20,
+      "type": "timeseries",
+      "title": "HTTP Status Code Distribution",
+      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"2..\"}[1m]))",
+          "legendFormat": "2xx Success"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"4..\"}[1m]))",
+          "legendFormat": "4xx Client Error"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m]))",
+          "legendFormat": "5xx Server Error"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "2xx Success" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "4xx Client Error" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "5xx Server Error" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      }
+    },
+    {
+      "id": 21,
+      "type": "timeseries",
+      "title": "Error Rate % (5xx / Total)",
+      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
+          "legendFormat": "Error Rate %"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": { "mode": "fixed", "fixedColor": "red" },
+          "custom": { "fillOpacity": 20 }
+        }
+      }
+    },
+
+    {
+      "id": 400,
+      "type": "row",
+      "title": "☕ JVM Metrics",
+      "gridPos": { "x": 0, "y": 23, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "JVM Heap Memory",
+      "gridPos": { "x": 0, "y": 24, "w": 8, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{job=\"$job\",area=\"heap\"}",
+          "legendFormat": "Used - {{instance}}"
+        },
+        {
+          "expr": "jvm_memory_max_bytes{job=\"$job\",area=\"heap\"}",
+          "legendFormat": "Max - {{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" }
+      }
+    },
+    {
+      "id": 31,
+      "type": "timeseries",
+      "title": "JVM Non-Heap (Metaspace)",
+      "gridPos": { "x": 8, "y": 24, "w": 8, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\"}",
+          "legendFormat": "Used - {{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" }
+      }
+    },
+    {
+      "id": 32,
+      "type": "timeseries",
+      "title": "JVM Threads",
+      "gridPos": { "x": 16, "y": 24, "w": 8, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{job=\"$job\"}",
+          "legendFormat": "Live - {{instance}}"
+        },
+        {
+          "expr": "jvm_threads_daemon_threads{job=\"$job\"}",
+          "legendFormat": "Daemon - {{instance}}"
+        },
+        {
+          "expr": "jvm_threads_peak_threads{job=\"$job\"}",
+          "legendFormat": "Peak - {{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" }
+      }
+    },
+    {
+      "id": 33,
+      "type": "timeseries",
+      "title": "GC Pause Time (Avg)",
+      "description": "Average GC pause time calculated from sum/count",
+      "gridPos": { "x": 0, "y": 32, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"$job\"}[5m]) / rate(jvm_gc_pause_seconds_count{job=\"$job\"}[5m])",
+          "legendFormat": "{{gc}} - {{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "id": 34,
+      "type": "timeseries",
+      "title": "GC Count Rate (per minute)",
+      "gridPos": { "x": 12, "y": 32, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "rate(jvm_gc_pause_seconds_count{job=\"$job\"}[1m]) * 60",
+          "legendFormat": "{{gc}} - {{instance}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "displayName": "GC/min" }
+      }
+    },
+
+    {
+      "id": 500,
+      "type": "row",
+      "title": "🔗 Upstream Services (Gateway Routing)",
+      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 40,
+      "type": "timeseries",
+      "title": "Upstream Request Rate by URI",
+      "gridPos": { "x": 0, "y": 41, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum by (uri) (rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "reqps" }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" }
+      }
+    },
+    {
+      "id": 41,
+      "type": "timeseries",
+      "title": "Upstream Latency P95 by URI",
+      "gridPos": { "x": 12, "y": 41, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, uri) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "{{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" }
+      }
+    }
+  ]
+}
