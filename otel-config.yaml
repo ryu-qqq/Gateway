@@ -24,9 +24,16 @@ receivers:
             - targets: ['localhost:8080']
           metrics_path: /actuator/prometheus
           metric_relabel_configs:
+            # 필요한 메트릭만 수집
             - source_labels: [__name__]
               regex: '(http_.*|jvm_.*|process_.*|system_.*|application_.*|spring_.*|gateway_.*)'
               action: keep
+            # instance 레이블을 ECS task ID로 교체 (중복 방지)
+            - source_labels: [aws_ecs_task_id]
+              target_label: instance
+              regex: (.+)
+              replacement: $1
+              action: replace
 
   awsecscontainermetrics:
     collection_interval: 30s
