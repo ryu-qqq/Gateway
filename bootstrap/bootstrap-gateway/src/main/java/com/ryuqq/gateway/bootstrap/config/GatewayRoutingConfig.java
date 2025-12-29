@@ -99,11 +99,52 @@ public class GatewayRoutingConfig {
                                     var predicateSpec = r.path(path);
 
                                     // Add host predicate if hosts are configured
+                                    // Check both Host header and X-Forwarded-Host for CloudFront
+                                    // compatibility
                                     if (!hosts.isEmpty()) {
+                                        String hostPattern =
+                                                String.join("|", hosts)
+                                                        .replace(".", "\\.")
+                                                        .replace("*", ".*");
                                         predicateSpec =
                                                 predicateSpec
                                                         .and()
-                                                        .host(hosts.toArray(String[]::new));
+                                                        .predicate(
+                                                                exchange -> {
+                                                                    var request =
+                                                                            exchange.getRequest();
+                                                                    // Check X-Forwarded-Host first
+                                                                    // (CloudFront/ALB)
+                                                                    String forwardedHost =
+                                                                            request.getHeaders()
+                                                                                    .getFirst(
+                                                                                            "X-Forwarded-Host");
+                                                                    if (forwardedHost != null) {
+                                                                        return hosts.stream()
+                                                                                .anyMatch(
+                                                                                        h ->
+                                                                                                matchHost(
+                                                                                                        h,
+                                                                                                        forwardedHost));
+                                                                    }
+                                                                    // Fallback to Host header
+                                                                    String host =
+                                                                            request.getHeaders()
+                                                                                    .getFirst(
+                                                                                            "Host");
+                                                                    if (host != null) {
+                                                                        // Remove port if present
+                                                                        String hostWithoutPort =
+                                                                                host.split(":")[0];
+                                                                        return hosts.stream()
+                                                                                .anyMatch(
+                                                                                        h ->
+                                                                                                matchHost(
+                                                                                                        h,
+                                                                                                        hostWithoutPort));
+                                                                    }
+                                                                    return false;
+                                                                });
                                     }
 
                                     return predicateSpec
@@ -121,6 +162,26 @@ public class GatewayRoutingConfig {
         }
 
         return routes.build();
+    }
+
+    /**
+     * Match host pattern against actual host
+     *
+     * <p>Supports wildcard patterns like "*.set-of.com"
+     *
+     * @param pattern host pattern (e.g., "set-of.com", "*.set-of.com")
+     * @param host actual host from request
+     * @return true if matches
+     */
+    private boolean matchHost(String pattern, String host) {
+        if (pattern.equals(host)) {
+            return true;
+        }
+        if (pattern.startsWith("*.")) {
+            String suffix = pattern.substring(1); // ".set-of.com"
+            return host.endsWith(suffix) || host.equals(pattern.substring(2));
+        }
+        return false;
     }
 
     /**
