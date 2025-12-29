@@ -13,9 +13,9 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.bootstrap.config.GatewayRoutingConfig.GatewayRoutingProperties;
 import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
+import com.ryuqq.gateway.integration.fixtures.PermissionTestFixture;
 import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -57,6 +57,22 @@ class GatewayHostRoutingIntegrationTest {
     static WireMockServer legacyAdminServer;
     static WireMockServer authServer;
 
+    // WireMock 서버는 @DynamicPropertySource보다 먼저 시작되어야 하므로 static 초기화 블록 사용
+    static {
+        // Auth Server (JWKS, Permission Spec 등)
+        authServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
+        authServer.start();
+
+        // Legacy Web API Server
+        legacyWebServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
+        legacyWebServer.start();
+
+        // Legacy Admin API Server
+        legacyAdminServer =
+                new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
+        legacyAdminServer.start();
+    }
+
     @Container
     static GenericContainer<?> redis =
             new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
@@ -64,21 +80,6 @@ class GatewayHostRoutingIntegrationTest {
     @Autowired private WebTestClient webTestClient;
 
     @Autowired private GatewayRoutingProperties routingProperties;
-
-    @BeforeAll
-    static void startWireMock() {
-        // Auth Server (JWKS, Permission Spec 등)
-        authServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8888));
-        authServer.start();
-
-        // Legacy Web API Server
-        legacyWebServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8889));
-        legacyWebServer.start();
-
-        // Legacy Admin API Server
-        legacyAdminServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8890));
-        legacyAdminServer.start();
-    }
 
     @AfterAll
     static void stopWireMock() {
@@ -99,8 +100,8 @@ class GatewayHostRoutingIntegrationTest {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
 
-        // AuthHub Client
-        registry.add("authhub.client.base-url", () -> "http://localhost:8888");
+        // AuthHub Client (동적 포트 사용)
+        registry.add("authhub.client.base-url", () -> "http://localhost:" + authServer.port());
 
         // Redisson config
         registry.add(
@@ -113,18 +114,22 @@ class GatewayHostRoutingIntegrationTest {
         // Gateway Routing - Host-based routing 설정
         registry.add("gateway.routing.discovery.enabled", () -> "false");
 
-        // Legacy Web Service
+        // Legacy Web Service (동적 포트 사용)
         registry.add("gateway.routing.services[0].id", () -> "legacy-web");
-        registry.add("gateway.routing.services[0].uri", () -> "http://localhost:8889");
+        registry.add(
+                "gateway.routing.services[0].uri",
+                () -> "http://localhost:" + legacyWebServer.port());
         registry.add("gateway.routing.services[0].paths[0]", () -> "/**");
         registry.add("gateway.routing.services[0].hosts[0]", () -> "stage.set-of.com");
         registry.add("gateway.routing.services[0].hosts[1]", () -> "set-of.com");
         registry.add("gateway.routing.services[0].hosts[2]", () -> "server.set-of.net");
         registry.add("gateway.routing.services[0].public-paths[0]", () -> "/**");
 
-        // Legacy Admin Service
+        // Legacy Admin Service (동적 포트 사용)
         registry.add("gateway.routing.services[1].id", () -> "legacy-admin");
-        registry.add("gateway.routing.services[1].uri", () -> "http://localhost:8890");
+        registry.add(
+                "gateway.routing.services[1].uri",
+                () -> "http://localhost:" + legacyAdminServer.port());
         registry.add("gateway.routing.services[1].paths[0]", () -> "/**");
         registry.add("gateway.routing.services[1].hosts[0]", () -> "admin.set-of.com");
         registry.add("gateway.routing.services[1].hosts[1]", () -> "admin-server.set-of.net");
@@ -154,30 +159,8 @@ class GatewayHostRoutingIntegrationTest {
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
-                                                """
-                                                {
-                                                    "version": 1,
-                                                    "updatedAt": "2025-01-01T00:00:00Z",
-                                                    "permissions": [
-                                                        {
-                                                            "serviceName": "legacy-web",
-                                                            "path": "/.*",
-                                                            "method": "GET",
-                                                            "isPublic": true,
-                                                            "requiredRoles": [],
-                                                            "requiredPermissions": []
-                                                        },
-                                                        {
-                                                            "serviceName": "legacy-admin",
-                                                            "path": "/.*",
-                                                            "method": "GET",
-                                                            "isPublic": true,
-                                                            "requiredRoles": [],
-                                                            "requiredPermissions": []
-                                                        }
-                                                    ]
-                                                }
-                                                """)));
+                                                PermissionTestFixture
+                                                        .legacyServicesPermissionSpec())));
 
         // Auth Server - Tenant Config
         authServer.stubFor(

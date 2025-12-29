@@ -10,14 +10,16 @@ Cross-Origin 쿠키 문제 해결을 위해 Gateway에서 Host-based routing을 
 ## 아키텍처
 
 ### 기존 구조 (Cross-Origin - 문제 발생)
-```
+
+```text
 프론트엔드: stage.set-of.com
 API 호출:   commerce.set-of.com/api/v1/...
 → 다른 도메인이라 쿠키 저장 안 됨 (Third-party cookie 차단)
 ```
 
 ### 새로운 구조 (Same-Origin - 문제 해결)
-```
+
+```text
 프론트엔드: stage.set-of.com
 API 호출:   stage.set-of.com/api/v1/...
 → 같은 도메인이라 쿠키 정상 작동
