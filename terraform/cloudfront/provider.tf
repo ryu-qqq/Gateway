@@ -116,7 +116,7 @@ data "aws_lb" "gateway" {
 
 # Frontend ALB - set-of.com (Next.js production)
 data "aws_lb" "frontend_prod" {
-  name = "setof-next-web-lb"
+  name = "turbo-setof-web-lb"
 }
 
 # Frontend ALB - stage.set-of.com (staging)
