@@ -296,6 +296,11 @@ resource "aws_cloudfront_distribution" "stage" {
 # ========================================
 
 # set-of.com → CloudFront
+import {
+  to = aws_route53_record.prod_apex
+  id = "Z104656329CL6XBYE8OIJ_set-of.com_A"
+}
+
 resource "aws_route53_record" "prod_apex" {
   zone_id = local.route53_zone_id
   name    = "set-of.com"
@@ -309,6 +314,11 @@ resource "aws_route53_record" "prod_apex" {
 }
 
 # www.set-of.com → CloudFront
+import {
+  to = aws_route53_record.prod_www
+  id = "Z104656329CL6XBYE8OIJ_www.set-of.com_A"
+}
+
 resource "aws_route53_record" "prod_www" {
   zone_id = local.route53_zone_id
   name    = "www.set-of.com"
