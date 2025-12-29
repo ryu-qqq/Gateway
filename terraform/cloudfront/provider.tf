@@ -97,10 +97,10 @@ data "aws_ssm_parameter" "certificate_arn" {
 # CloudFront requires ACM certificate in us-east-1
 # ========================================
 # NOTE: CloudFront용 인증서가 us-east-1에 있어야 합니다.
-# 기존에 없다면 생성이 필요합니다.
+# 인증서는 set-of.com + *.set-of.com 둘 다 커버해야 합니다.
 data "aws_acm_certificate" "cloudfront_cert" {
   provider    = aws.us_east_1
-  domain      = "*.set-of.com"
+  domain      = "set-of.com"
   statuses    = ["ISSUED"]
   most_recent = true
 }

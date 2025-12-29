@@ -322,6 +322,12 @@ resource "aws_route53_record" "prod_www" {
 }
 
 # stage.set-of.com → CloudFront
+# Import existing record: terraform import aws_route53_record.stage Z104656329CL6XBYE8OIJ_stage.set-of.com_A
+import {
+  to = aws_route53_record.stage
+  id = "Z104656329CL6XBYE8OIJ_stage.set-of.com_A"
+}
+
 resource "aws_route53_record" "stage" {
   zone_id = local.route53_zone_id
   name    = "stage.set-of.com"
