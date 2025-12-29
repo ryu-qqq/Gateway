@@ -12,6 +12,9 @@
 # ===============================================
 server:
   port: 8080
+  # CloudFront/ALB에서 전달하는 X-Forwarded-* 헤더 처리
+  # X-Forwarded-Host를 사용하여 원본 호스트 기반 라우팅 지원
+  forward-headers-strategy: framework
 
 # ===============================================
 # Spring Configuration
@@ -320,6 +323,35 @@ gateway:
         uri: http://marketplace-web-api-prod.connectly.local:8080
         paths:
           - /api/v1/marketplace/**
+
+      # ============================================
+      # Legacy Web API Service (Host-based routing)
+      # Handles: stage.set-of.com, set-of.com, server.set-of.net
+      # ============================================
+      - id: legacy-web
+        uri: ${LEGACY_WEB_URI:http://setof-commerce-legacy-api-prod.connectly.local:8080}
+        paths:
+          - /**
+        hosts:
+          - stage.set-of.com
+          - set-of.com
+          - server.set-of.net
+        public-paths:
+          - /**
+
+      # ============================================
+      # Legacy Admin API Service (Host-based routing)
+      # Handles: admin.set-of.com, admin-server.set-of.net
+      # ============================================
+      - id: legacy-admin
+        uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-prod.connectly.local:8080}
+        paths:
+          - /**
+        hosts:
+          - admin.set-of.com
+          - admin-server.set-of.net
+        public-paths:
+          - /**
 
     host-mapping:
       api.set-of.com: public

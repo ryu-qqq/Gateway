@@ -540,6 +540,286 @@
       "fieldConfig": {
         "defaults": { "unit": "short", "decimals": 0 }
       }
+    },
+
+    {
+      "id": 600,
+      "type": "row",
+      "title": "🔴 Redis Metrics",
+      "gridPos": { "x": 0, "y": 57, "w": 24, "h": 1 },
+      "collapsed": false
+    },
+    {
+      "id": 50,
+      "type": "stat",
+      "title": "Active Connections",
+      "description": "현재 사용 중인 Redis 연결 수",
+      "gridPos": { "x": 0, "y": 58, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(lettuce_pool_active{job=\"$job\"})",
+          "legendFormat": "Active"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 12 },
+              { "color": "red", "value": 15 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 51,
+      "type": "stat",
+      "title": "Idle Connections",
+      "description": "유휴 상태의 Redis 연결 수",
+      "gridPos": { "x": 4, "y": 58, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(lettuce_pool_idle{job=\"$job\"})",
+          "legendFormat": "Idle"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 52,
+      "type": "stat",
+      "title": "Pending Requests",
+      "description": "연결 대기 중인 요청 수",
+      "gridPos": { "x": 8, "y": 58, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(lettuce_pool_pending{job=\"$job\"}) or vector(0)",
+          "legendFormat": "Pending"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 1 },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 53,
+      "type": "stat",
+      "title": "Command Rate",
+      "description": "초당 Redis 명령어 처리량",
+      "gridPos": { "x": 12, "y": 58, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "ops/s"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] }
+      },
+      "fieldConfig": {
+        "defaults": { "unit": "ops", "decimals": 1 }
+      }
+    },
+    {
+      "id": 54,
+      "type": "stat",
+      "title": "Avg Latency",
+      "description": "평균 Redis 명령어 응답 시간",
+      "gridPos": { "x": 16, "y": 58, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(lettuce_command_completion_seconds_sum{job=\"$job\"}[1m])) / sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "Avg"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 4,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.05 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 55,
+      "type": "stat",
+      "title": "Error Rate",
+      "description": "Redis 명령어 실패율",
+      "gridPos": { "x": 20, "y": 58, "w": 4, "h": 4 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(lettuce_command_completion_seconds_count{job=\"$job\",status=\"ERROR\"}[1m])) / sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
+          "legendFormat": "Error %"
+        }
+      ],
+      "options": {
+        "reduceOptions": { "calcs": ["last"] },
+        "colorMode": "background"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 2,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 60,
+      "type": "timeseries",
+      "title": "Connection Pool Usage",
+      "description": "Redis 연결 풀 사용량 추이",
+      "gridPos": { "x": 0, "y": 62, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(lettuce_pool_active{job=\"$job\"})",
+          "legendFormat": "Active"
+        },
+        {
+          "expr": "sum(lettuce_pool_idle{job=\"$job\"})",
+          "legendFormat": "Idle"
+        },
+        {
+          "expr": "sum(lettuce_pool_pending{job=\"$job\"}) or vector(0)",
+          "legendFormat": "Pending"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Active" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Idle" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "Pending" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      }
+    },
+    {
+      "id": 61,
+      "type": "timeseries",
+      "title": "Command Rate by Instance",
+      "description": "인스턴스별 Redis 명령어 처리량",
+      "gridPos": { "x": 12, "y": 62, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "Total"
+        },
+        {
+          "expr": "sum by (aws_ecs_task_id) (rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
+          "legendFormat": "{{aws_ecs_task_id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      }
+    },
+    {
+      "id": 62,
+      "type": "timeseries",
+      "title": "Command Latency (P50 / P95 / P99)",
+      "description": "Redis 명령어 응답 시간 분포",
+      "gridPos": { "x": 0, "y": 70, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "P50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "P95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
+          "legendFormat": "P99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "id": 63,
+      "type": "timeseries",
+      "title": "Command Rate by Type",
+      "description": "명령어 유형별 처리량 (GET, SET, INCR 등)",
+      "gridPos": { "x": 12, "y": 70, "w": 12, "h": 8 },
+      "datasource": "$datasource",
+      "targets": [
+        {
+          "expr": "sum by (command) (rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m])) > 0",
+          "legendFormat": "{{command}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "ops" }
+      },
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right" }
+      }
     }
   ]
 }

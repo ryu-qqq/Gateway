@@ -1,4 +1,5 @@
 version: '3.8'
+name: gateway-aws
 
 # ===============================================
 # Connectly Gateway - AWS 리소스 연결용 로컬 개발 환경
@@ -31,11 +32,11 @@ services:
       # Redis (AWS ElastiCache via SSM Port Forwarding)
       # SSM으로 localhost:16380 -> ElastiCache:6379 포워딩
       SPRING_DATA_REDIS_HOST: host.docker.internal
-      SPRING_DATA_REDIS_PORT: 16380
+      SPRING_DATA_REDIS_PORT: 16381
       SPRING_DATA_REDIS_TIMEOUT: 3s
 
       # AuthHub Client (JWKS Endpoint)
-      AUTHHUB_CLIENT_BASE_URL: ${AUTHHUB_BASE_URL:-http://host.docker.internal:9090}
+      AUTHHUB_CLIENT_BASE_URL: ${AUTHHUB_BASE_URL:-http://host.docker.internal:8080}
       AUTHHUB_CLIENT_JWKS_ENDPOINT: /api/v1/auth/jwks
       AUTHHUB_CLIENT_TIMEOUT_CONNECTION: 3000
       AUTHHUB_CLIENT_TIMEOUT_RESPONSE: 3000
@@ -43,8 +44,12 @@ services:
       # JWT Configuration
       JWT_PUBLIC_KEY_CACHE_TTL: 3600
 
-      # Gateway Routing - AuthHub URI
-      AUTHHUB_URI: ${AUTHHUB_BASE_URL:-http://host.docker.internal:9090}
+      # Gateway Routing - Service URIs
+      AUTH_HUB_URL: ${AUTHHUB_BASE_URL:-http://host.docker.internal:8080}
+      MARKETPLACE_URI: http://host.docker.internal:9090
+      COMMERCE_URI: http://host.docker.internal:8081
+      FILEFLOW_URI: http://host.docker.internal:8082
+      CRAWLING_URI: http://host.docker.internal:8083
 
       # AWS Credentials (필요시)
       AWS_REGION: ${AWS_REGION:-ap-northeast-2}
@@ -65,7 +70,7 @@ services:
         -Djava.security.egd=file:/dev/./urandom
 
     ports:
-      - "${GATEWAY_PORT:-8080}:8080"
+      - "${GATEWAY_PORT:-8089}:8080"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:

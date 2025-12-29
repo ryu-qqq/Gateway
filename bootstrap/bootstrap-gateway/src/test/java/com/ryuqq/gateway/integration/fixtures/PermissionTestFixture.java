@@ -23,6 +23,40 @@ public final class PermissionTestFixture {
     }
 
     /**
+     * Host-based routing 테스트용 Permission Spec 응답 JSON 생성
+     *
+     * <p>Legacy Web/Admin 서비스의 모든 경로를 public으로 설정
+     *
+     * @return Permission Spec JSON
+     */
+    public static String legacyServicesPermissionSpec() {
+        return """
+               {
+                   "version": 1,
+                   "updatedAt": "2025-01-01T00:00:00Z",
+                   "permissions": [
+                       {
+                           "serviceName": "legacy-web",
+                           "path": "/.*",
+                           "method": "GET",
+                           "isPublic": true,
+                           "requiredRoles": [],
+                           "requiredPermissions": []
+                       },
+                       {
+                           "serviceName": "legacy-admin",
+                           "path": "/.*",
+                           "method": "GET",
+                           "isPublic": true,
+                           "requiredRoles": [],
+                           "requiredPermissions": []
+                       }
+                   ]
+               }
+               """;
+    }
+
+    /**
      * Permission Spec 응답 JSON 생성 (AuthHub API Response 형식)
      *
      * @return Permission Spec JSON
