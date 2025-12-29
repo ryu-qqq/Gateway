@@ -251,8 +251,10 @@ resource "aws_lb_listener" "http" {
 }
 
 # ========================================
-# Route53 DNS Record
+# Route53 DNS Records
 # ========================================
+
+# Primary API Gateway Record
 resource "aws_route53_record" "gateway" {
   zone_id = local.route53_zone_id
   name    = local.fqdn
@@ -264,6 +266,57 @@ resource "aws_route53_record" "gateway" {
     evaluate_target_health = true
   }
 }
+
+# ========================================
+# Host-Based Routing DNS Records
+# NOTE: 아래 레코드들은 CloudFront를 통해 관리됩니다.
+# 자세한 내용은 terraform/cloudfront/ 모듈을 참조하세요.
+# ========================================
+#
+# CloudFront가 관리하는 도메인:
+#   - set-of.com, www.set-of.com → CloudFront → /api/v1/* → Gateway ALB
+#   - stage.set-of.com → CloudFront → /api/v1/* → Gateway ALB
+#   - admin.set-of.com (예정) → CloudFront → /api/v1/* → Gateway ALB
+#
+# 이 모듈에서는 api.set-of.com만 직접 Gateway ALB로 라우팅합니다.
+# ========================================
+
+# ========================================
+# set-of.net 도메인 레코드 (별도 Hosted Zone 필요)
+# TODO: set-of.net hosted zone이 있다면 아래 주석 해제
+# ========================================
+# NOTE: server.set-of.net, admin-server.set-of.net은
+# 별도의 Route53 Hosted Zone (set-of.net)이 필요합니다.
+# 해당 Hosted Zone이 있다면 아래 설정을 활성화하세요.
+#
+# data "aws_route53_zone" "set_of_net" {
+#   name         = "set-of.net"
+#   private_zone = false
+# }
+#
+# resource "aws_route53_record" "legacy_web_server_net" {
+#   zone_id = data.aws_route53_zone.set_of_net.zone_id
+#   name    = "server.set-of.net"
+#   type    = "A"
+#
+#   alias {
+#     name                   = aws_lb.gateway.dns_name
+#     zone_id                = aws_lb.gateway.zone_id
+#     evaluate_target_health = true
+#   }
+# }
+#
+# resource "aws_route53_record" "legacy_admin_server_net" {
+#   zone_id = data.aws_route53_zone.set_of_net.zone_id
+#   name    = "admin-server.set-of.net"
+#   type    = "A"
+#
+#   alias {
+#     name                   = aws_lb.gateway.dns_name
+#     zone_id                = aws_lb.gateway.zone_id
+#     evaluate_target_health = true
+#   }
+# }
 
 # ========================================
 # IAM Roles (using Infrastructure module)
