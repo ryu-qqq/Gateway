@@ -77,8 +77,17 @@ public class GatewayRoutingConfig {
         for (ServiceRoute service : properties.getServices()) {
             String serviceId = service.getId();
             String uri = buildServiceUri(serviceId, service, discovery);
+            List<String> hosts = service.getHosts();
 
-            log.info("Registering route: {} -> {}", service.getPaths(), uri);
+            if (!hosts.isEmpty()) {
+                log.info(
+                        "Registering host-based route: {} hosts={} -> {}",
+                        service.getPaths(),
+                        hosts,
+                        uri);
+            } else {
+                log.info("Registering path-based route: {} -> {}", service.getPaths(), uri);
+            }
 
             for (String path : service.getPaths()) {
                 String routeId = serviceId + "-" + (path.hashCode() & Integer.MAX_VALUE);
@@ -86,18 +95,28 @@ public class GatewayRoutingConfig {
                 routes =
                         routes.route(
                                 routeId,
-                                r ->
-                                        r.path(path)
-                                                .filters(
-                                                        f -> {
-                                                            if (service.isStripPrefix()) {
-                                                                return f.stripPrefix(
-                                                                        service
-                                                                                .getStripPrefixParts());
-                                                            }
-                                                            return f;
-                                                        })
-                                                .uri(uri));
+                                r -> {
+                                    var predicateSpec = r.path(path);
+
+                                    // Add host predicate if hosts are configured
+                                    if (!hosts.isEmpty()) {
+                                        predicateSpec =
+                                                predicateSpec
+                                                        .and()
+                                                        .host(hosts.toArray(new String[0]));
+                                    }
+
+                                    return predicateSpec
+                                            .filters(
+                                                    f -> {
+                                                        if (service.isStripPrefix()) {
+                                                            return f.stripPrefix(
+                                                                    service.getStripPrefixParts());
+                                                        }
+                                                        return f;
+                                                    })
+                                            .uri(uri);
+                                });
             }
         }
 
@@ -237,6 +256,9 @@ public class GatewayRoutingConfig {
         /** Public paths that don't require JWT authentication */
         private List<String> publicPaths = List.of();
 
+        /** Host patterns for host-based routing (e.g., "*.set-of.com", "server.set-of.net") */
+        private List<String> hosts = List.of();
+
         public String getId() {
             return id;
         }
@@ -291,6 +313,14 @@ public class GatewayRoutingConfig {
 
         public void setPublicPaths(List<String> publicPaths) {
             this.publicPaths = publicPaths == null ? List.of() : new ArrayList<>(publicPaths);
+        }
+
+        public List<String> getHosts() {
+            return Collections.unmodifiableList(hosts);
+        }
+
+        public void setHosts(List<String> hosts) {
+            this.hosts = hosts == null ? List.of() : new ArrayList<>(hosts);
         }
     }
 }
