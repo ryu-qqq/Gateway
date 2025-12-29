@@ -367,13 +367,22 @@ class GatewayHostRoutingIntegrationTest {
         @DisplayName("설정되지 않은 호스트로 요청 시 라우팅되지 않아야 한다")
         void shouldNotRouteWhenHostNotConfigured() {
             // 설정되지 않은 호스트로 요청
+            // 라우트가 매칭되지 않으면 정적 리소스 핸들러로 폴백되어 404 발생
+            // GlobalExceptionHandler가 이를 500으로 래핑하지만, 메시지에 "404 NOT_FOUND" 포함
             webTestClient
                     .get()
                     .uri("/api/v1/products")
                     .header("Host", "unknown.example.com")
                     .exchange()
                     .expectStatus()
-                    .isNotFound();
+                    .is5xxServerError()
+                    .expectBody()
+                    .jsonPath("$.error.message")
+                    .value(message -> assertThat((String) message).contains("404 NOT_FOUND"));
+
+            // Legacy Web Server와 Admin Server 모두 요청을 받지 않아야 함
+            legacyWebServer.verify(0, getRequestedFor(urlEqualTo("/api/v1/products")));
+            legacyAdminServer.verify(0, getRequestedFor(urlEqualTo("/api/v1/products")));
         }
     }
 }
