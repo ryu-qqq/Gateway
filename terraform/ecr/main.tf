@@ -29,6 +29,7 @@ module "ecr_gateway" {
   name                 = "${var.project_name}-${var.environment}"
   image_tag_mutability = "IMMUTABLE"
   scan_on_push         = true
+  encryption_type      = "AES256"  # 기존 ECR과 동일하게 AES256 사용
 
   # Lifecycle Policy
   enable_lifecycle_policy    = true
