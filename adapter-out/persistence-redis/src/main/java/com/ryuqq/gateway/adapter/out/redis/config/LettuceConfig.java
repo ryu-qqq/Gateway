@@ -8,8 +8,11 @@ import com.ryuqq.gateway.adapter.out.redis.entity.PermissionSpecEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.PublicKeyEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.TenantConfigEntity;
 import io.lettuce.core.ClientOptions;
+import io.lettuce.core.metrics.MicrometerCommandLatencyRecorder;
+import io.lettuce.core.metrics.MicrometerOptions;
 import io.lettuce.core.resource.ClientResources;
 import io.lettuce.core.resource.DefaultClientResources;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
@@ -59,10 +62,27 @@ public class LettuceConfig {
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
 
-    /** Lettuce Client Resources */
+    /**
+     * Lettuce Client Resources with Micrometer Metrics
+     *
+     * <p>Micrometer를 통해 Redis 명령어 레이턴시 메트릭을 수집합니다.
+     *
+     * <p><strong>노출되는 메트릭</strong>:
+     *
+     * <ul>
+     *   <li>lettuce_command_firstresponse_seconds - 첫 응답까지 시간
+     *   <li>lettuce_command_completion_seconds - 전체 명령 완료 시간
+     *   <li>lettuce_command_completion_seconds_bucket - 히스토그램 (P50/P95/P99)
+     * </ul>
+     */
     @Bean(destroyMethod = "shutdown")
-    public ClientResources clientResources() {
-        return DefaultClientResources.create();
+    public ClientResources clientResources(MeterRegistry meterRegistry) {
+        MicrometerOptions options = MicrometerOptions.builder().enable().histogram(true).build();
+
+        return DefaultClientResources.builder()
+                .commandLatencyRecorder(
+                        new MicrometerCommandLatencyRecorder(meterRegistry, options))
+                .build();
     }
 
     /** Reactive Redis Connection Factory */

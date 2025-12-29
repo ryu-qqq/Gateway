@@ -19,6 +19,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -49,6 +50,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {"spring.profiles.active=test"})
 @Testcontainers
+@Tag("integration")
 class GatewayHostRoutingIntegrationTest {
 
     static WireMockServer legacyWebServer;
@@ -338,8 +340,8 @@ class GatewayHostRoutingIntegrationTest {
         }
 
         @Test
-        @DisplayName("hosts가 설정되지 않은 서비스는 빈 리스트를 반환해야 한다")
-        void shouldReturnEmptyListWhenHostsNotConfigured() {
+        @DisplayName("hosts 리스트는 수정 불가능해야 한다")
+        void shouldReturnUnmodifiableHostsList() {
             // 테스트용 서비스가 아닌 실제 서비스 중 hosts가 없는 경우
             // 이 테스트에서는 동적으로 설정하므로 legacy-web과 legacy-admin만 존재
             // 두 서비스 모두 hosts가 있으므로 hosts.isEmpty()인 케이스는 없음

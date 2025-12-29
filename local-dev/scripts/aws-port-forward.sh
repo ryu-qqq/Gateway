@@ -166,18 +166,18 @@ fi
 
 # Redis 포트 포워딩
 if [ -n "$REDIS_ENDPOINT" ]; then
-    echo "Redis 포트 포워딩 시작 (localhost:16380 -> ${REDIS_ENDPOINT}:6379)..."
+    echo "Redis 포트 포워딩 시작 (localhost:16381 -> ${REDIS_ENDPOINT}:6379)..."
     aws ssm start-session \
         --region $AWS_REGION \
         --target $BASTION_INSTANCE_ID \
         --document-name AWS-StartPortForwardingSessionToRemoteHost \
-        --parameters "{\"host\":[\"${REDIS_ENDPOINT}\"],\"portNumber\":[\"6379\"],\"localPortNumber\":[\"16380\"]}" \
+        --parameters "{\"host\":[\"${REDIS_ENDPOINT}\"],\"portNumber\":[\"6379\"],\"localPortNumber\":[\"16381\"]}" \
         > /dev/null 2>&1 &
-    
+
     REDIS_PID=$!
     echo $REDIS_PID > $PID_DIR/redis.pid
     echo -e "${GREEN}✅ Redis 포트 포워딩 시작 (PID: ${REDIS_PID})${NC}"
-    echo "   로컬 접속: redis-cli -h 127.0.0.1 -p 16380"
+    echo "   로컬 접속: redis-cli -h 127.0.0.1 -p 16381"
 fi
 
 echo ""

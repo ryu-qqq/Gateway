@@ -103,7 +103,7 @@ public class GatewayRoutingConfig {
                                         predicateSpec =
                                                 predicateSpec
                                                         .and()
-                                                        .host(hosts.toArray(new String[0]));
+                                                        .host(hosts.toArray(String[]::new));
                                     }
 
                                     return predicateSpec
