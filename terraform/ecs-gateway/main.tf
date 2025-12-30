@@ -233,20 +233,17 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# HTTP to HTTPS Redirect
+# HTTP Listener - Forward to Target Group
+# NOTE: CloudFront → Gateway ALB는 HTTP로 통신 (origin_protocol_policy: http-only)
+# ALB 인증서가 *.set-of.com이라 ALB DNS로 HTTPS 연결 시 도메인 불일치 발생
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.gateway.arn
   port              = "80"
   protocol          = "HTTP"
 
   default_action {
-    type = "redirect"
-
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
-    }
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.gateway.arn
   }
 }
 
@@ -540,7 +537,10 @@ module "ecs_service" {
     { name = "SPRING_PROFILES_ACTIVE", value = var.environment },
     { name = "SPRING_DATA_REDIS_HOST", value = local.redis_host },
     { name = "SPRING_DATA_REDIS_PORT", value = tostring(local.redis_port) },
-    { name = "AUTH_HUB_URL", value = var.auth_hub_url }
+    { name = "AUTH_HUB_URL", value = var.auth_hub_url },
+    # Legacy API 라우팅 (Cloud Map DNS)
+    { name = "LEGACY_WEB_URI", value = "http://setof-commerce-legacy-api-prod.connectly.local:8088" },
+    { name = "LEGACY_ADMIN_URI", value = "http://setof-commerce-legacy-admin-prod.connectly.local:8089" }
   ]
 
   # Container Secrets (Gateway may not need DB access, but keep for flexibility)
