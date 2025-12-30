@@ -69,9 +69,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private final RecordFailureUseCase recordFailureUseCase;
     private final ObjectMapper objectMapper;
     private final AntPathMatcher pathMatcher;
+    private final PublicPathsProperties publicPathsProperties;
 
-    /** JWT 인증을 건너뛸 Public 경로 패턴 (YAML 설정에서 로드) */
-    private final List<String> publicPaths;
+    /** JWT 인증을 건너뛸 전역 Public 경로 패턴 (Host 기반 서비스 제외) */
+    private final List<String> globalPublicPaths;
 
     public JwtAuthenticationFilter(
             ValidateJwtUseCase validateJwtUseCase,
@@ -82,7 +83,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         this.recordFailureUseCase = recordFailureUseCase;
         this.objectMapper = objectMapper;
         this.pathMatcher = new AntPathMatcher();
-        this.publicPaths = publicPathsProperties.getAllPublicPaths();
+        this.publicPathsProperties = publicPathsProperties;
+        this.globalPublicPaths = publicPathsProperties.getAllPublicPaths();
     }
 
     @Override
@@ -93,9 +95,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
+        String host = extractHost(exchange);
 
         // Public Path인 경우 JWT 검증 없이 통과
-        if (isPublicPath(path)) {
+        if (isPublicPath(path, host)) {
             return chain.filter(exchange);
         }
 
@@ -205,12 +208,65 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * Public Path 여부 확인
+     * Public Path 여부 확인 (Host 인식)
+     *
+     * <p>다음 순서로 Public Path 여부를 확인합니다:
+     *
+     * <ol>
+     *   <li>전역 Public Paths 매칭 (Host 기반 서비스 제외)
+     *   <li>Host 기반 서비스의 Public Paths 매칭
+     * </ol>
      *
      * @param path 요청 경로
+     * @param host 요청 Host 헤더 (X-Forwarded-Host 우선)
      * @return Public Path이면 true
      */
-    private boolean isPublicPath(String path) {
-        return publicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+    private boolean isPublicPath(String path, String host) {
+        // 1. 전역 Public Paths 체크 (Host 기반 서비스 제외됨)
+        boolean isGlobalPublic =
+                globalPublicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+        if (isGlobalPublic) {
+            return true;
+        }
+
+        // 2. Host 기반 서비스의 Public Paths 체크
+        List<String> hostPublicPaths = publicPathsProperties.getPublicPathsForHost(host);
+        return hostPublicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
+
+    /**
+     * 요청에서 Host 추출 (X-Forwarded-Host 우선)
+     *
+     * <p>CloudFront나 ALB를 통해 들어오는 요청은 X-Forwarded-Host 헤더에 원본 Host가 있습니다.
+     *
+     * @param exchange ServerWebExchange
+     * @return Host 값 (포트 제외)
+     */
+    private String extractHost(ServerWebExchange exchange) {
+        HttpHeaders headers = exchange.getRequest().getHeaders();
+
+        // X-Forwarded-Host 우선 (CloudFront/ALB)
+        String forwardedHost = headers.getFirst("X-Forwarded-Host");
+        if (forwardedHost != null && !forwardedHost.isEmpty()) {
+            return removePort(forwardedHost);
+        }
+
+        // 기본 Host 헤더
+        String host = headers.getFirst(HttpHeaders.HOST);
+        return removePort(host);
+    }
+
+    /**
+     * Host에서 포트 번호 제거
+     *
+     * @param host Host 값 (예: "api.set-of.com:443")
+     * @return 포트 제거된 Host (예: "api.set-of.com")
+     */
+    private String removePort(String host) {
+        if (host == null) {
+            return null;
+        }
+        int colonIndex = host.indexOf(':');
+        return colonIndex > 0 ? host.substring(0, colonIndex) : host;
     }
 }
