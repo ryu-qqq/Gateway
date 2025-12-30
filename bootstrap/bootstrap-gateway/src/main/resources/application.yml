@@ -321,7 +321,7 @@ gateway:
       # Handles: stage.set-of.com, set-of.com, server.set-of.net
       # ============================================
       - id: legacy-web
-        uri: ${LEGACY_WEB_URI:http://setof-commerce-legacy-api-prod.connectly.local:8080}
+        uri: ${LEGACY_WEB_URI:http://setof-commerce-legacy-api-prod.connectly.local:8088}
         paths:
           - /**
         hosts:
@@ -336,7 +336,7 @@ gateway:
       # Handles: admin.set-of.com, admin-server.set-of.net
       # ============================================
       - id: legacy-admin
-        uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-prod.connectly.local:8080}
+        uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-prod.connectly.local:8089}
         paths:
           - /**
         hosts:
