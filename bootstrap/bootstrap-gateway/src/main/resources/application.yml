@@ -123,13 +123,18 @@ gateway:
           - /api/v1/auth/jwks
 
       # ============================================
-      # FileFlow Service
+      # MarketPlace Service
       # ============================================
-      - id: fileflow
-        uri: ${FILEFLOW_URI:http://localhost:8082}
+      - id: marketplace
+        uri: ${MARKETPLACE_URI:http://localhost:9090}
+        port: 9090
         paths:
-          - /api/v1/file/**
-        public-paths: []
+          - /api/v1/market/**
+        public-paths:
+          - /api/v1/market/swagger-ui/**
+          - /api/v1/market/swagger-ui.html
+          - /api/v1/market/api-docs/**
+          - /api/v1/market/docs/**
 
       # ============================================
       # Commerce Service
@@ -141,21 +146,21 @@ gateway:
         public-paths: []
 
       # ============================================
+      # FileFlow Service
+      # ============================================
+      - id: fileflow
+        uri: ${FILEFLOW_URI:http://localhost:8082}
+        paths:
+          - /api/v1/file/**
+        public-paths: []
+
+      # ============================================
       # CrawlingHub Service
       # ============================================
       - id: crawling
         uri: ${CRAWLING_URI:http://localhost:8083}
         paths:
           - /api/v1/crawling/**
-        public-paths: []
-
-      # ============================================
-      # MarketPlace Service
-      # ============================================
-      - id: marketplace
-        uri: ${MARKETPLACE_URI:http://localhost:8084}
-        paths:
-          - /api/v1/marketplace/**
         public-paths: []
 
     # Host-based routing mapping (for production)
@@ -218,22 +223,8 @@ spring:
     activate:
       on-profile: local
 
-gateway:
-  routing:
-    discovery:
-      enabled: false  # Use static URI
-    services:
-      - id: authhub
-        uri: ${AUTH_HUB_URL:http://localhost:8080}
-        port: 8080
-        paths:
-          - /api/v1/auth/**
-        public-paths:
-          - /api/v1/auth/login
-          - /api/v1/auth/refresh
-          - /api/v1/auth/logout
-          - /api/v1/auth/.well-known/**
-          - /api/v1/auth/jwks
+# gateway.routing.services는 기본 설정(라인 109-160)을 그대로 사용
+# discovery.enabled=false가 기본값이므로 static URI 사용됨
 
 logging:
   level:
@@ -320,9 +311,10 @@ gateway:
 
       # MarketPlace Service
       - id: marketplace
-        uri: http://marketplace-web-api-prod.connectly.local:8080
+        uri: http://marketplace-web-api-prod.connectly.local:9090
+        port: 9090
         paths:
-          - /api/v1/marketplace/**
+          - /api/v1/market/**
 
       # ============================================
       # Legacy Web API Service (Host-based routing)

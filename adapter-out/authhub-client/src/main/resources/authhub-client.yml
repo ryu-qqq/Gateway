@@ -108,7 +108,8 @@ spring:
 
 authhub:
   client:
-    base-url: https://auth.set-of.com
+    # Cloud Map 내부 DNS 사용 (VPC 내부 통신)
+    base-url: http://authhub-web-api-prod.connectly.local:8080
     webclient:
       wire-logging-enabled: false
       max-connections: 1000
