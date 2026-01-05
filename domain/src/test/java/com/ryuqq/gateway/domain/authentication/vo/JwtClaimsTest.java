@@ -16,7 +16,7 @@ class JwtClaimsTest {
 
     private static final String VALID_SUBJECT = "user123";
     private static final String VALID_ISSUER = "auth-service";
-    private static final Instant FUTURE_TIME = Instant.parse("2025-12-31T23:59:59Z");
+    private static final Instant FUTURE_TIME = Instant.parse("2030-12-31T23:59:59Z");
     private static final Instant PAST_TIME = Instant.parse("2024-01-01T00:00:00Z");
     private static final Instant ISSUED_TIME = Instant.parse("2025-01-01T00:00:00Z");
 
