@@ -318,13 +318,14 @@ gateway:
 
       # ============================================
       # Legacy Web API Service (Host-based routing)
-      # Handles: stage.set-of.com, set-of.com, server.set-of.net
+      # Handles: www.set-of.com, stage.set-of.com, set-of.com, server.set-of.net
       # ============================================
       - id: legacy-web
         uri: ${LEGACY_WEB_URI:http://setof-commerce-legacy-api-prod.connectly.local:8088}
         paths:
           - /**
         hosts:
+          - www.set-of.com
           - stage.set-of.com
           - set-of.com
           - server.set-of.net
