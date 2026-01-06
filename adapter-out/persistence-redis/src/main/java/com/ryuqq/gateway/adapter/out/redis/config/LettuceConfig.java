@@ -23,6 +23,7 @@ import org.springframework.data.redis.connection.lettuce.LettuceClientConfigurat
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -109,6 +110,17 @@ public class LettuceConfig {
 
         connectionFactory.afterPropertiesSet();
         return connectionFactory;
+    }
+
+    /**
+     * ReactiveStringRedisTemplate for Rate Limiting
+     *
+     * <p>Rate Limit 기능에서 사용하는 String 전용 ReactiveRedisTemplate
+     */
+    @Bean(name = "reactiveStringRedisTemplate")
+    public ReactiveStringRedisTemplate reactiveStringRedisTemplate(
+            ReactiveRedisConnectionFactory reactiveRedisConnectionFactory) {
+        return new ReactiveStringRedisTemplate(reactiveRedisConnectionFactory);
     }
 
     /** ReactiveRedisTemplate for PublicKeyEntity */

@@ -50,8 +50,9 @@ public class JwtErrorHandler implements ErrorWebExceptionHandler {
         HttpStatus status = getHttpStatus(ex);
         String errorCode = getErrorCode(ex);
         String traceId = exchange.getAttribute("traceId");
+        String message = getErrorMessage(ex);
 
-        ErrorInfo error = new ErrorInfo(errorCode, ex.getMessage());
+        ErrorInfo error = new ErrorInfo(errorCode, message);
         ApiResponse<Void> errorResponse =
                 ApiResponse.ofFailure(error, traceId != null ? traceId : "unknown");
 
@@ -83,5 +84,21 @@ public class JwtErrorHandler implements ErrorWebExceptionHandler {
             return "JWT_INVALID";
         }
         return "INTERNAL_ERROR";
+    }
+
+    private String getErrorMessage(Throwable ex) {
+        String message = ex.getMessage();
+        if (message != null && !message.isBlank()) {
+            return message;
+        }
+
+        // 메시지가 null이거나 빈 경우 기본 메시지 제공
+        if (ex instanceof JwtExpiredException) {
+            return "토큰이 만료되었습니다";
+        }
+        if (ex instanceof JwtInvalidException) {
+            return "유효하지 않은 토큰입니다";
+        }
+        return "서버 내부 오류가 발생했습니다";
     }
 }

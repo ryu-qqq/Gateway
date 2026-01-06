@@ -95,11 +95,26 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                                                             endpointResponse.retryAfterSeconds());
                                                 }
 
-                                                // Rate Limit 헤더 추가
-                                                addRateLimitHeaders(
-                                                        exchange,
-                                                        endpointResponse.limit(),
-                                                        endpointResponse.remaining());
+                                                // Rate Limit 헤더를 응답 커밋 직전에 추가
+                                                exchange.getResponse()
+                                                        .beforeCommit(
+                                                                () -> {
+                                                                    exchange.getResponse()
+                                                                            .getHeaders()
+                                                                            .set(
+                                                                                    X_RATE_LIMIT_LIMIT_HEADER,
+                                                                                    String.valueOf(
+                                                                                            endpointResponse
+                                                                                                    .limit()));
+                                                                    exchange.getResponse()
+                                                                            .getHeaders()
+                                                                            .set(
+                                                                                    X_RATE_LIMIT_REMAINING_HEADER,
+                                                                                    String.valueOf(
+                                                                                            endpointResponse
+                                                                                                    .remaining()));
+                                                                    return Mono.empty();
+                                                                });
 
                                                 return chain.filter(exchange);
                                             });
@@ -109,14 +124,6 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                 .onErrorResume(
                         RateLimitExceededException.class,
                         e -> tooManyRequests(exchange, e.limit(), e.retryAfterSeconds()));
-    }
-
-    /** Rate Limit 헤더 추가 */
-    private void addRateLimitHeaders(ServerWebExchange exchange, int limit, int remaining) {
-        exchange.getResponse().getHeaders().add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
-        exchange.getResponse()
-                .getHeaders()
-                .add(X_RATE_LIMIT_REMAINING_HEADER, String.valueOf(remaining));
     }
 
     /** 429 Too Many Requests 응답 */
