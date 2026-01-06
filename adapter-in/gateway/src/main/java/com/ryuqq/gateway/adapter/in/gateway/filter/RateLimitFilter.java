@@ -95,26 +95,20 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                                                             endpointResponse.retryAfterSeconds());
                                                 }
 
-                                                // Rate Limit 헤더를 응답 커밋 직전에 추가
+                                                // Rate Limit 헤더 추가
                                                 exchange.getResponse()
-                                                        .beforeCommit(
-                                                                () -> {
-                                                                    exchange.getResponse()
-                                                                            .getHeaders()
-                                                                            .set(
-                                                                                    X_RATE_LIMIT_LIMIT_HEADER,
-                                                                                    String.valueOf(
-                                                                                            endpointResponse
-                                                                                                    .limit()));
-                                                                    exchange.getResponse()
-                                                                            .getHeaders()
-                                                                            .set(
-                                                                                    X_RATE_LIMIT_REMAINING_HEADER,
-                                                                                    String.valueOf(
-                                                                                            endpointResponse
-                                                                                                    .remaining()));
-                                                                    return Mono.empty();
-                                                                });
+                                                        .getHeaders()
+                                                        .set(
+                                                                X_RATE_LIMIT_LIMIT_HEADER,
+                                                                String.valueOf(
+                                                                        endpointResponse.limit()));
+                                                exchange.getResponse()
+                                                        .getHeaders()
+                                                        .set(
+                                                                X_RATE_LIMIT_REMAINING_HEADER,
+                                                                String.valueOf(
+                                                                        endpointResponse
+                                                                                .remaining()));
 
                                                 return chain.filter(exchange);
                                             });
