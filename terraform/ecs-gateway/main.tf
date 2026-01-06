@@ -127,18 +127,13 @@ module "log_streaming" {
 }
 
 # ========================================
-# Sentry DSN SSM Parameter
+# Sentry DSN SSM Parameter (External - 수동 생성됨)
 # ========================================
-resource "aws_ssm_parameter" "sentry_dsn" {
-  name        = "/connectly-gateway/sentry/dsn"
-  description = "Sentry DSN for connectly-gateway"
-  type        = "SecureString"
-  value       = "https://51a8a20d464920be26e7d584f7be0da9@o4510661281644544.ingest.us.sentry.io/4510661851611136"
-
-  tags = merge(local.common_tags, {
-    Name      = "connectly-gateway-sentry-dsn-${var.environment}"
-    ManagedBy = "terraform"
-  })
+# SSM Parameter는 AWS Console/CLI로 수동 생성됨
+# Atlantis IAM Role에 ssm:PutParameter 권한이 없어서 data source로 참조
+# ========================================
+data "aws_ssm_parameter" "sentry_dsn" {
+  name = "/connectly-gateway/sentry/dsn"
 }
 
 # ========================================
@@ -578,7 +573,7 @@ module "ecs_service" {
 
   # Container Secrets (Sentry DSN from SSM Parameter)
   container_secrets = [
-    { name = "SENTRY_DSN", valueFrom = aws_ssm_parameter.sentry_dsn.arn }
+    { name = "SENTRY_DSN", valueFrom = data.aws_ssm_parameter.sentry_dsn.arn }
   ]
 
   # Health Check
