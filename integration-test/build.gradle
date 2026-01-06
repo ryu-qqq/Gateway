@@ -1,0 +1,107 @@
+// ========================================
+// Integration Test Module
+// ========================================
+// E2E integration tests for Gateway bootstrap module
+// Uses TestContainers, WireMock
+// NO Lombok allowed
+// ========================================
+
+plugins {
+    id 'java'
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+}
+
+// Disable bootJar - this is a test-only module
+tasks.bootJar {
+    enabled = false
+}
+
+tasks.jar {
+    enabled = true
+}
+
+dependencyManagement {
+    imports {
+        mavenBom libs.spring.cloud.dependencies.get().toString()
+    }
+}
+
+dependencies {
+    // ========================================
+    // Bootstrap Module (Test Target)
+    // ========================================
+    testImplementation project(':bootstrap:bootstrap-gateway')
+
+    // ========================================
+    // Core Modules (for direct access in tests)
+    // ========================================
+    testImplementation project(':domain')
+    testImplementation project(':application')
+
+    // ========================================
+    // Adapter Modules (for test configuration)
+    // ========================================
+    testImplementation project(':adapter-in:gateway')
+    testImplementation project(':adapter-out:persistence-redis')
+    testImplementation project(':adapter-out:authhub-client')
+
+    // ========================================
+    // Spring Boot Test
+    // ========================================
+    testImplementation libs.spring.boot.starter.test
+    testImplementation libs.spring.boot.starter.webflux
+    testImplementation libs.spring.boot.starter.data.redis.reactive
+
+    // ========================================
+    // Spring Cloud Gateway
+    // ========================================
+    testImplementation libs.spring.cloud.starter.gateway
+
+    // ========================================
+    // TestContainers
+    // ========================================
+    testImplementation libs.testcontainers.junit
+    testImplementation 'org.testcontainers:testcontainers:1.19.7'
+
+    // ========================================
+    // WireMock
+    // ========================================
+    testImplementation libs.wiremock
+
+    // ========================================
+    // Reactor Test
+    // ========================================
+    testImplementation libs.reactor.test
+
+    // ========================================
+    // JWT (for test fixtures)
+    // ========================================
+    testImplementation libs.jjwt.api
+    testImplementation libs.jjwt.impl
+    testImplementation libs.jjwt.jackson
+    testImplementation libs.nimbus.jose.jwt
+
+    // ========================================
+    // Redisson (for Redis integration)
+    // ========================================
+    testImplementation 'org.redisson:redisson-spring-boot-starter:3.27.2'
+
+    // ========================================
+    // Assertions
+    // ========================================
+    testImplementation libs.assertj.core
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'spring.profiles.active', 'test'
+
+    // TestContainers reuse
+    systemProperty 'testcontainers.reuse.enable', 'true'
+
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true
+    }
+}

@@ -172,7 +172,7 @@ micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus
 # ========================================
 # Observability Starter (JitPack)
 # ========================================
-observability-starter = { module = "com.github.ryu-qqq.observability-spring-boot-starter:observability-webflux", version.ref = "observabilityStarter" }
+observability-starter = { module = "com.github.ryu-qqq.observability-spring-boot-starter:observability-starter", version.ref = "observabilityStarter" }
 
 # ========================================
 # Sentry (Error Tracking)

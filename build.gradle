@@ -78,35 +78,40 @@ subprojects {
     }
 
     // ========================================
-    // Checkstyle Configuration (임시 비활성화)
+    // Checkstyle Configuration
     // ========================================
     checkstyle {
         toolVersion = rootProject.libs.versions.checkstyle.get()
         configFile = rootProject.file('config/checkstyle/checkstyle.xml')
-        ignoreFailures = true  // TODO: 정적 분석 안정화 후 false로 변경
+        ignoreFailures = false
         maxWarnings = 0
     }
 
     // ========================================
-    // SpotBugs Configuration (임시 비활성화)
+    // SpotBugs Configuration
     // ========================================
     spotbugs {
         toolVersion = rootProject.libs.versions.spotbugs.get()
         effort = 'max'
         reportLevel = 'low'
         excludeFilter = rootProject.file('config/spotbugs/spotbugs-exclude.xml')
-        ignoreFailures = true  // TODO: 정적 분석 안정화 후 false로 변경
+        ignoreFailures = false
+    }
+
+    // SpotBugs 테스트 코드 분석 비활성화 (메인 코드만 분석)
+    tasks.matching { it.name == 'spotbugsTest' }.configureEach {
+        enabled = false
     }
 
     // ========================================
-    // PMD Configuration (임시 비활성화)
+    // PMD Configuration
     // ========================================
     pmd {
         toolVersion = rootProject.libs.versions.pmd.get()
         consoleOutput = true
         ruleSetFiles = files(rootProject.file('config/pmd/pmd-ruleset.xml'))
         ruleSets = [] // Use only custom ruleset
-        ignoreFailures = true  // TODO: 정적 분석 안정화 후 false로 변경
+        ignoreFailures = false
     }
 
     tasks.withType(Pmd) {
@@ -114,6 +119,11 @@ subprojects {
             xml.required = true
             html.required = true
         }
+    }
+
+    // PMD 테스트 코드 분석 비활성화 (메인 코드만 분석)
+    tasks.matching { it.name == 'pmdTest' }.configureEach {
+        enabled = false
     }
 
     // ========================================

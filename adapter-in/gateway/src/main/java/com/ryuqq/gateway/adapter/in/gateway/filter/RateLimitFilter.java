@@ -6,6 +6,7 @@ import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
+import com.ryuqq.gateway.application.ratelimit.config.RateLimitProperties;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.CheckRateLimitUseCase;
 import com.ryuqq.gateway.domain.ratelimit.exception.IpBlockedException;
@@ -45,13 +46,22 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     private static final String X_RATE_LIMIT_LIMIT_HEADER = "X-RateLimit-Limit";
     private static final String X_RATE_LIMIT_REMAINING_HEADER = "X-RateLimit-Remaining";
     private static final String RETRY_AFTER_HEADER = "Retry-After";
+    private static final String RATE_LIMIT_CHECKED_ATTRIBUTE = "RATE_LIMIT_CHECKED";
 
+    private final RateLimitProperties rateLimitProperties;
     private final CheckRateLimitUseCase checkRateLimitUseCase;
     private final ObjectMapper objectMapper;
+    private final ClientIpExtractor clientIpExtractor;
 
-    public RateLimitFilter(CheckRateLimitUseCase checkRateLimitUseCase, ObjectMapper objectMapper) {
+    public RateLimitFilter(
+            RateLimitProperties rateLimitProperties,
+            CheckRateLimitUseCase checkRateLimitUseCase,
+            ObjectMapper objectMapper,
+            ClientIpExtractor clientIpExtractor) {
+        this.rateLimitProperties = rateLimitProperties;
         this.checkRateLimitUseCase = checkRateLimitUseCase;
         this.objectMapper = objectMapper;
+        this.clientIpExtractor = clientIpExtractor;
     }
 
     @Override
@@ -61,8 +71,23 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        // 이미 Rate Limit 체크를 수행한 경우 스킵 (중복 실행 방지)
+        // Spring Cloud Gateway에서 동일 exchange가 여러 번 필터 체인을 통과할 수 있음
+        Boolean rateLimitChecked = exchange.getAttribute(RATE_LIMIT_CHECKED_ATTRIBUTE);
+        if (Boolean.TRUE.equals(rateLimitChecked)) {
+            return chain.filter(exchange);
+        }
+
+        // Rate Limit 비활성화 시 스킵
+        if (!rateLimitProperties.isEnabled()) {
+            return chain.filter(exchange);
+        }
+
+        // Rate Limit 체크 시작 - 중복 실행 방지를 위해 플래그 설정
+        exchange.getAttributes().put(RATE_LIMIT_CHECKED_ATTRIBUTE, true);
+
         // AWS 환경 (CloudFront → ALB → ECS)에서 X-Forwarded-For 헤더 사용
-        String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+        String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().name();
 
@@ -95,21 +120,8 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                                                             endpointResponse.retryAfterSeconds());
                                                 }
 
-                                                // Rate Limit 헤더 추가
-                                                exchange.getResponse()
-                                                        .getHeaders()
-                                                        .set(
-                                                                X_RATE_LIMIT_LIMIT_HEADER,
-                                                                String.valueOf(
-                                                                        endpointResponse.limit()));
-                                                exchange.getResponse()
-                                                        .getHeaders()
-                                                        .set(
-                                                                X_RATE_LIMIT_REMAINING_HEADER,
-                                                                String.valueOf(
-                                                                        endpointResponse
-                                                                                .remaining()));
-
+                                                // Rate Limit 통과 - 다음 필터로 진행
+                                                // 성공 응답의 Rate Limit 헤더는 나중에 별도 구현 예정
                                                 return chain.filter(exchange);
                                             });
                         })
@@ -123,32 +135,48 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
     /** 429 Too Many Requests 응답 */
     private Mono<Void> tooManyRequests(
             ServerWebExchange exchange, int limit, int retryAfterSeconds) {
-        exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        exchange.getResponse().getHeaders().add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
-        exchange.getResponse().getHeaders().add(X_RATE_LIMIT_REMAINING_HEADER, "0");
-        exchange.getResponse()
-                .getHeaders()
-                .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
+        return Mono.defer(
+                () -> {
+                    if (exchange.getResponse().isCommitted()) {
+                        return Mono.empty();
+                    }
+                    exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+                    exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                    exchange.getResponse()
+                            .getHeaders()
+                            .add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
+                    exchange.getResponse().getHeaders().add(X_RATE_LIMIT_REMAINING_HEADER, "0");
+                    exchange.getResponse()
+                            .getHeaders()
+                            .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
 
-        ErrorInfo error = new ErrorInfo("RATE_LIMIT_EXCEEDED", "요청 빈도가 너무 높습니다. 잠시 후 다시 시도해주세요.");
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
+                    ErrorInfo error =
+                            new ErrorInfo("RATE_LIMIT_EXCEEDED", "요청 빈도가 너무 높습니다. 잠시 후 다시 시도해주세요.");
+                    ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
 
-        return writeResponse(exchange, errorResponse);
+                    return writeResponse(exchange, errorResponse);
+                });
     }
 
     /** 403 Forbidden 응답 (IP 차단) */
     private Mono<Void> forbidden(ServerWebExchange exchange, int retryAfterSeconds) {
-        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        exchange.getResponse()
-                .getHeaders()
-                .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
+        return Mono.defer(
+                () -> {
+                    if (exchange.getResponse().isCommitted()) {
+                        return Mono.empty();
+                    }
+                    exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                    exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                    exchange.getResponse()
+                            .getHeaders()
+                            .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
 
-        ErrorInfo error = new ErrorInfo("IP_BLOCKED", "비정상적인 요청 패턴이 감지되어 일시적으로 차단되었습니다.");
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
+                    ErrorInfo error =
+                            new ErrorInfo("IP_BLOCKED", "비정상적인 요청 패턴이 감지되어 일시적으로 차단되었습니다.");
+                    ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
 
-        return writeResponse(exchange, errorResponse);
+                    return writeResponse(exchange, errorResponse);
+                });
     }
 
     /** JSON 응답 작성 */

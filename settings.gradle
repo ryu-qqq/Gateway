@@ -22,6 +22,11 @@ include 'adapter-out:authhub-client'
 include 'bootstrap:bootstrap-gateway'
 
 // ========================================
+// Integration Test Module
+// ========================================
+include 'integration-test'
+
+// ========================================
 // Project Structure
 // ========================================
 project(':domain').projectDir = file('domain')

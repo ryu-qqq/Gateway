@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 
 /**
@@ -29,7 +30,8 @@ import org.springframework.web.server.ServerWebExchange;
  * @author development-team
  * @since 1.0.0
  */
-public final class ClientIpExtractor {
+@Component
+public class ClientIpExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(ClientIpExtractor.class);
 
@@ -44,10 +46,6 @@ public final class ClientIpExtractor {
     private static final Pattern IPV6_PATTERN =
             Pattern.compile("^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$");
 
-    private ClientIpExtractor() {
-        // Utility class
-    }
-
     /**
      * 클라이언트 IP 추출 (Direct Mode - 기본, 안전)
      *
@@ -56,7 +54,7 @@ public final class ClientIpExtractor {
      * @param exchange ServerWebExchange
      * @return 클라이언트 IP (추출 불가 시 "unknown")
      */
-    public static String extract(ServerWebExchange exchange) {
+    public String extract(ServerWebExchange exchange) {
         return extractFromRemoteAddress(exchange);
     }
 
@@ -70,7 +68,7 @@ public final class ClientIpExtractor {
      * @param exchange ServerWebExchange
      * @return 클라이언트 IP (추출 불가 시 "unknown")
      */
-    public static String extractWithTrustedProxy(ServerWebExchange exchange) {
+    public String extractWithTrustedProxy(ServerWebExchange exchange) {
         String xForwardedFor = exchange.getRequest().getHeaders().getFirst(X_FORWARDED_FOR_HEADER);
 
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
@@ -96,7 +94,7 @@ public final class ClientIpExtractor {
      * @param exchange ServerWebExchange
      * @return IP 주소 또는 "unknown"
      */
-    private static String extractFromRemoteAddress(ServerWebExchange exchange) {
+    private String extractFromRemoteAddress(ServerWebExchange exchange) {
         InetSocketAddress remoteAddress = exchange.getRequest().getRemoteAddress();
 
         if (remoteAddress != null && remoteAddress.getAddress() != null) {
@@ -113,7 +111,7 @@ public final class ClientIpExtractor {
      * @param ip 검증할 IP 문자열
      * @return 유효한 IPv4 또는 IPv6 형식이면 true
      */
-    private static boolean isValidIpAddress(String ip) {
+    private boolean isValidIpAddress(String ip) {
         if (ip == null || ip.isBlank()) {
             return false;
         }

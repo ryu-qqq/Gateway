@@ -1,4 +1,4 @@
-package com.ryuqq.gateway.integration;
+package com.ryuqq.gateway.integration.tenant;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -8,15 +8,15 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
-import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
-import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
+import com.ryuqq.gateway.integration.helper.JwtTestFixture;
+import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,6 +29,8 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -60,25 +62,27 @@ import reactor.test.StepVerifier;
 @SpringBootTest(
         classes = GatewayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 @Testcontainers
+@Tag("integration")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Import(TenantIsolationIntegrationTest.TestGatewayConfig.class)
 class TenantIsolationIntegrationTest {
 
     static WireMockServer wireMockServer;
 
+    static {
+        wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
+        wireMockServer.start();
+    }
+
     @Container
     static GenericContainer<?> redis =
-            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
+            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379).withReuse(true);
 
     @Autowired private WebTestClient webTestClient;
 
     @Autowired private ReactiveRedisTemplate<String, String> redisTemplate;
-
-    @BeforeAll
-    static void startWireMock() {
-        wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8890));
-        wireMockServer.start();
-    }
 
     @AfterAll
     static void stopWireMock() {
@@ -91,7 +95,7 @@ class TenantIsolationIntegrationTest {
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
-        registry.add("authhub.client.base-url", () -> "http://localhost:8890");
+        registry.add("authhub.client.base-url", () -> "http://localhost:" + wireMockServer.port());
         registry.add("gateway.rate-limit.enabled", () -> "false");
         // Redisson 설정 (Testcontainers Redis 사용)
         registry.add(
@@ -109,7 +113,7 @@ class TenantIsolationIntegrationTest {
             return builder.routes()
                     .route(
                             "tenant-isolation-test-route",
-                            r -> r.path("/api/**").uri("http://localhost:8890"))
+                            r -> r.path("/api/**").uri("http://localhost:" + wireMockServer.port()))
                     .build();
         }
     }
@@ -133,7 +137,7 @@ class TenantIsolationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
-        // Mock Permission Spec endpoint (query parameter 포함)
+        // Mock Permission Spec endpoint
         wireMockServer.stubFor(
                 get(urlPathMatching("/api/v1/permissions/spec"))
                         .willReturn(
@@ -437,7 +441,7 @@ class TenantIsolationIntegrationTest {
                                             .withHeader("Content-Type", "application/json")
                                             .withBody(JwtTestFixture.jwksResponse())));
 
-            // Re-setup Permission Spec (query parameter 포함)
+            // Re-setup Permission Spec
             wireMockServer.stubFor(
                     get(urlPathMatching("/api/v1/permissions/spec"))
                             .willReturn(
@@ -483,9 +487,6 @@ class TenantIsolationIntegrationTest {
                     .exchange()
                     .expectStatus()
                     .isOk();
-
-            // then - Tenant Config API should NOT have been called
-            // (WireMock will throw if called since we didn't mock it)
         }
     }
 
@@ -521,9 +522,6 @@ class TenantIsolationIntegrationTest {
                     .exchange()
                     .expectStatus()
                     .isOk();
-
-            // Note: Full social login validation would require a separate endpoint
-            // This test verifies that restricted social logins don't block normal requests
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.ryuqq.gateway.integration.fixtures;
+package com.ryuqq.gateway.integration.helper;
 
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -143,7 +143,6 @@ public final class JwtTestFixture {
             JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(DEFAULT_KID).build();
 
             JWTClaimsSet claimsSet =
-                    // AuthHub JWT claim 이름: tid, oid, permission_hash, mfa_verified (snake_case)
                     new JWTClaimsSet.Builder()
                             .subject("user-123")
                             .issuer(DEFAULT_ISSUER)
@@ -254,7 +253,6 @@ public final class JwtTestFixture {
         try {
             JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256).keyID(DEFAULT_KID).build();
 
-            // AuthHub JWT claim 이름: tid, oid, permission_hash, mfa_verified (snake_case)
             JWTClaimsSet claimsSet =
                     new JWTClaimsSet.Builder()
                             .subject(subject)

@@ -2,12 +2,14 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
 import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.RecordFailureUseCase;
@@ -47,6 +49,8 @@ class JwtAuthenticationFilterHostAwareTest {
 
     @Mock private PublicPathsProperties publicPathsProperties;
 
+    @Mock private ClientIpExtractor clientIpExtractor;
+
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private final ObjectMapper objectMapper =
@@ -55,15 +59,19 @@ class JwtAuthenticationFilterHostAwareTest {
     @BeforeEach
     void setUp() {
         // 전역 public paths (host 기반 서비스 제외)
-        when(publicPathsProperties.getAllPublicPaths())
+        lenient()
+                .when(publicPathsProperties.getAllPublicPaths())
                 .thenReturn(List.of("/actuator/**", "/api/v1/auth/login"));
+        lenient().when(clientIpExtractor.extractWithTrustedProxy(any())).thenReturn("127.0.0.1");
+        lenient().when(clientIpExtractor.extract(any())).thenReturn("127.0.0.1");
 
         jwtAuthenticationFilter =
                 new JwtAuthenticationFilter(
                         validateJwtUseCase,
                         recordFailureUseCase,
                         objectMapper,
-                        publicPathsProperties);
+                        publicPathsProperties,
+                        clientIpExtractor);
     }
 
     @Nested

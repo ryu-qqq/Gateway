@@ -1,5 +1,6 @@
 package com.ryuqq.gateway.adapter.out.authhub.client;
 
+import com.ryuqq.observability.client.webclient.TraceIdExchangeFilterFunction;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.core.IntervalFunction;
@@ -84,7 +85,8 @@ public class AuthHubConfig {
      * </ul>
      */
     @Bean
-    public WebClient authHubWebClient(WebClient.Builder webClientBuilder) {
+    public WebClient authHubWebClient(
+            WebClient.Builder webClientBuilder, TraceIdExchangeFilterFunction traceIdFilter) {
         AuthHubProperties.WebClientConfig webclientConfig = properties.getWebclient();
 
         // Connection Pool 설정
@@ -130,6 +132,7 @@ public class AuthHubConfig {
                 .exchangeStrategies(exchangeStrategies)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+                .filter(traceIdFilter)
                 .filter(logRequest())
                 .filter(logResponse())
                 .build();
