@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -61,6 +62,8 @@ public abstract class GatewayIntegrationTest {
     }
 
     @Autowired protected WebTestClient webTestClient;
+
+    @LocalServerPort protected int port;
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -144,6 +147,6 @@ public abstract class GatewayIntegrationTest {
 
     /** Returns the base URL for API calls. */
     protected String baseUrl() {
-        return webTestClient.toString();
+        return "http://localhost:" + port;
     }
 }

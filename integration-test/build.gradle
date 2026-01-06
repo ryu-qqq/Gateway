@@ -62,7 +62,7 @@ dependencies {
     // TestContainers
     // ========================================
     testImplementation libs.testcontainers.junit
-    testImplementation 'org.testcontainers:testcontainers:1.19.7'
+    testImplementation libs.testcontainers.core
 
     // ========================================
     // WireMock
@@ -85,7 +85,7 @@ dependencies {
     // ========================================
     // Redisson (for Redis integration)
     // ========================================
-    testImplementation 'org.redisson:redisson-spring-boot-starter:3.27.2'
+    testImplementation libs.redisson.spring.boot.starter
 
     // ========================================
     // Assertions

@@ -84,6 +84,34 @@ class RateLimitFilterTest {
     }
 
     @Nested
+    @DisplayName("Idempotency Guard 테스트")
+    class IdempotencyGuardTest {
+
+        @Test
+        @DisplayName("이미 Rate Limit 체크된 요청은 스킵해야 한다")
+        void shouldSkipWhenRateLimitAlreadyChecked() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            // 이미 Rate Limit 체크가 완료된 것으로 설정
+            exchange.getAttributes().put("RATE_LIMIT_CHECKED", true);
+
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(rateLimitFilter.filter(exchange, filterChain)).verifyComplete();
+
+            // Rate Limit 체크 없이 다음 필터로 진행해야 함
+            verify(filterChain).filter(exchange);
+            verify(checkRateLimitUseCase, never()).execute(any(CheckRateLimitCommand.class));
+        }
+    }
+
+    @Nested
     @DisplayName("Rate Limit 비활성화 테스트")
     class RateLimitDisabledTest {
 

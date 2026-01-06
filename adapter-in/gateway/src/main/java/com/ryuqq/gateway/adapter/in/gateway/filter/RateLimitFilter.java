@@ -11,6 +11,8 @@ import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand
 import com.ryuqq.gateway.application.ratelimit.port.in.command.CheckRateLimitUseCase;
 import com.ryuqq.gateway.domain.ratelimit.exception.IpBlockedException;
 import com.ryuqq.gateway.domain.ratelimit.exception.RateLimitExceededException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -42,6 +44,8 @@ import reactor.core.publisher.Mono;
  */
 @Component
 public class RateLimitFilter implements GlobalFilter, Ordered {
+
+    private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
 
     private static final String X_RATE_LIMIT_LIMIT_HEADER = "X-RateLimit-Limit";
     private static final String X_RATE_LIMIT_REMAINING_HEADER = "X-RateLimit-Remaining";
@@ -135,7 +139,11 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                         e -> {
                             // Rate Limit 체크 실패 시 graceful degradation
                             // 서비스 가용성을 위해 Rate Limit 없이 요청 진행
-                            // 로깅은 별도 모니터링 시스템에서 처리
+                            log.warn(
+                                    "Rate limit check failed for IP={}, path={}: {}",
+                                    clientIp,
+                                    path,
+                                    e.getMessage());
                             return chain.filter(exchange);
                         });
     }

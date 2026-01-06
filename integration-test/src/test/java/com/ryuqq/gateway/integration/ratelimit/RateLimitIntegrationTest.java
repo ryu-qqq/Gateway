@@ -88,7 +88,7 @@ class RateLimitIntegrationTest {
 
     @Container
     static GenericContainer<?> redis =
-            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
+            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379).withReuse(true);
 
     @Autowired private WebTestClient webTestClient;
 

@@ -80,6 +80,11 @@ nimbusJoseJwt = "10.3"
 resilience4j = "2.3.0"
 
 # ========================================
+# Redis Client
+# ========================================
+redisson = "3.27.2"
+
+# ========================================
 # Reactive
 # ========================================
 reactor = "3.6.0"
@@ -152,6 +157,16 @@ wiremock = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremoc
 # Architecture Testing
 # ========================================
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+# ========================================
+# TestContainers (core)
+# ========================================
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+
+# ========================================
+# Redis Client (Redisson)
+# ========================================
+redisson-spring-boot-starter = { module = "org.redisson:redisson-spring-boot-starter", version.ref = "redisson" }
 
 # ========================================
 # Code Quality
