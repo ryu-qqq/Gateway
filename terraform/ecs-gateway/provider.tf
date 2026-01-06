@@ -90,6 +90,9 @@ variable "auth_hub_url" {
   default     = "https://auth.set-of.com"
 }
 
+# NOTE: sentry_dsn is managed externally via SSM Parameter (manually created)
+# Terraform references it via data source in main.tf
+
 # ========================================
 # Shared Resource References (SSM)
 # ========================================

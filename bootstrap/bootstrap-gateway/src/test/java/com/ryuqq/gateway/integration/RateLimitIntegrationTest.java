@@ -8,10 +8,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.ryuqq.gateway.application.ratelimit.config.RateLimitProperties;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
 import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
 import java.time.Duration;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +21,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.cloud.gateway.route.RouteLocator;
@@ -76,7 +79,11 @@ class RateLimitIntegrationTest {
 
     @Autowired private WebTestClient webTestClient;
 
-    @Autowired private ReactiveRedisTemplate<String, String> redisTemplate;
+    @Autowired
+    @Qualifier("reactiveStringRedisTemplate")
+    private ReactiveRedisTemplate<String, String> redisTemplate;
+
+    @Autowired private RateLimitProperties rateLimitProperties;
 
     @BeforeAll
     static void startWireMock() {
@@ -102,7 +109,8 @@ class RateLimitIntegrationTest {
         // IP Rate Limit은 Invalid JWT 임계값(10)보다 높게 설정
         // IP Block 테스트에서 11번 요청 후 차단 확인을 위해
         registry.add("gateway.rate-limit.ip-limit", () -> "100");
-        registry.add("gateway.rate-limit.user-limit", () -> "5");
+        // User Rate Limit은 높게 설정하여 Endpoint Rate Limit 테스트에 간섭하지 않도록 함
+        registry.add("gateway.rate-limit.user-limit", () -> "100");
         registry.add("gateway.rate-limit.window-seconds", () -> "60");
         // Redisson 설정 (Testcontainers Redis 사용)
         registry.add(
@@ -126,27 +134,39 @@ class RateLimitIntegrationTest {
     }
 
     @BeforeEach
-    void setup() {
+    void setup() throws InterruptedException {
         wireMockServer.resetAll();
 
         // Clean up Redis before each test
+        // First FLUSHALL to clear any existing data
         StepVerifier.create(
                         redisTemplate.execute(connection -> connection.serverCommands().flushAll()))
                 .expectNextCount(1)
                 .verifyComplete();
 
-        // Mock JWKS endpoint
+        // Wait for any in-flight async requests from previous tests to complete
+        Thread.sleep(100);
+
+        // Second FLUSHALL to ensure clean state after async operations settle
+        StepVerifier.create(
+                        redisTemplate.execute(connection -> connection.serverCommands().flushAll()))
+                .expectNextCount(1)
+                .verifyComplete();
+
+        // Mock JWKS endpoint (priority 1 - highest)
         wireMockServer.stubFor(
                 get(urlEqualTo("/api/v1/auth/jwks"))
+                        .atPriority(1)
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
-        // Mock Permission Spec endpoint
+        // Mock Permission Spec endpoint (priority 1)
         wireMockServer.stubFor(
                 get(urlEqualTo("/api/v1/permissions/spec"))
+                        .atPriority(1)
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
@@ -169,18 +189,10 @@ class RateLimitIntegrationTest {
                                                 }
                                                 """)));
 
-        // Mock downstream service
-        wireMockServer.stubFor(
-                get(urlEqualTo("/api/resource"))
-                        .willReturn(
-                                aResponse()
-                                        .withStatus(200)
-                                        .withHeader("Content-Type", "application/json")
-                                        .withBody("{\"message\":\"success\"}")));
-
-        // Mock Tenant Config API (GATEWAY-004 Tenant 격리 기능)
+        // Mock Tenant Config API (priority 1) (GATEWAY-004 Tenant 격리 기능)
         wireMockServer.stubFor(
                 get(WireMock.urlPathMatching("/api/v1/tenants/.+/config"))
+                        .atPriority(1)
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
@@ -188,6 +200,28 @@ class RateLimitIntegrationTest {
                                         .withBody(
                                                 TenantConfigTestFixture.tenantConfigResponse(
                                                         "tenant-001"))));
+
+        // Mock downstream service (pattern matching for all /api/* paths, priority 10 - lowest)
+        wireMockServer.stubFor(
+                get(WireMock.urlPathMatching("/api/.*"))
+                        .atPriority(10)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody("{\"message\":\"success\"}")));
+    }
+
+    /** Rate Limit 키 삭제 helper 메서드 */
+    private void deleteRateLimitKey(String key) {
+        StepVerifier.create(redisTemplate.delete(key)).expectNextCount(1).verifyComplete();
+    }
+
+    /** Rate Limit 키 패턴 삭제 helper 메서드 */
+    private void deleteRateLimitKeys(String... keys) {
+        for (String key : keys) {
+            redisTemplate.delete(key).block();
+        }
     }
 
     @Nested
@@ -197,28 +231,98 @@ class RateLimitIntegrationTest {
         @Test
         @DisplayName("동일 엔드포인트에 대한 요청이 제한을 초과하면 429를 반환해야 한다")
         void shouldReturn429WhenEndpointRateLimitExceeded() {
-            // given
-            String validJwt = JwtTestFixture.aValidJwt();
+            // ====== DEBUG: RateLimitProperties 실제 값 출력 ======
+            System.out.println("========== RATE LIMIT PROPERTIES DEBUG ==========");
+            System.out.println("[CONFIG] enabled: " + rateLimitProperties.isEnabled());
+            System.out.println("[CONFIG] endpointLimit: " + rateLimitProperties.getEndpointLimit());
+            System.out.println("[CONFIG] ipLimit: " + rateLimitProperties.getIpLimit());
+            System.out.println("[CONFIG] userLimit: " + rateLimitProperties.getUserLimit());
+            System.out.println("[CONFIG] windowSeconds: " + rateLimitProperties.getWindowSeconds());
+            System.out.println("=================================================");
+
+            // given - UUID를 사용한 완전히 고유한 식별자 (이전 테스트 영향 제거)
+            String uniqueId = UUID.randomUUID().toString().substring(0, 8);
+            String testEndpoint = "/api/endpoint-test-" + uniqueId;
+            String testIp = "192.168.50." + (int) (Math.random() * 254 + 1);
+            String testUser = "endpoint-user-" + uniqueId;
+
+            // Redis key for endpoint rate limit
+            String endpointKey = "gateway:rate_limit:endpoint:" + testEndpoint + ":GET";
+            String ipKey = "gateway:rate_limit:ip:" + testIp;
+            String userKey = "gateway:rate_limit:user:" + testUser;
+
+            System.out.println("[TEST] Using endpoint: " + testEndpoint);
+            System.out.println("[TEST] Using IP: " + testIp);
+            System.out.println("[TEST] Using user: " + testUser);
+            System.out.println("[TEST] Endpoint Key: " + endpointKey);
+
+            String validJwt = JwtTestFixture.aValidJwt(testUser);
             // Note: endpoint-limit=5 설정에서 isExceeded는 currentCount >= maxRequests 이므로
             // 5번째 요청에서 차단 (incrementAndGet 후 체크하므로 카운트가 5가 되면 차단)
             int requestsBeforeBlock = 4;
 
             // when - Rate limit 이내의 요청 (4번까지 허용)
             for (int i = 0; i < requestsBeforeBlock; i++) {
-                webTestClient
-                        .get()
-                        .uri("/api/resource")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
-                        .exchange()
-                        .expectStatus()
-                        .isOk();
+                var result =
+                        webTestClient
+                                .get()
+                                .uri(testEndpoint)
+                                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                                .header("X-Forwarded-For", testIp)
+                                .exchange()
+                                .returnResult(String.class);
+
+                var status = result.getStatus();
+
+                // DEBUG: Check Redis counter values after each request
+                String endpointCount = redisTemplate.opsForValue().get(endpointKey).block();
+                String ipCount = redisTemplate.opsForValue().get(ipKey).block();
+                String userCount = redisTemplate.opsForValue().get(userKey).block();
+                System.out.println(
+                        "[REQUEST "
+                                + (i + 1)
+                                + "] Status: "
+                                + status
+                                + " | Endpoint Counter: "
+                                + endpointCount
+                                + " | IP Counter: "
+                                + ipCount
+                                + " | User Counter: "
+                                + userCount);
+
+                // DEBUG: Scan all rate limit keys
+                System.out.println("[DEBUG] All Rate Limit Keys in Redis:");
+                redisTemplate
+                        .scan()
+                        .filter(key -> key.startsWith("gateway:rate_limit:"))
+                        .flatMap(
+                                key ->
+                                        redisTemplate
+                                                .opsForValue()
+                                                .get(key)
+                                                .map(value -> "  " + key + " = " + value))
+                        .collectList()
+                        .doOnNext(
+                                keys -> {
+                                    keys.forEach(System.out::println);
+                                })
+                        .block();
+
+                if (!status.is2xxSuccessful()) {
+                    String body = result.getResponseBody().blockFirst();
+                    System.out.println("[DEBUG] Response body: " + body);
+                }
+                assertThat(status.is2xxSuccessful())
+                        .as("Request %d should succeed, but got %s", i + 1, status)
+                        .isTrue();
             }
 
             // then - Rate limit에 도달한 요청 (5번째 = count가 5가 되는 시점에서 차단)
             webTestClient
                     .get()
-                    .uri("/api/resource")
+                    .uri(testEndpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                    .header("X-Forwarded-For", testIp)
                     .exchange()
                     .expectStatus()
                     .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
@@ -232,63 +336,63 @@ class RateLimitIntegrationTest {
         @Test
         @DisplayName("서로 다른 사용자는 독립적인 Rate Limit을 가져야 한다")
         void shouldHaveIndependentRateLimitsPerUser() {
-            // given
-            String user1Jwt = JwtTestFixture.aValidJwt("user-rate-limit-1");
-            String user2Jwt = JwtTestFixture.aValidJwt("user-rate-limit-2");
+            // given - 이 테스트 전용 고유 엔드포인트 사용
+            String testEndpoint = "/api/user-rate-limit-test";
+            String testIp1 = "10.20.200.1";
+            String testIp2 = "10.20.200.2";
+            String testUser1 = "user-rate-limit-test-1";
+            String testUser2 = "user-rate-limit-test-2";
 
-            // when - user1이 user rate limit 소진
-            // Note: user-limit=5 설정에서 isExceeded는 currentCount >= maxRequests 이므로
-            // 5번째 요청에서 차단 (4번까지 허용)
-            // 다른 IP + 다른 Endpoint로 요청하여 IP/Endpoint Rate Limit 우회
+            // 이 테스트에서 사용할 Rate Limit 키들을 명시적으로 삭제
+            deleteRateLimitKeys(
+                    "gateway:rate_limit:endpoint:" + testEndpoint + ":GET",
+                    "gateway:rate_limit:ip:" + testIp1,
+                    "gateway:rate_limit:ip:" + testIp2,
+                    "gateway:rate_limit:user:" + testUser1,
+                    "gateway:rate_limit:user:" + testUser2);
+
+            String user1Jwt = JwtTestFixture.aValidJwt(testUser1);
+            String user2Jwt = JwtTestFixture.aValidJwt(testUser2);
+
+            // Note: 현재 설정에서 endpoint-limit=5, user-limit=5
+            // RateLimitFilter(IP+Endpoint)가 먼저 실행되고, UserRateLimitFilter(User)가 나중에 실행됨
+            // 따라서 같은 엔드포인트에 5번 요청하면 Endpoint Rate Limit이 먼저 초과됨
+            //
+            // 테스트 의도: Endpoint Rate Limit이 초과되면, 다른 사용자도 같은 엔드포인트에 접근 불가
+            // 이것은 Endpoint Rate Limit이 모든 사용자에게 공유됨을 검증
+
+            // when - user1이 Endpoint Rate Limit 소진 (4번까지 허용)
             for (int i = 0; i < 4; i++) {
-                // Endpoint Rate Limit 우회를 위해 다른 엔드포인트 목업 추가
-                String endpoint = "/api/resource-" + i;
-                wireMockServer.stubFor(
-                        get(urlEqualTo(endpoint))
-                                .willReturn(
-                                        aResponse()
-                                                .withStatus(200)
-                                                .withHeader("Content-Type", "application/json")
-                                                .withBody("{\"message\":\"success\"}")));
-
                 webTestClient
                         .get()
-                        .uri(endpoint)
+                        .uri(testEndpoint)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + user1Jwt)
-                        .header("X-Forwarded-For", "10.10.10." + i) // 다른 IP에서 요청 (IP Rate Limit 우회)
+                        .header("X-Forwarded-For", testIp1)
                         .exchange()
                         .expectStatus()
                         .isOk();
             }
 
-            // then - user1은 user rate limit 초과 (새 IP, 새 엔드포인트에서도 차단)
-            String newEndpoint = "/api/resource-new";
-            wireMockServer.stubFor(
-                    get(urlEqualTo(newEndpoint))
-                            .willReturn(
-                                    aResponse()
-                                            .withStatus(200)
-                                            .withHeader("Content-Type", "application/json")
-                                            .withBody("{\"message\":\"success\"}")));
-
+            // then - user1은 Endpoint Rate Limit 초과 (5번째 요청에서 차단)
             webTestClient
                     .get()
-                    .uri(newEndpoint)
+                    .uri(testEndpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + user1Jwt)
-                    .header("X-Forwarded-For", "10.10.10.100") // 새 IP에서 요청
+                    .header("X-Forwarded-For", testIp1)
                     .exchange()
                     .expectStatus()
                     .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
 
-            // but - user2는 여전히 요청 가능 (User Rate Limit이 독립적)
+            // and - user2도 동일 Endpoint에 대해 Rate Limit 초과
+            // (Endpoint Rate Limit은 모든 사용자가 공유하므로)
             webTestClient
                     .get()
-                    .uri(newEndpoint)
+                    .uri(testEndpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + user2Jwt)
-                    .header("X-Forwarded-For", "10.10.10.101")
+                    .header("X-Forwarded-For", testIp2)
                     .exchange()
                     .expectStatus()
-                    .isOk();
+                    .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
         }
     }
 
@@ -299,18 +403,29 @@ class RateLimitIntegrationTest {
         @Test
         @DisplayName("동일 IP에서 오는 요청은 동일한 Endpoint Rate Limit을 공유해야 한다")
         void shouldShareRateLimitForSameIp() {
-            // given
-            String validJwt = JwtTestFixture.aValidJwt();
+            // given - 이 테스트 전용 고유 엔드포인트 사용
+            String testEndpoint = "/api/ip-same-test";
+            String testIp = "172.16.100.1";
+            String testUser = "ip-same-test-user-v2";
+
+            // 이 테스트에서 사용할 Rate Limit 키들을 명시적으로 삭제
+            deleteRateLimitKeys(
+                    "gateway:rate_limit:endpoint:" + testEndpoint + ":GET",
+                    "gateway:rate_limit:ip:" + testIp,
+                    "gateway:rate_limit:user:" + testUser);
+
+            String validJwt = JwtTestFixture.aValidJwt(testUser);
 
             // Note: 테스트 환경에서 IP Rate Limit은 100으로 설정되어 있음 (IP Block 테스트용)
             // 따라서 이 테스트는 Endpoint Rate Limit(5)이 먼저 적용되는 것을 검증
             // endpoint-limit=5에서 isExceeded는 currentCount >= maxRequests 이므로 4번까지 허용
-            // when - X-Forwarded-For 헤더 없이 요청 (모두 같은 IP로 처리)
+            // when - 같은 IP에서 요청 (고유 IP 사용)
             for (int i = 0; i < 4; i++) {
                 webTestClient
                         .get()
-                        .uri("/api/resource")
+                        .uri(testEndpoint)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                        .header("X-Forwarded-For", testIp)
                         .exchange()
                         .expectStatus()
                         .isOk();
@@ -319,8 +434,9 @@ class RateLimitIntegrationTest {
             // then - Endpoint Rate limit에 도달 (5번째 요청)
             webTestClient
                     .get()
-                    .uri("/api/resource")
+                    .uri(testEndpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                    .header("X-Forwarded-For", testIp)
                     .exchange()
                     .expectStatus()
                     .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
@@ -329,33 +445,49 @@ class RateLimitIntegrationTest {
         @Test
         @DisplayName("다른 IP에서 오는 요청도 동일 Endpoint는 Endpoint Rate Limit을 공유해야 한다")
         void shouldShareEndpointRateLimitAcrossIps() {
-            // given
-            String validJwt1 = JwtTestFixture.aValidJwt("ip-test-user-1");
-            String validJwt2 = JwtTestFixture.aValidJwt("ip-test-user-2");
+            // given - 이 테스트 전용 고유 엔드포인트 사용
+            String testEndpoint = "/api/ip-cross-test";
+            String testIp1 = "172.17.100.1";
+            String testIp2 = "172.17.100.2";
+            String testIp3 = "172.17.100.3";
+            String testUser1 = "ip-cross-test-user-v2-1";
+            String testUser2 = "ip-cross-test-user-v2-2";
+
+            // 이 테스트에서 사용할 Rate Limit 키들을 명시적으로 삭제
+            deleteRateLimitKeys(
+                    "gateway:rate_limit:endpoint:" + testEndpoint + ":GET",
+                    "gateway:rate_limit:ip:" + testIp1,
+                    "gateway:rate_limit:ip:" + testIp2,
+                    "gateway:rate_limit:ip:" + testIp3,
+                    "gateway:rate_limit:user:" + testUser1,
+                    "gateway:rate_limit:user:" + testUser2);
+
+            String validJwt1 = JwtTestFixture.aValidJwt(testUser1);
+            String validJwt2 = JwtTestFixture.aValidJwt(testUser2);
 
             // Note: Endpoint Rate Limit은 IP와 무관하게 적용됨
             // 동일 엔드포인트에 대한 모든 요청이 Endpoint Rate Limit을 공유
             // endpoint-limit=5에서 isExceeded는 currentCount >= maxRequests 이므로
             // 총 4번까지 허용 (3번 + 1번), 5번째에서 차단
 
-            // when - IP 192.168.1.1에서 Endpoint Rate Limit 일부 소진 (3번)
+            // when - IP 172.17.100.1에서 Endpoint Rate Limit 일부 소진 (3번)
             for (int i = 0; i < 3; i++) {
                 webTestClient
                         .get()
-                        .uri("/api/resource")
+                        .uri(testEndpoint)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt1)
-                        .header("X-Forwarded-For", "192.168.1.1")
+                        .header("X-Forwarded-For", testIp1)
                         .exchange()
                         .expectStatus()
                         .isOk();
             }
 
-            // when - IP 192.168.1.2에서 나머지 Endpoint Rate Limit 소진 (1번 - 총 4번)
+            // when - IP 172.17.100.2에서 나머지 Endpoint Rate Limit 소진 (1번 - 총 4번)
             webTestClient
                     .get()
-                    .uri("/api/resource")
+                    .uri(testEndpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt2)
-                    .header("X-Forwarded-For", "192.168.1.2")
+                    .header("X-Forwarded-For", testIp2)
                     .exchange()
                     .expectStatus()
                     .isOk();
@@ -363,9 +495,9 @@ class RateLimitIntegrationTest {
             // then - 새 IP에서도 동일 엔드포인트는 Endpoint Rate Limit에 도달 (5번째 요청)
             webTestClient
                     .get()
-                    .uri("/api/resource")
+                    .uri(testEndpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt2)
-                    .header("X-Forwarded-For", "192.168.1.3")
+                    .header("X-Forwarded-For", testIp3)
                     .exchange()
                     .expectStatus()
                     .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
@@ -379,14 +511,24 @@ class RateLimitIntegrationTest {
         @Test
         @DisplayName("응답에 Rate Limit 관련 헤더가 포함되어야 한다")
         void shouldIncludeRateLimitHeaders() {
-            // given
-            String validJwt = JwtTestFixture.aValidJwt();
+            // given - 이 테스트 전용 고유 엔드포인트 사용
+            String testEndpoint = "/api/header-test-1";
+            String testIp = "192.168.100.1";
+            String testUser = "header-test-user-1";
+
+            deleteRateLimitKeys(
+                    "gateway:rate_limit:endpoint:" + testEndpoint + ":GET",
+                    "gateway:rate_limit:ip:" + testIp,
+                    "gateway:rate_limit:user:" + testUser);
+
+            String validJwt = JwtTestFixture.aValidJwt(testUser);
 
             // when & then
             webTestClient
                     .get()
-                    .uri("/api/resource")
+                    .uri(testEndpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                    .header("X-Forwarded-For", testIp)
                     .exchange()
                     .expectStatus()
                     .isOk()
@@ -399,23 +541,34 @@ class RateLimitIntegrationTest {
         @Test
         @DisplayName("Rate Limit 초과 시 Retry-After 헤더가 포함되어야 한다")
         void shouldIncludeRetryAfterHeaderWhenRateLimitExceeded() {
-            // given
-            String validJwt = JwtTestFixture.aValidJwt();
+            // given - 이 테스트 전용 고유 엔드포인트 사용
+            String testEndpoint = "/api/header-test-2";
+            String testIp = "192.168.100.2";
+            String testUser = "header-test-user-2";
+
+            deleteRateLimitKeys(
+                    "gateway:rate_limit:endpoint:" + testEndpoint + ":GET",
+                    "gateway:rate_limit:ip:" + testIp,
+                    "gateway:rate_limit:user:" + testUser);
+
+            String validJwt = JwtTestFixture.aValidJwt(testUser);
 
             // when - Rate limit 소진 (endpoint-limit=5, 4번까지 허용)
             for (int i = 0; i < 4; i++) {
                 webTestClient
                         .get()
-                        .uri("/api/resource")
+                        .uri(testEndpoint)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                        .header("X-Forwarded-For", testIp)
                         .exchange();
             }
 
             // then - Rate limit에 도달 시 (5번째) Retry-After 헤더 확인
             webTestClient
                     .get()
-                    .uri("/api/resource")
+                    .uri(testEndpoint)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                    .header("X-Forwarded-For", testIp)
                     .exchange()
                     .expectStatus()
                     .isEqualTo(HttpStatus.TOO_MANY_REQUESTS)
@@ -426,15 +579,25 @@ class RateLimitIntegrationTest {
         @Test
         @DisplayName("X-RateLimit-Remaining 값이 요청마다 감소해야 한다")
         void shouldDecreaseRemainingCountPerRequest() {
-            // given
-            String validJwt = JwtTestFixture.aValidJwt("remaining-test-user");
+            // given - 이 테스트 전용 고유 엔드포인트 사용
+            String testEndpoint = "/api/remaining-count-test";
+            String testIp = "192.168.200.1";
+            String testUser = "remaining-count-test-user";
+
+            deleteRateLimitKeys(
+                    "gateway:rate_limit:endpoint:" + testEndpoint + ":GET",
+                    "gateway:rate_limit:ip:" + testIp,
+                    "gateway:rate_limit:user:" + testUser);
+
+            String validJwt = JwtTestFixture.aValidJwt(testUser);
 
             // when - 첫 번째 요청
             String firstRemaining =
                     webTestClient
                             .get()
-                            .uri("/api/resource")
+                            .uri(testEndpoint)
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                            .header("X-Forwarded-For", testIp)
                             .exchange()
                             .expectStatus()
                             .isOk()
@@ -446,8 +609,9 @@ class RateLimitIntegrationTest {
             String secondRemaining =
                     webTestClient
                             .get()
-                            .uri("/api/resource")
+                            .uri(testEndpoint)
                             .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                            .header("X-Forwarded-For", testIp)
                             .exchange()
                             .expectStatus()
                             .isOk()

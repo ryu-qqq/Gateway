@@ -63,4 +63,8 @@ langfuse/tests/__pycache__/
 .env
 # Terraform
 **/.terraform/
-**/terraform.tfstate* git add .gitignore git add -A git status --short
+**/terraform.tfstate*
+**/tfplan
+**/*.tfplan
+**/crash.log
+**/.terraform.lock.hcl

@@ -112,6 +112,31 @@ module "gateway_logs" {
 }
 
 # ========================================
+# Log Streaming to OpenSearch (V2 - Kinesis)
+# ========================================
+# CloudWatch Logs → Kinesis → Lambda → OpenSearch
+# SSM Parameters required:
+#   - /shared/logging/kinesis-stream-arn
+#   - /shared/logging/cloudwatch-to-kinesis-role-arn
+# ========================================
+module "log_streaming" {
+  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter-v2?ref=main"
+
+  log_group_name = module.gateway_logs.log_group_name
+  service_name   = "gateway"
+}
+
+# ========================================
+# Sentry DSN SSM Parameter (External - 수동 생성됨)
+# ========================================
+# SSM Parameter는 AWS Console/CLI로 수동 생성됨
+# Atlantis IAM Role에 ssm:PutParameter 권한이 없어서 data source로 참조
+# ========================================
+data "aws_ssm_parameter" "sentry_dsn" {
+  name = "/connectly-gateway/sentry/dsn"
+}
+
+# ========================================
 # Security Groups
 # ========================================
 resource "aws_security_group" "alb" {
@@ -540,11 +565,16 @@ module "ecs_service" {
     { name = "AUTH_HUB_URL", value = var.auth_hub_url },
     # Legacy API 라우팅 (Cloud Map DNS)
     { name = "LEGACY_WEB_URI", value = "http://setof-commerce-legacy-api-prod.connectly.local:8088" },
-    { name = "LEGACY_ADMIN_URI", value = "http://setof-commerce-legacy-admin-prod.connectly.local:8089" }
+    { name = "LEGACY_ADMIN_URI", value = "http://setof-commerce-legacy-admin-prod.connectly.local:8089" },
+    # Sentry/Observability
+    { name = "SERVICE_NAME", value = "${var.project_name}" },
+    { name = "APP_VERSION", value = var.image_tag }
   ]
 
-  # Container Secrets (Gateway may not need DB access, but keep for flexibility)
-  container_secrets = []
+  # Container Secrets (Sentry DSN from SSM Parameter)
+  container_secrets = [
+    { name = "SENTRY_DSN", valueFrom = data.aws_ssm_parameter.sentry_dsn.arn }
+  ]
 
   # Health Check
   health_check_command      = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]

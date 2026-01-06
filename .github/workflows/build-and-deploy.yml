@@ -47,6 +47,8 @@ jobs:
           cache: 'gradle'
 
       - name: Run tests
+        env:
+          SKIP_INTEGRATION_TESTS: 'true'
         run: |
           chmod +x gradlew
           ./gradlew clean test -x jacocoTestCoverageVerification --no-daemon

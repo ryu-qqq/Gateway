@@ -7,6 +7,34 @@
 # ========================================
 
 # ========================================
+# AWS Managed Cache Policies (Data Sources)
+# ========================================
+# Using data sources instead of hardcoded IDs for better maintainability
+# ========================================
+data "aws_cloudfront_cache_policy" "caching_disabled" {
+  name = "Managed-CachingDisabled"
+}
+
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"
+}
+
+data "aws_cloudfront_origin_request_policy" "all_viewer" {
+  name = "Managed-AllViewer"
+}
+
+# ========================================
+# Public Static File Paths (for DRY cache behaviors)
+# ========================================
+locals {
+  public_static_paths = [
+    "/favicon.ico",
+    "/robots.txt",
+    "/sitemap*.xml"
+  ]
+}
+
+# ========================================
 # Cache Policies
 # ========================================
 
@@ -28,6 +56,57 @@ resource "aws_cloudfront_cache_policy" "api_no_cache" {
     query_strings_config {
       query_string_behavior = "none"
     }
+  }
+}
+
+# Public Static Files Cache Policy - Override Origin headers
+# NOTE: favicon.ico, robots.txt, sitemap.xml 등은 Origin이 max-age=0을 보내도
+# CloudFront에서 강제로 캐시하여 Origin 요청 감소
+resource "aws_cloudfront_cache_policy" "public_static" {
+  name        = "${var.project_name}-public-static-${var.environment}"
+  comment     = "Cache policy for public static files - override Origin no-cache headers"
+  min_ttl     = 3600      # 최소 1시간 (Origin이 no-cache 보내도 무시)
+  default_ttl = 86400     # 기본 1일
+  max_ttl     = 604800    # 최대 1주
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    cookies_config {
+      cookie_behavior = "none"
+    }
+    headers_config {
+      header_behavior = "none"
+    }
+    query_strings_config {
+      query_string_behavior = "none"
+    }
+    enable_accept_encoding_brotli = true
+    enable_accept_encoding_gzip   = true
+  }
+}
+
+# Next.js Image Optimization Cache Policy - Include query strings in cache key
+resource "aws_cloudfront_cache_policy" "nextjs_image" {
+  name        = "${var.project_name}-nextjs-image-${var.environment}"
+  comment     = "Cache policy for Next.js Image Optimization - includes query strings"
+  min_ttl     = 0
+  default_ttl = 86400    # 1 day
+  max_ttl     = 31536000 # 1 year
+
+  parameters_in_cache_key_and_forwarded_to_origin {
+    cookies_config {
+      cookie_behavior = "none"
+    }
+    headers_config {
+      header_behavior = "whitelist"
+      headers {
+        items = ["Accept"]
+      }
+    }
+    query_strings_config {
+      query_string_behavior = "all"  # Include all query strings (url, w, q)
+    }
+    enable_accept_encoding_brotli = true
+    enable_accept_encoding_gzip   = true
   }
 }
 
@@ -111,6 +190,8 @@ resource "aws_cloudfront_distribution" "prod" {
   # ========================================
   # Origin 2: Gateway ALB (for /api/v1/*)
   # ========================================
+  # NOTE: HTTP 사용 - CloudFront ↔ ALB 내부 통신이므로 안전
+  # ALB 인증서가 *.set-of.com이라 ALB DNS로 HTTPS 연결 시 도메인 불일치 발생
   origin {
     domain_name = data.aws_lb.gateway.dns_name
     origin_id   = "gateway-alb"
@@ -118,7 +199,7 @@ resource "aws_cloudfront_distribution" "prod" {
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "https-only"
+      origin_protocol_policy = "http-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
 
@@ -129,19 +210,77 @@ resource "aws_cloudfront_distribution" "prod" {
   }
 
   # ========================================
-  # Default Cache Behavior → Frontend
+  # Default Cache Behavior → Frontend (HTML pages - no cache)
   # ========================================
+  # NOTE: HTML 페이지는 캐시하면 안됨 - 배포 후 즉시 반영 필요
+  # 정적 자산(/_next/static/*)은 파일명에 해시가 포함되어 있어 별도 캐시 정책 적용
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "frontend-alb"
 
-    # Use managed cache policy for frontend
-    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
+  }
+
+  # ========================================
+  # Ordered Cache Behavior: /_next/static/* → Frontend (long-term cache)
+  # ========================================
+  # NOTE: 파일명에 해시 포함 (예: main-app-a27d5f1dbddc8d0f.js)
+  # 새 빌드 시 파일명 변경되므로 장기 캐시해도 안전
+  ordered_cache_behavior {
+    path_pattern     = "/_next/static/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "frontend-alb"
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_optimized.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+  }
+
+  # ========================================
+  # Ordered Cache Behavior: /_next/image/* → Frontend (with query string caching)
+  # ========================================
+  ordered_cache_behavior {
+    path_pattern     = "/_next/image*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "frontend-alb"
+
+    cache_policy_id          = aws_cloudfront_cache_policy.nextjs_image.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+  }
+
+  # ========================================
+  # Ordered Cache Behavior: Public Static Files → Frontend (force cache)
+  # ========================================
+  # NOTE: Origin이 max-age=0을 보내도 min_ttl=3600으로 강제 캐시
+  # 파일 변경 시 CloudFront Invalidation 필요
+  # Using dynamic block to reduce code duplication
+  dynamic "ordered_cache_behavior" {
+    for_each = toset(local.public_static_paths)
+
+    content {
+      path_pattern     = ordered_cache_behavior.value
+      allowed_methods  = ["GET", "HEAD"]
+      cached_methods   = ["GET", "HEAD"]
+      target_origin_id = "frontend-alb"
+
+      cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
+      origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+
+      viewer_protocol_policy = "redirect-to-https"
+      compress               = true
+    }
   }
 
   # ========================================
@@ -222,6 +361,8 @@ resource "aws_cloudfront_distribution" "stage" {
   # ========================================
   # Origin 2: Gateway ALB (for /api/v1/*)
   # ========================================
+  # NOTE: HTTP 사용 - CloudFront ↔ ALB 내부 통신이므로 안전
+  # ALB 인증서가 *.set-of.com이라 ALB DNS로 HTTPS 연결 시 도메인 불일치 발생
   origin {
     domain_name = data.aws_lb.gateway.dns_name
     origin_id   = "gateway-alb"
@@ -229,7 +370,7 @@ resource "aws_cloudfront_distribution" "stage" {
     custom_origin_config {
       http_port              = 80
       https_port             = 443
-      origin_protocol_policy = "https-only"
+      origin_protocol_policy = "http-only"
       origin_ssl_protocols   = ["TLSv1.2"]
     }
 
@@ -240,18 +381,78 @@ resource "aws_cloudfront_distribution" "stage" {
   }
 
   # ========================================
-  # Default Cache Behavior → Frontend
+  # Default Cache Behavior → Frontend (HTML pages - no cache)
   # ========================================
+  # NOTE: HTML 페이지는 캐시하면 안됨 - 배포 후 즉시 반영 필요
+  # 정적 자산(/_next/static/*)은 파일명에 해시가 포함되어 있어 별도 캐시 정책 적용
   default_cache_behavior {
     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "frontend-alb"
 
-    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    # CachingDisabled - HTML 페이지 캐시 안함
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
+  }
+
+  # ========================================
+  # Ordered Cache Behavior: /_next/static/* → Frontend (long-term cache)
+  # ========================================
+  # NOTE: 파일명에 해시 포함 (예: main-app-a27d5f1dbddc8d0f.js)
+  # 새 빌드 시 파일명 변경되므로 장기 캐시해도 안전
+  ordered_cache_behavior {
+    path_pattern     = "/_next/static/*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "frontend-alb"
+
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_optimized.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+  }
+
+  # ========================================
+  # Ordered Cache Behavior: /_next/image/* → Frontend (with query string caching)
+  # ========================================
+  ordered_cache_behavior {
+    path_pattern     = "/_next/image*"
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "frontend-alb"
+
+    cache_policy_id          = aws_cloudfront_cache_policy.nextjs_image.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+
+    viewer_protocol_policy = "redirect-to-https"
+    compress               = true
+  }
+
+  # ========================================
+  # Ordered Cache Behavior: Public Static Files → Frontend (force cache)
+  # ========================================
+  # NOTE: Origin이 max-age=0을 보내도 min_ttl=3600으로 강제 캐시
+  # 파일 변경 시 CloudFront Invalidation 필요
+  # DRY: Dynamic block으로 중복 제거 (favicon.ico, robots.txt, sitemap*.xml)
+  dynamic "ordered_cache_behavior" {
+    for_each = toset(local.public_static_paths)
+
+    content {
+      path_pattern     = ordered_cache_behavior.value
+      allowed_methods  = ["GET", "HEAD"]
+      cached_methods   = ["GET", "HEAD"]
+      target_origin_id = "frontend-alb"
+
+      cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
+      origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+
+      viewer_protocol_policy = "redirect-to-https"
+      compress               = true
+    }
   }
 
   # ========================================
@@ -351,71 +552,98 @@ resource "aws_route53_record" "stage" {
 }
 
 # ========================================
-# Future: admin.set-of.com (uncomment when ready)
+# CloudFront Distribution - Admin (admin.set-of.com)
 # ========================================
-# resource "aws_cloudfront_distribution" "admin" {
-#   enabled             = true
-#   is_ipv6_enabled     = true
-#   comment             = "admin.set-of.com - Admin API Gateway routing"
-#   default_root_object = ""
-#   price_class         = "PriceClass_200"
-#   aliases             = ["admin.set-of.com"]
-#
-#   origin {
-#     domain_name = data.aws_lb.gateway.dns_name
-#     origin_id   = "gateway-alb"
-#
-#     custom_origin_config {
-#       http_port              = 80
-#       https_port             = 443
-#       origin_protocol_policy = "https-only"
-#       origin_ssl_protocols   = ["TLSv1.2"]
-#     }
-#
-#     custom_header {
-#       name  = "X-Forwarded-Host"
-#       value = "admin.set-of.com"
-#     }
-#   }
-#
-#   default_cache_behavior {
-#     allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
-#     cached_methods   = ["GET", "HEAD"]
-#     target_origin_id = "gateway-alb"
-#
-#     cache_policy_id            = aws_cloudfront_cache_policy.api_no_cache.id
-#     origin_request_policy_id   = aws_cloudfront_origin_request_policy.api_all_viewer.id
-#     response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
-#
-#     viewer_protocol_policy = "https-only"
-#     compress               = false
-#   }
-#
-#   viewer_certificate {
-#     acm_certificate_arn      = data.aws_acm_certificate.cloudfront_cert.arn
-#     ssl_support_method       = "sni-only"
-#     minimum_protocol_version = "TLSv1.2_2021"
-#   }
-#
-#   restrictions {
-#     geo_restriction {
-#       restriction_type = "none"
-#     }
-#   }
-#
-#   tags = merge(local.common_tags, {
-#     Name = "${var.project_name}-cloudfront-admin"
-#   })
+# TODO: 배포 전 체크리스트 (stage.set-of.com 배포 시 발생했던 문제 방지)
+# ──────────────────────────────────────────────────────────────────────
+# 1. [  ] Gateway ALB Security Group (sg-0086211d4194a6d58) 확인
+#         → Port 80 인바운드가 0.0.0.0/0 허용되어 있는지 확인
+# 2. [  ] Route53에 기존 admin.set-of.com 레코드 존재 여부 확인
+#         → 있으면 import 블록 추가 필요
+# 3. [  ] terraform plan 실행 후 변경사항 리뷰
+# 4. [  ] terraform apply 실행
+# 5. [  ] 배포 후 테스트: curl -I https://admin.set-of.com/api/v1/...
+# ──────────────────────────────────────────────────────────────────────
+resource "aws_cloudfront_distribution" "admin" {
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "admin.set-of.com - Admin API Gateway routing"
+  default_root_object = ""
+  price_class         = "PriceClass_200"
+  aliases             = ["admin.set-of.com"]
+
+  # ========================================
+  # Origin: Gateway ALB (모든 요청 → Gateway → Legacy Admin API)
+  # ========================================
+  # NOTE: HTTP 사용 - CloudFront ↔ ALB 내부 통신
+  # ALB 인증서가 *.set-of.com이라 ALB DNS로 HTTPS 연결 시 도메인 불일치 발생
+  origin {
+    domain_name = data.aws_lb.gateway.dns_name
+    origin_id   = "gateway-alb"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"  # HTTPS가 아닌 HTTP 사용 (stage와 동일)
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+
+    custom_header {
+      name  = "X-Forwarded-Host"
+      value = "admin.set-of.com"
+    }
+  }
+
+  # ========================================
+  # Default Cache Behavior → Gateway (API 전용, 캐싱 없음)
+  # ========================================
+  default_cache_behavior {
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "gateway-alb"
+
+    cache_policy_id            = aws_cloudfront_cache_policy.api_no_cache.id
+    origin_request_policy_id   = aws_cloudfront_origin_request_policy.api_all_viewer.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
+
+    viewer_protocol_policy = "https-only"
+    compress               = false
+  }
+
+  # ========================================
+  # SSL Certificate
+  # ========================================
+  viewer_certificate {
+    acm_certificate_arn      = data.aws_acm_certificate.cloudfront_cert.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-cloudfront-admin"
+  })
+}
+
+# TODO: 배포 전 Route53에 기존 레코드가 있는지 확인하고, 있으면 아래 import 블록 추가
+# import {
+#   to = aws_route53_record.admin
+#   id = "Z104656329CL6XBYE8OIJ_admin.set-of.com_A"
 # }
-#
-# resource "aws_route53_record" "admin" {
-#   zone_id = local.route53_zone_id
-#   name    = "admin.set-of.com"
-#   type    = "A"
-#
-#   alias {
-#     name                   = aws_cloudfront_distribution.admin.domain_name
-#     zone_id                = aws_cloudfront_distribution.admin.hosted_zone_id
-#     evaluate_target_health = false
-#   }
-# }
+
+resource "aws_route53_record" "admin" {
+  zone_id = local.route53_zone_id
+  name    = "admin.set-of.com"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.admin.domain_name
+    zone_id                = aws_cloudfront_distribution.admin.hosted_zone_id
+    evaluate_target_health = false
+  }
+}

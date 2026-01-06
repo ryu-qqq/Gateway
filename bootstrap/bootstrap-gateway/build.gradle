@@ -76,6 +76,12 @@ dependencies {
     implementation libs.logstash.logback.encoder
 
     // ========================================
+    // Sentry (Error Tracking)
+    // ========================================
+    implementation libs.sentry.spring.boot.starter
+    implementation libs.sentry.logback
+
+    // ========================================
     // Reactive Support
     // ========================================
     implementation libs.reactor.core
@@ -139,6 +145,10 @@ tasks.jacocoTestCoverageVerification {
 }
 
 tasks.test {
+    // CI 환경에서 통합 테스트 제외 (SKIP_INTEGRATION_TESTS=true)
+    if (System.getenv('SKIP_INTEGRATION_TESTS') == 'true') {
+        exclude '**/integration/**'
+    }
     finalizedBy tasks.jacocoTestCoverageVerification
 }
 

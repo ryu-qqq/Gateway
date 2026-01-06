@@ -84,6 +84,11 @@ resilience4j = "2.3.0"
 # ========================================
 reactor = "3.6.0"
 
+# ========================================
+# Sentry (Error Tracking)
+# ========================================
+sentry = "8.28.0"
+
 [libraries]
 # ========================================
 # Spring Boot Starters
@@ -167,7 +172,13 @@ micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus
 # ========================================
 # Observability Starter (JitPack)
 # ========================================
-observability-starter = { module = "com.github.ryu-qqq:observability-spring-boot-starter", version.ref = "observabilityStarter" }
+observability-starter = { module = "com.github.ryu-qqq.observability-spring-boot-starter:observability-webflux", version.ref = "observabilityStarter" }
+
+# ========================================
+# Sentry (Error Tracking)
+# ========================================
+sentry-spring-boot-starter = { module = "io.sentry:sentry-spring-boot-starter-jakarta", version.ref = "sentry" }
+sentry-logback = { module = "io.sentry:sentry-logback", version.ref = "sentry" }
 
 # ========================================
 # Utilities
