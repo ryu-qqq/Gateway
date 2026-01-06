@@ -61,7 +61,8 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String clientIp = ClientIpExtractor.extract(exchange);
+        // AWS 환경 (CloudFront → ALB → ECS)에서 X-Forwarded-For 헤더 사용
+        String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().name();
 

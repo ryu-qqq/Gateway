@@ -100,6 +100,17 @@ jwt:
 #   - Defined in each service's 'public-paths' list
 # ===============================================
 gateway:
+  # ===============================================
+  # Rate Limit Configuration
+  # ===============================================
+  # IP/USER: 500 req/min, ENDPOINT: 1000 req/min
+  # AWS 환경에서 X-Forwarded-For 헤더 기반 IP 추출
+  rate-limit:
+    enabled: true
+    ip-limit: 500        # IP당 분당 요청 제한 (기본 100 → 500)
+    user-limit: 500      # 사용자당 분당 요청 제한 (기본 100 → 500)
+    endpoint-limit: 1000 # 엔드포인트당 분당 요청 제한 (기본값 유지)
+
   routing:
     discovery:
       enabled: false
