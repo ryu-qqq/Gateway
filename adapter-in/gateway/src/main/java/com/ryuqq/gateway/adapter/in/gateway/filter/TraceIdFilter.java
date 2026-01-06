@@ -112,15 +112,33 @@ public class TraceIdFilter implements GlobalFilter, Ordered {
         exchange.getAttributes().put(TRACE_ID_ATTRIBUTE, traceId);
 
         // 3. Response Header에 X-Trace-Id 추가 (Client 반환)
-        exchange.getResponse()
-                .beforeCommit(
-                        () -> {
-                            exchange.getResponse().getHeaders().add(X_TRACE_ID_HEADER, traceId);
-                            return Mono.empty();
-                        });
+        // Actuator 경로는 응답이 이미 커밋된 상태에서 beforeCommit이 호출될 수 있으므로 스킵
+        String path = exchange.getRequest().getURI().getPath();
+        if (!isActuatorPath(path)) {
+            exchange.getResponse()
+                    .beforeCommit(
+                            () -> {
+                                if (!exchange.getResponse().isCommitted()) {
+                                    exchange.getResponse()
+                                            .getHeaders()
+                                            .add(X_TRACE_ID_HEADER, traceId);
+                                }
+                                return Mono.empty();
+                            });
+        }
 
         // 4. Reactor Context에 traceId 추가 (MDC 전파)
         return chain.filter(exchange.mutate().request(mutatedRequest).build())
                 .contextWrite(ctx -> ctx.put(TraceIdMdcContext.TRACE_ID_KEY, traceId));
+    }
+
+    /**
+     * Actuator 경로인지 확인
+     *
+     * @param path 요청 경로
+     * @return actuator 경로이면 true
+     */
+    private boolean isActuatorPath(String path) {
+        return path != null && path.startsWith("/actuator");
     }
 }

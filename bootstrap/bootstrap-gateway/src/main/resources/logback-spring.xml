@@ -87,8 +87,12 @@
 
         <!-- Reduce noise from common libraries -->
         <logger name="org.springframework.web" level="WARN"/>
+        <logger name="org.springframework.web.reactive" level="WARN"/>
+        <logger name="org.springframework.web.server" level="WARN"/>
         <logger name="io.netty" level="WARN"/>
         <logger name="reactor.netty" level="WARN"/>
+        <logger name="io.lettuce" level="WARN"/>
+        <logger name="org.redisson" level="WARN"/>
     </springProfile>
 
     <!-- ========================================
