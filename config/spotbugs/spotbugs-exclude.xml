@@ -20,10 +20,48 @@
 
     <!-- ========================================
          Exclude Test Code from Certain Rules
+         JUnit 5 테스트 클래스는 @Mock, @Autowired 등으로 필드 초기화되므로
+         생성자 초기화 검사 제외
          ======================================== -->
     <Match>
         <Class name="~.*Test"/>
         <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+    </Match>
+
+    <!-- Test: UwF (Unwritten Field) - @Mock, @Autowired 필드 -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
+    </Match>
+
+    <!-- Test: NP (Null Pointer) - null 처리 테스트 -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="NP_LOAD_OF_KNOWN_NULL_VALUE,NP_NULL_ON_SOME_PATH,NP_NULL_PARAM_DEREF"/>
+    </Match>
+
+    <!-- Test: DLS (Dead Local Store) - 테스트 변수 -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+
+    <!-- Test: SA (Self Assignment) - 동등성 테스트 -->
+    <Match>
+        <Class name="~.*Test"/>
+        <Bug pattern="SA_LOCAL_SELF_COMPARISON,SA_FIELD_SELF_COMPARISON"/>
+    </Match>
+
+    <!-- Test: SIC (Static Inner Class) - 익명 클래스 -->
+    <Match>
+        <Class name="~.*Test\$.*"/>
+        <Bug pattern="SIC_INNER_SHOULD_BE_STATIC_ANON,SIC_INNER_SHOULD_BE_STATIC"/>
+    </Match>
+
+    <!-- RestDocs Test 클래스 -->
+    <Match>
+        <Class name="~.*RestDocsTest"/>
+        <Bug pattern="UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"/>
     </Match>
 
     <!-- ========================================
