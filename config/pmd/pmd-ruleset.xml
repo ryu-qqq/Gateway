@@ -28,8 +28,9 @@
             <!-- Fluent API 패턴 허용 (Builder, Stream) -->
             <property name="trustRadius" value="2"/>
 
-            <!-- Gateway Filter/Util 제외: Spring WebFlux ServerWebExchange API는 체이닝 필수
-                 exchange.getRequest().getHeaders() 등은 프레임워크 설계상 불가피 -->
+            <!-- 제외 대상:
+                 - Gateway Filter/Util: Spring WebFlux ServerWebExchange API는 체이닝 필수
+                 - 테스트 클래스: WebTestClient 등 테스트 API는 체이닝 패턴 사용 -->
             <property name="violationSuppressXPath"
                       value="//ClassDeclaration[
                              ancestor::CompilationUnit/PackageDeclaration[contains(@Name, '.gateway.filter')]
@@ -39,6 +40,7 @@
                              or contains(@SimpleName, 'ErrorHandler')
                              or contains(@SimpleName, 'Extractor')
                              or contains(@SimpleName, 'Responder')
+                             or contains(@SimpleName, 'Test')
                              ]"/>
         </properties>
     </rule>
@@ -76,6 +78,7 @@
                              or contains(@SimpleName, 'Query')
                              or contains(@SimpleName, 'Properties')
                              or contains(@SimpleName, 'Config')
+                             or contains(@SimpleName, 'Constants')
                              or starts-with(@SimpleName, 'Q')
                              or ancestor::ClassDeclaration[contains(@SimpleName, 'ApiPaths')]
                              or ancestor::ClassDeclaration[contains(@SimpleName, 'Paths')]
@@ -101,11 +104,13 @@
                  - Controller (다양한 UseCase, DTO 의존)
                  - ExceptionHandler (다양한 예외 타입 처리)
                  - V1Controller (레거시 마이그레이션)
+                 - *Test (테스트 클래스는 다양한 테스트 유틸리티 import 필요)
             -->
             <property name="violationSuppressXPath"
                       value="//ClassDeclaration[
                              contains(@SimpleName, 'Controller')
                              or contains(@SimpleName, 'ExceptionHandler')
+                             or contains(@SimpleName, 'Test')
                              ]"/>
         </properties>
     </rule>
@@ -318,11 +323,18 @@
 ]]>
                 </value>
             </property>
+            <!-- 테스트 클래스 및 ArchUnit 패키지 제외 -->
+            <property name="violationSuppressXPath"
+                      value="//ClassDeclaration[
+                             contains(@SimpleName, 'Test')
+                             or ancestor::CompilationUnit/PackageDeclaration[contains(@Name, '.architecture')]
+                             ]"/>
         </properties>
         <description>
             Domain 레이어에서는 메서드 체이닝을 최소화해야 합니다.
             허용: Builder 패턴, Stream API, Optional 체이닝, BigDecimal 연산, StringBuilder,
                   Java 리플렉션 (getClass().getSimpleName() 등)
+            제외: 테스트 클래스(*Test), ArchUnit 아키텍처 테스트(.architecture 패키지)
 
             ❌ BAD:
             order.getCustomer().getAddress().getCity()
