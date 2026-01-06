@@ -129,21 +129,14 @@ module "log_streaming" {
 # ========================================
 # Sentry DSN SSM Parameter
 # ========================================
-# Sentry DSN은 수동으로 AWS Console에서 값을 설정해야 합니다.
-# 값 형식: https://xxx@xxx.ingest.sentry.io/xxx
-# ========================================
 resource "aws_ssm_parameter" "sentry_dsn" {
-  name        = "/${var.project_name}/sentry/dsn"
-  description = "Sentry DSN for ${var.project_name}"
+  name        = "/connectly-gateway/sentry/dsn"
+  description = "Sentry DSN for connectly-gateway"
   type        = "SecureString"
-  value       = "placeholder"  # 실제 값은 AWS Console에서 수동 설정
-
-  lifecycle {
-    ignore_changes = [value]  # Terraform이 값 변경을 무시
-  }
+  value       = "https://51a8a20d464920be26e7d584f7be0da9@o4510661281644544.ingest.us.sentry.io/4510661851611136"
 
   tags = merge(local.common_tags, {
-    Name      = "${var.project_name}-sentry-dsn-${var.environment}"
+    Name      = "connectly-gateway-sentry-dsn-${var.environment}"
     ManagedBy = "terraform"
   })
 }

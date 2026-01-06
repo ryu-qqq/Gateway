@@ -66,8 +66,7 @@ dependencies {
     // ========================================
     // Observability Starter (TraceId + MDC Context propagation for WebFlux)
     // AOP 의존성 필요 (observability-logging의 @Aspect 지원)
-    // TODO: JitPack 저장소 문제 해결 후 활성화
-    // implementation libs.observability.starter
+    implementation libs.observability.starter
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
     // Micrometer for metrics
