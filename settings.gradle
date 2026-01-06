@@ -1,3 +1,17 @@
+// ========================================
+// Plugin Management (Maven Mirror for Rate Limit)
+// ========================================
+pluginManagement {
+    repositories {
+        // Google Maven Mirror (Maven Central의 미러, rate limit 우회)
+        maven { url 'https://maven.google.com' }
+        // Gradle Plugin Portal
+        gradlePluginPortal()
+        // Maven Central (fallback)
+        mavenCentral()
+    }
+}
+
 rootProject.name = 'connectly-gateway'
 
 // ========================================

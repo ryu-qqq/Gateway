@@ -18,8 +18,14 @@ allprojects {
     version = '1.0.0-SNAPSHOT'
 
     repositories {
+        // Google Maven Mirror (Maven Central 미러, rate limit 우회용)
+        maven { url 'https://maven.google.com' }
+        // Maven Central
         mavenCentral()
+        // JitPack (observability-starter 등)
         maven { url 'https://jitpack.io' }
+        // Spring Milestone (백업용)
+        maven { url 'https://repo.spring.io/milestone' }
     }
 }
 
