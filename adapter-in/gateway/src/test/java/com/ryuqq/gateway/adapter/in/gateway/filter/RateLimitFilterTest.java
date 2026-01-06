@@ -304,5 +304,29 @@ class RateLimitFilterTest {
                     .isEqualTo("120");
             verify(filterChain, never()).filter(any());
         }
+
+        @Test
+        @DisplayName("예기치 않은 예외 발생 시 graceful degradation으로 다음 필터 진행")
+        void shouldProceedToNextFilterOnUnexpectedException() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            // Redis 연결 실패 등 예기치 않은 예외 시뮬레이션
+            when(checkRateLimitUseCase.execute(any(CheckRateLimitCommand.class)))
+                    .thenReturn(Mono.error(new RuntimeException("Redis connection failed")));
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when
+            Mono<Void> result = rateLimitFilter.filter(exchange, filterChain);
+
+            // then - graceful degradation: Rate Limit 체크 실패 시 다음 필터로 진행
+            StepVerifier.create(result).verifyComplete();
+
+            verify(filterChain).filter(exchange);
+        }
     }
 }

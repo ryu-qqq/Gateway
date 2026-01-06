@@ -102,8 +102,10 @@ class RateLimitIntegrationTest {
 
     /**
      * 테스트에서 사용할 클라이언트 IP를 설정하는 필드. Mock ClientIpExtractor가 이 값을 반환합니다. 각 테스트에서 요청 전에 이 값을 설정해야 합니다.
+     *
+     * <p>주의: @BeforeEach에서 고유한 기본값으로 초기화되며, 각 테스트에서 currentTestIp.set()으로 명시적으로 설정해야 합니다.
      */
-    private final AtomicReference<String> currentTestIp = new AtomicReference<>("default-test-ip");
+    private final AtomicReference<String> currentTestIp = new AtomicReference<>();
 
     @AfterAll
     static void stopWireMock() {
@@ -158,6 +160,10 @@ class RateLimitIntegrationTest {
     @BeforeEach
     void setup() throws InterruptedException {
         wireMockServer.resetAll();
+
+        // 테스트 격리를 위해 고유한 기본 IP 설정 (UUID 사용)
+        // 각 테스트에서 currentTestIp.set()으로 명시적으로 덮어써야 함
+        currentTestIp.set("test-default-" + UUID.randomUUID().toString().substring(0, 8));
 
         // Mock 초기화 후 재설정
         Mockito.reset(clientIpExtractor);

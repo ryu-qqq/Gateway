@@ -129,7 +129,15 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                         IpBlockedException.class, e -> forbidden(exchange, e.retryAfterSeconds()))
                 .onErrorResume(
                         RateLimitExceededException.class,
-                        e -> tooManyRequests(exchange, e.limit(), e.retryAfterSeconds()));
+                        e -> tooManyRequests(exchange, e.limit(), e.retryAfterSeconds()))
+                .onErrorResume(
+                        Exception.class,
+                        e -> {
+                            // Rate Limit 체크 실패 시 graceful degradation
+                            // 서비스 가용성을 위해 Rate Limit 없이 요청 진행
+                            // 로깅은 별도 모니터링 시스템에서 처리
+                            return chain.filter(exchange);
+                        });
     }
 
     /** 429 Too Many Requests 응답 */
