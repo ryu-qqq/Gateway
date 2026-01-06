@@ -58,6 +58,11 @@ logstashLogback = "7.4"
 micrometer = "1.12.4"
 
 # ========================================
+# Observability Starter (JitPack)
+# ========================================
+observabilityStarter = "v1.1.1"
+
+# ========================================
 # Utilities
 # ========================================
 commonsLang3 = "3.14.0"
@@ -158,6 +163,11 @@ springdoc-openapi = { module = "org.springdoc:springdoc-openapi-starter-webmvc-u
 # ========================================
 logstash-logback-encoder = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstashLogback" }
 micrometer-prometheus = { module = "io.micrometer:micrometer-registry-prometheus" }
+
+# ========================================
+# Observability Starter (JitPack)
+# ========================================
+observability-starter = { module = "com.github.ryu-qqq:observability-spring-boot-starter", version.ref = "observabilityStarter" }
 
 # ========================================
 # Utilities

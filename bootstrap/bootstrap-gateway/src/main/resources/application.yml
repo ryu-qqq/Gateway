@@ -169,6 +169,16 @@ gateway:
       admin.set-of.com: admin
 
 # ===============================================
+# Observability (TraceId + MDC Context Propagation)
+# ===============================================
+# MdcContextLifterHook으로 Reactor Context → MDC 자동 전파
+# 기존 TraceIdFilter(GlobalFilter)는 X-Trace-Id 헤더 존재 시 재사용
+observability:
+  reactive-trace:
+    enabled: true
+    generate-if-missing: true  # traceId 없으면 생성 (필터 체인 진행 필수)
+
+# ===============================================
 # Management & Actuator
 # ===============================================
 management:
