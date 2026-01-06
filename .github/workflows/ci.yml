@@ -10,16 +10,11 @@
 
 name: CI
 
-# TEMPORARILY DISABLED: Maven Central rate limit (403 Forbidden)
-# TODO: Rate limit 해결 후 다시 활성화
-# on:
-#   push:
-#     branches: [main, develop]
-#   pull_request:
-#     branches: [main, develop]
-
 on:
-  workflow_dispatch:  # 수동 실행만 허용
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
 
 permissions:
   contents: read
@@ -51,31 +46,28 @@ jobs:
 
       # ----------------------------------------------------------------------
       # 코드 품질 검증 (QA Tools)
-      # TEMPORARILY DISABLED: Maven Repository rate limit 문제로 비활성화
-      # TODO: Rate limit 해결 후 다시 활성화
       # ----------------------------------------------------------------------
-      # - name: Run Checkstyle
-      #   run: ./gradlew checkstyleMain checkstyleTest --no-daemon
-      #   continue-on-error: false
+      - name: Run Checkstyle
+        run: ./gradlew checkstyleMain checkstyleTest --no-daemon
+        continue-on-error: false
 
-      # - name: Run SpotBugs
-      #   run: ./gradlew spotbugsMain --no-daemon
-      #   continue-on-error: false
+      - name: Run SpotBugs
+        run: ./gradlew spotbugsMain --no-daemon
+        continue-on-error: false
 
-      # - name: Run PMD (Law of Demeter)
-      #   run: ./gradlew pmdMain --no-daemon
-      #   continue-on-error: false
+      - name: Run PMD (Law of Demeter)
+        run: ./gradlew pmdMain --no-daemon
+        continue-on-error: false
 
-      # - name: Check Code Formatting (Spotless)
-      #   run: ./gradlew spotlessCheck --no-daemon
-      #   continue-on-error: false
+      - name: Check Code Formatting (Spotless)
+        run: ./gradlew spotlessCheck --no-daemon
+        continue-on-error: false
 
       # ----------------------------------------------------------------------
       # Zero-Tolerance 검증
-      # TEMPORARILY DISABLED: Maven Repository rate limit 문제로 비활성화
       # ----------------------------------------------------------------------
-      # - name: Verify No Lombok
-      #   run: ./gradlew checkNoLombok --no-daemon
+      - name: Verify No Lombok
+        run: ./gradlew checkNoLombok --no-daemon
 
       # TODO: verifyVersionCatalog 태스크 구현 후 활성화
       # - name: Verify Version Catalog Consistency
@@ -91,10 +83,9 @@ jobs:
 
       # ----------------------------------------------------------------------
       # JaCoCo 커버리지 검증
-      # TEMPORARILY DISABLED: Maven Repository rate limit 문제로 비활성화
       # ----------------------------------------------------------------------
-      # - name: Verify Code Coverage
-      #   run: ./gradlew jacocoTestCoverageVerification --no-daemon
+      - name: Verify Code Coverage
+        run: ./gradlew jacocoTestCoverageVerification --no-daemon
 
       # ----------------------------------------------------------------------
       # 테스트 리포트 업로드
