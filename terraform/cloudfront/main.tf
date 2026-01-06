@@ -7,6 +7,34 @@
 # ========================================
 
 # ========================================
+# AWS Managed Cache Policies (Data Sources)
+# ========================================
+# Using data sources instead of hardcoded IDs for better maintainability
+# ========================================
+data "aws_cloudfront_cache_policy" "caching_disabled" {
+  name = "Managed-CachingDisabled"
+}
+
+data "aws_cloudfront_cache_policy" "caching_optimized" {
+  name = "Managed-CachingOptimized"
+}
+
+data "aws_cloudfront_origin_request_policy" "all_viewer" {
+  name = "Managed-AllViewer"
+}
+
+# ========================================
+# Public Static File Paths (for DRY cache behaviors)
+# ========================================
+locals {
+  public_static_paths = [
+    "/favicon.ico",
+    "/robots.txt",
+    "/sitemap*.xml"
+  ]
+}
+
+# ========================================
 # Cache Policies
 # ========================================
 
@@ -191,9 +219,8 @@ resource "aws_cloudfront_distribution" "prod" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "frontend-alb"
 
-    # CachingDisabled - HTML 페이지 캐시 안함
-    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
@@ -210,8 +237,8 @@ resource "aws_cloudfront_distribution" "prod" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "frontend-alb"
 
-    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_optimized.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
@@ -227,7 +254,7 @@ resource "aws_cloudfront_distribution" "prod" {
     target_origin_id = "frontend-alb"
 
     cache_policy_id          = aws_cloudfront_cache_policy.nextjs_image.id
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
@@ -238,43 +265,22 @@ resource "aws_cloudfront_distribution" "prod" {
   # ========================================
   # NOTE: Origin이 max-age=0을 보내도 min_ttl=3600으로 강제 캐시
   # 파일 변경 시 CloudFront Invalidation 필요
-  ordered_cache_behavior {
-    path_pattern     = "/favicon.ico"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "frontend-alb"
+  # Using dynamic block to reduce code duplication
+  dynamic "ordered_cache_behavior" {
+    for_each = toset(local.public_static_paths)
 
-    cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    content {
+      path_pattern     = ordered_cache_behavior.value
+      allowed_methods  = ["GET", "HEAD"]
+      cached_methods   = ["GET", "HEAD"]
+      target_origin_id = "frontend-alb"
 
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
-  }
+      cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
+      origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
-  ordered_cache_behavior {
-    path_pattern     = "/robots.txt"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "frontend-alb"
-
-    cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
-
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
-  }
-
-  ordered_cache_behavior {
-    path_pattern     = "/sitemap*.xml"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "frontend-alb"
-
-    cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
-
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
+      viewer_protocol_policy = "redirect-to-https"
+      compress               = true
+    }
   }
 
   # ========================================
@@ -385,8 +391,8 @@ resource "aws_cloudfront_distribution" "stage" {
     target_origin_id = "frontend-alb"
 
     # CachingDisabled - HTML 페이지 캐시 안함
-    cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_disabled.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
@@ -403,8 +409,8 @@ resource "aws_cloudfront_distribution" "stage" {
     cached_methods   = ["GET", "HEAD"]
     target_origin_id = "frontend-alb"
 
-    cache_policy_id          = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    cache_policy_id          = data.aws_cloudfront_cache_policy.caching_optimized.id
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
@@ -420,7 +426,7 @@ resource "aws_cloudfront_distribution" "stage" {
     target_origin_id = "frontend-alb"
 
     cache_policy_id          = aws_cloudfront_cache_policy.nextjs_image.id
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
     viewer_protocol_policy = "redirect-to-https"
     compress               = true
@@ -431,43 +437,22 @@ resource "aws_cloudfront_distribution" "stage" {
   # ========================================
   # NOTE: Origin이 max-age=0을 보내도 min_ttl=3600으로 강제 캐시
   # 파일 변경 시 CloudFront Invalidation 필요
-  ordered_cache_behavior {
-    path_pattern     = "/favicon.ico"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "frontend-alb"
+  # DRY: Dynamic block으로 중복 제거 (favicon.ico, robots.txt, sitemap*.xml)
+  dynamic "ordered_cache_behavior" {
+    for_each = toset(local.public_static_paths)
 
-    cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+    content {
+      path_pattern     = ordered_cache_behavior.value
+      allowed_methods  = ["GET", "HEAD"]
+      cached_methods   = ["GET", "HEAD"]
+      target_origin_id = "frontend-alb"
 
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
-  }
+      cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
+      origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
 
-  ordered_cache_behavior {
-    path_pattern     = "/robots.txt"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "frontend-alb"
-
-    cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
-
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
-  }
-
-  ordered_cache_behavior {
-    path_pattern     = "/sitemap*.xml"
-    allowed_methods  = ["GET", "HEAD"]
-    cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "frontend-alb"
-
-    cache_policy_id          = aws_cloudfront_cache_policy.public_static.id
-    origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
-
-    viewer_protocol_policy = "redirect-to-https"
-    compress               = true
+      viewer_protocol_policy = "redirect-to-https"
+      compress               = true
+    }
   }
 
   # ========================================

@@ -91,12 +91,17 @@
         <logger name="reactor.netty" level="WARN"/>
     </springProfile>
 
-    <!-- Default (fallback) -->
-    <springProfile name="!local,!test,!prod">
+    <!-- ========================================
+         Staging/Development Profiles: JSON logs + Sentry
+         For non-local, non-test, non-prod environments (e.g., dev, stage)
+         ======================================== -->
+    <springProfile name="dev | stage">
         <root level="INFO">
             <appender-ref ref="JSON_CONSOLE"/>
             <appender-ref ref="SENTRY"/>
         </root>
+
+        <logger name="com.ryuqq.gateway" level="DEBUG"/>
     </springProfile>
 
 </configuration>
