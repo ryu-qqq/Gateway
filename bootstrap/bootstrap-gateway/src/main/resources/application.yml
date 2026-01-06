@@ -188,6 +188,16 @@ observability:
   reactive-trace:
     enabled: true
     generate-if-missing: true  # traceId 없으면 생성 (필터 체인 진행 필수)
+  http:
+    enabled: true
+    log-request-body: false
+    log-response-body: false
+    exclude-paths:
+      - /actuator/**
+    exclude-headers:
+      - Authorization
+      - Cookie
+      - X-Service-Token
 
 # ===============================================
 # Sentry (Error Tracking)
@@ -398,3 +408,9 @@ logging:
     root: WARN
     com.ryuqq.gateway: INFO
     org.springframework.cloud.gateway: INFO
+    org.springframework.web.reactive: WARN
+    org.springframework.web.server: WARN
+    io.netty: WARN
+    reactor.netty: WARN
+    io.lettuce: WARN
+    org.redisson: WARN

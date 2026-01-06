@@ -101,7 +101,7 @@ public class ClientIpExtractor {
             return remoteAddress.getAddress().getHostAddress();
         }
 
-        log.warn("Unable to extract client IP from RemoteAddress. Returning 'unknown'.");
+        log.debug("Unable to extract client IP from RemoteAddress. Returning 'unknown'.");
         return UNKNOWN_IP;
     }
 

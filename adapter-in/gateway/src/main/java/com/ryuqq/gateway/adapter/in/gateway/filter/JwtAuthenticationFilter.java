@@ -187,7 +187,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
      * <p>RecordFailureUseCase를 호출하여 IP별 실패 횟수를 증가시킵니다. 임계값 초과 시 IP가 차단됩니다.
      */
     private Mono<Void> recordFailureAndUnauthorized(ServerWebExchange exchange) {
-        String clientIp = clientIpExtractor.extract(exchange);
+        String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
         RecordFailureCommand command = RecordFailureCommand.forInvalidJwt(clientIp);
 
         return recordFailureUseCase.execute(command).then(unauthorized(exchange));
