@@ -95,6 +95,14 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
         String path = exchange.getRequest().getURI().getPath();
         String method = exchange.getRequest().getMethod().name();
 
+        // IP를 추출할 수 없는 경우 Rate Limit 스킵 (graceful degradation)
+        // 모든 요청이 "unknown"으로 처리되면 전체 서비스가 429 에러 발생
+        if (ClientIpExtractor.UNKNOWN_IP.equals(clientIp)) {
+            log.warn(
+                    "Unable to extract client IP for path={}. Skipping IP-based rate limit.", path);
+            return chain.filter(exchange);
+        }
+
         // IP 기반 Rate Limit 체크
         CheckRateLimitCommand ipCommand = CheckRateLimitCommand.forIp(clientIp);
 

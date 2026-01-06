@@ -1,7 +1,7 @@
 package com.ryuqq.gateway.adapter.in.gateway.common.util;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -36,15 +36,7 @@ public class ClientIpExtractor {
     private static final Logger log = LoggerFactory.getLogger(ClientIpExtractor.class);
 
     private static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
-    private static final String UNKNOWN_IP = "unknown";
-
-    /** IPv4 주소 패턴 (간단한 검증용) */
-    private static final Pattern IPV4_PATTERN =
-            Pattern.compile("^((25[0-5]|(2[0-4]|1\\d|[1-9]|)\\d)(\\.(?!$)|$)){4}$");
-
-    /** IPv6 주소 패턴 (간단한 검증용) */
-    private static final Pattern IPV6_PATTERN =
-            Pattern.compile("^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$");
+    public static final String UNKNOWN_IP = "unknown";
 
     /**
      * 클라이언트 IP 추출 (Direct Mode - 기본, 안전)
@@ -106,16 +98,23 @@ public class ClientIpExtractor {
     }
 
     /**
-     * IP 주소 형식 검증
+     * IP 주소 형식 검증 (Java 표준 라이브러리 사용)
+     *
+     * <p>IPv4, IPv6, IPv4-mapped IPv6 (::ffff:1.2.3.4) 등 모든 표준 형식 지원
      *
      * @param ip 검증할 IP 문자열
-     * @return 유효한 IPv4 또는 IPv6 형식이면 true
+     * @return 유효한 IP 주소 형식이면 true
      */
     private boolean isValidIpAddress(String ip) {
         if (ip == null || ip.isBlank()) {
             return false;
         }
 
-        return IPV4_PATTERN.matcher(ip).matches() || IPV6_PATTERN.matcher(ip).matches();
+        try {
+            InetAddress.getByName(ip);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
