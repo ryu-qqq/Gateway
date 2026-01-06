@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ========================================
+     Logback Configuration for Gateway
+     ========================================
+     - JSON format logs for CloudWatch/OpenSearch
+     - Sentry integration for error tracking
+     - TraceId included in all logs
+     ======================================== -->
+<configuration>
+    <!-- Spring Boot defaults -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!-- Properties from Spring Environment -->
+    <springProperty scope="context" name="SERVICE_NAME" source="spring.application.name" defaultValue="connectly-gateway"/>
+    <springProperty scope="context" name="ENVIRONMENT" source="spring.profiles.active" defaultValue="local"/>
+
+    <!-- ========================================
+         Console Appender (Development)
+         ======================================== -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - traceId=%X{traceId} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- ========================================
+         JSON Console Appender (Production - CloudWatch/OpenSearch)
+         ======================================== -->
+    <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <!-- MDC fields to include -->
+            <includeMdcKeyName>traceId</includeMdcKeyName>
+            <includeMdcKeyName>spanId</includeMdcKeyName>
+            <includeMdcKeyName>userId</includeMdcKeyName>
+            <includeMdcKeyName>tenantId</includeMdcKeyName>
+            <!-- Custom fields -->
+            <customFields>{"service":"${SERVICE_NAME}","environment":"${ENVIRONMENT}"}</customFields>
+            <!-- Timestamp format -->
+            <timestampPattern>yyyy-MM-dd'T'HH:mm:ss.SSSZ</timestampPattern>
+        </encoder>
+    </appender>
+
+    <!-- ========================================
+         Sentry Appender (Error Tracking)
+         ======================================== -->
+    <appender name="SENTRY" class="io.sentry.logback.SentryAppender">
+        <!-- ERROR level and above only -->
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <!-- DSN is configured via application.yml/environment variable -->
+    </appender>
+
+    <!-- ========================================
+         Profile-specific Configuration
+         ======================================== -->
+
+    <!-- Local Profile: Human-readable console output -->
+    <springProfile name="local">
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <logger name="com.ryuqq.gateway" level="TRACE"/>
+        <logger name="org.springframework.cloud.gateway" level="DEBUG"/>
+        <logger name="org.springframework.web.reactive" level="DEBUG"/>
+    </springProfile>
+
+    <!-- Test Profile: Console output with less verbosity -->
+    <springProfile name="test">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+
+        <logger name="com.ryuqq.gateway" level="DEBUG"/>
+    </springProfile>
+
+    <!-- Production Profile: JSON logs + Sentry -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+            <appender-ref ref="SENTRY"/>
+        </root>
+
+        <logger name="com.ryuqq.gateway" level="INFO"/>
+        <logger name="org.springframework.cloud.gateway" level="INFO"/>
+
+        <!-- Reduce noise from common libraries -->
+        <logger name="org.springframework.web" level="WARN"/>
+        <logger name="io.netty" level="WARN"/>
+        <logger name="reactor.netty" level="WARN"/>
+    </springProfile>
+
+    <!-- Default (fallback) -->
+    <springProfile name="!local,!test,!prod">
+        <root level="INFO">
+            <appender-ref ref="JSON_CONSOLE"/>
+            <appender-ref ref="SENTRY"/>
+        </root>
+    </springProfile>
+
+</configuration>

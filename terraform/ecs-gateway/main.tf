@@ -112,6 +112,43 @@ module "gateway_logs" {
 }
 
 # ========================================
+# Log Streaming to OpenSearch (V2 - Kinesis)
+# ========================================
+# CloudWatch Logs → Kinesis → Lambda → OpenSearch
+# SSM Parameters required:
+#   - /shared/logging/kinesis-stream-arn
+#   - /shared/logging/cloudwatch-to-kinesis-role-arn
+# ========================================
+module "log_streaming" {
+  source = "git::https://github.com/ryu-qqq/Infrastructure.git//terraform/modules/log-subscription-filter-v2?ref=main"
+
+  log_group_name = module.gateway_logs.log_group_name
+  service_name   = "gateway"
+}
+
+# ========================================
+# Sentry DSN SSM Parameter
+# ========================================
+# Sentry DSN은 수동으로 AWS Console에서 값을 설정해야 합니다.
+# 값 형식: https://xxx@xxx.ingest.sentry.io/xxx
+# ========================================
+resource "aws_ssm_parameter" "sentry_dsn" {
+  name        = "/${var.project_name}/sentry/dsn"
+  description = "Sentry DSN for ${var.project_name}"
+  type        = "SecureString"
+  value       = "placeholder"  # 실제 값은 AWS Console에서 수동 설정
+
+  lifecycle {
+    ignore_changes = [value]  # Terraform이 값 변경을 무시
+  }
+
+  tags = merge(local.common_tags, {
+    Name      = "${var.project_name}-sentry-dsn-${var.environment}"
+    ManagedBy = "terraform"
+  })
+}
+
+# ========================================
 # Security Groups
 # ========================================
 resource "aws_security_group" "alb" {
@@ -540,11 +577,16 @@ module "ecs_service" {
     { name = "AUTH_HUB_URL", value = var.auth_hub_url },
     # Legacy API 라우팅 (Cloud Map DNS)
     { name = "LEGACY_WEB_URI", value = "http://setof-commerce-legacy-api-prod.connectly.local:8088" },
-    { name = "LEGACY_ADMIN_URI", value = "http://setof-commerce-legacy-admin-prod.connectly.local:8089" }
+    { name = "LEGACY_ADMIN_URI", value = "http://setof-commerce-legacy-admin-prod.connectly.local:8089" },
+    # Sentry/Observability
+    { name = "SERVICE_NAME", value = "${var.project_name}" },
+    { name = "APP_VERSION", value = var.image_tag }
   ]
 
-  # Container Secrets (Gateway may not need DB access, but keep for flexibility)
-  container_secrets = []
+  # Container Secrets (Sentry DSN from SSM Parameter)
+  container_secrets = [
+    { name = "SENTRY_DSN", valueFrom = aws_ssm_parameter.sentry_dsn.arn }
+  ]
 
   # Health Check
   health_check_command      = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]

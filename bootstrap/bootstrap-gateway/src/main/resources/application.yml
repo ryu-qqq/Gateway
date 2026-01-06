@@ -190,6 +190,28 @@ observability:
     generate-if-missing: true  # traceId 없으면 생성 (필터 체인 진행 필수)
 
 # ===============================================
+# Sentry (Error Tracking)
+# ===============================================
+# DSN은 환경변수로 주입 (Secrets Manager / SSM Parameter)
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${spring.profiles.active:local}
+  release: ${APP_VERSION:unknown}
+  # 성능 모니터링 (트랜잭션 샘플링)
+  traces-sample-rate: 0.1  # 프로덕션: 10% 샘플링
+  # 민감 정보 필터링
+  send-default-pii: false
+  # 서버 이름 (ECS Task ID 사용)
+  server-name: ${HOSTNAME:unknown}
+  # 에러 필터링
+  ignored-exceptions-for-type:
+    - org.springframework.web.server.ResponseStatusException
+  # 로그 연동
+  logging:
+    minimum-event-level: error    # ERROR 이상만 Sentry로 전송
+    minimum-breadcrumb-level: info # INFO 이상은 breadcrumb으로 저장
+
+# ===============================================
 # Management & Actuator
 # ===============================================
 management:
