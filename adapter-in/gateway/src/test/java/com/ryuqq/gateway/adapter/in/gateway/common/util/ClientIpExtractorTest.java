@@ -19,6 +19,8 @@ import org.springframework.mock.web.server.MockServerWebExchange;
  */
 class ClientIpExtractorTest {
 
+    private final ClientIpExtractor clientIpExtractor = new ClientIpExtractor();
+
     @Nested
     @DisplayName("Direct Mode (기본 - 안전)")
     class DirectModeTest {
@@ -35,7 +37,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extract(exchange);
+            String clientIp = clientIpExtractor.extract(exchange);
 
             // then
             assertThat(clientIp).isEqualTo("192.168.1.100");
@@ -52,7 +54,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extract(exchange);
+            String clientIp = clientIpExtractor.extract(exchange);
 
             // then
             assertThat(clientIp).isEqualTo("10.20.30.40");
@@ -66,7 +68,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extract(exchange);
+            String clientIp = clientIpExtractor.extract(exchange);
 
             // then
             assertThat(clientIp).isEqualTo("unknown");
@@ -89,7 +91,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+            String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
 
             // then
             assertThat(clientIp).isEqualTo("203.0.113.50");
@@ -107,7 +109,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+            String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
 
             // then
             assertThat(clientIp).isEqualTo("198.51.100.178");
@@ -125,7 +127,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+            String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
 
             // then
             assertThat(clientIp).isEqualTo("172.16.0.1");
@@ -143,7 +145,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+            String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
 
             // then
             assertThat(clientIp).isEqualTo("172.16.0.2");
@@ -160,7 +162,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+            String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
 
             // then
             assertThat(clientIp).isEqualTo("10.10.10.10");
@@ -183,7 +185,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+            String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
 
             // then - RemoteAddress로 폴백
             assertThat(clientIp).isEqualTo("192.168.0.1");
@@ -201,7 +203,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+            String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
 
             // then - RemoteAddress로 폴백
             assertThat(clientIp).isEqualTo("192.168.0.2");
@@ -219,7 +221,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when
-            String clientIp = ClientIpExtractor.extractWithTrustedProxy(exchange);
+            String clientIp = clientIpExtractor.extractWithTrustedProxy(exchange);
 
             // then - RemoteAddress로 폴백
             assertThat(clientIp).isEqualTo("192.168.0.3");
@@ -237,7 +239,7 @@ class ClientIpExtractorTest {
             MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
             // when - Direct Mode 사용
-            String clientIp = ClientIpExtractor.extract(exchange);
+            String clientIp = clientIpExtractor.extract(exchange);
 
             // then - X-Forwarded-For가 아닌 실제 연결 주소 반환
             assertThat(clientIp).isNotEqualTo("1.2.3.4");

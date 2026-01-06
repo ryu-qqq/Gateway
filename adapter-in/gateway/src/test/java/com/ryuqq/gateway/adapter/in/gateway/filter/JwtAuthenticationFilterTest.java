@@ -2,11 +2,13 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
@@ -50,6 +52,8 @@ class JwtAuthenticationFilterTest {
 
     @Mock private PublicPathsProperties publicPathsProperties;
 
+    @Mock private ClientIpExtractor clientIpExtractor;
+
     private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -60,13 +64,16 @@ class JwtAuthenticationFilterTest {
 
     @BeforeEach
     void setUp() {
-        when(publicPathsProperties.getAllPublicPaths()).thenReturn(TEST_PUBLIC_PATHS);
+        lenient().when(publicPathsProperties.getAllPublicPaths()).thenReturn(TEST_PUBLIC_PATHS);
+        lenient().when(clientIpExtractor.extractWithTrustedProxy(any())).thenReturn("127.0.0.1");
+        lenient().when(clientIpExtractor.extract(any())).thenReturn("127.0.0.1");
         jwtAuthenticationFilter =
                 new JwtAuthenticationFilter(
                         validateJwtUseCase,
                         recordFailureUseCase,
                         objectMapper,
-                        publicPathsProperties);
+                        publicPathsProperties,
+                        clientIpExtractor);
     }
 
     /** recordFailureUseCase 기본 동작 설정 - 실패 기록이 필요한 테스트에서만 호출 */

@@ -194,7 +194,7 @@ observability:
 # ===============================================
 # DSN은 환경변수로 주입 (Secrets Manager / SSM Parameter)
 sentry:
-  dsn: ${SENTRY_DSN:}
+  dsn: ${SENTRY_DSN:https://51a8a20d464920be26e7d584f7be0da9@o4510661281644544.ingest.us.sentry.io/4510661851611136}
   environment: ${spring.profiles.active:local}
   release: ${APP_VERSION:unknown}
   # 성능 모니터링 (트랜잭션 샘플링)

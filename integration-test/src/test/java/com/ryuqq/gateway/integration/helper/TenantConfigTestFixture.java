@@ -1,4 +1,4 @@
-package com.ryuqq.gateway.integration.fixtures;
+package com.ryuqq.gateway.integration.helper;
 
 import java.util.List;
 

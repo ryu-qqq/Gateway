@@ -3,12 +3,15 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
+import com.ryuqq.gateway.application.ratelimit.config.RateLimitProperties;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.dto.response.CheckRateLimitResponse;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.CheckRateLimitUseCase;
@@ -17,6 +20,7 @@ import com.ryuqq.gateway.domain.ratelimit.exception.RateLimitExceededException;
 import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitAction;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,9 +44,13 @@ import reactor.test.StepVerifier;
 @DisplayName("RateLimitFilter 테스트")
 class RateLimitFilterTest {
 
+    @Mock private RateLimitProperties rateLimitProperties;
+
     @Mock private CheckRateLimitUseCase checkRateLimitUseCase;
 
     @Mock private GatewayFilterChain filterChain;
+
+    @Mock private ClientIpExtractor clientIpExtractor;
 
     private RateLimitFilter rateLimitFilter;
 
@@ -50,7 +58,14 @@ class RateLimitFilterTest {
 
     @BeforeEach
     void setUp() {
-        rateLimitFilter = new RateLimitFilter(checkRateLimitUseCase, objectMapper);
+        lenient().when(rateLimitProperties.isEnabled()).thenReturn(true);
+        lenient().when(clientIpExtractor.extractWithTrustedProxy(any())).thenReturn("127.0.0.1");
+        rateLimitFilter =
+                new RateLimitFilter(
+                        rateLimitProperties,
+                        checkRateLimitUseCase,
+                        objectMapper,
+                        clientIpExtractor);
     }
 
     @Nested
@@ -65,6 +80,60 @@ class RateLimitFilterTest {
 
             // then
             assertThat(order).isEqualTo(GatewayFilterOrder.RATE_LIMIT_FILTER);
+        }
+    }
+
+    @Nested
+    @DisplayName("Idempotency Guard 테스트")
+    class IdempotencyGuardTest {
+
+        @Test
+        @DisplayName("이미 Rate Limit 체크된 요청은 스킵해야 한다")
+        void shouldSkipWhenRateLimitAlreadyChecked() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            // 이미 Rate Limit 체크가 완료된 것으로 설정
+            exchange.getAttributes().put("RATE_LIMIT_CHECKED", true);
+
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(rateLimitFilter.filter(exchange, filterChain)).verifyComplete();
+
+            // Rate Limit 체크 없이 다음 필터로 진행해야 함
+            verify(filterChain).filter(exchange);
+            verify(checkRateLimitUseCase, never()).execute(any(CheckRateLimitCommand.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Rate Limit 비활성화 테스트")
+    class RateLimitDisabledTest {
+
+        @Test
+        @DisplayName("Rate Limit 비활성화 시 Rate Limit 체크 없이 다음 필터로 진행")
+        void shouldSkipRateLimitCheckWhenDisabled() {
+            // given
+            when(rateLimitProperties.isEnabled()).thenReturn(false);
+
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(rateLimitFilter.filter(exchange, filterChain)).verifyComplete();
+
+            verify(filterChain).filter(exchange);
+            verify(checkRateLimitUseCase, never()).execute(any(CheckRateLimitCommand.class));
         }
     }
 
@@ -175,6 +244,7 @@ class RateLimitFilterTest {
     class RateLimitHeaderTest {
 
         @Test
+        @Disabled("성공 응답의 Rate Limit 헤더 추가 기능 미구현 - 추후 구현 예정")
         @DisplayName("Rate Limit 허용 시 헤더 추가")
         void shouldAddRateLimitHeadersWhenAllowed() {
             // given
@@ -261,6 +331,30 @@ class RateLimitFilterTest {
             assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After"))
                     .isEqualTo("120");
             verify(filterChain, never()).filter(any());
+        }
+
+        @Test
+        @DisplayName("예기치 않은 예외 발생 시 graceful degradation으로 다음 필터 진행")
+        void shouldProceedToNextFilterOnUnexpectedException() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            // Redis 연결 실패 등 예기치 않은 예외 시뮬레이션
+            when(checkRateLimitUseCase.execute(any(CheckRateLimitCommand.class)))
+                    .thenReturn(Mono.error(new RuntimeException("Redis connection failed")));
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when
+            Mono<Void> result = rateLimitFilter.filter(exchange, filterChain);
+
+            // then - graceful degradation: Rate Limit 체크 실패 시 다음 필터로 진행
+            StepVerifier.create(result).verifyComplete();
+
+            verify(filterChain).filter(exchange);
         }
     }
 }

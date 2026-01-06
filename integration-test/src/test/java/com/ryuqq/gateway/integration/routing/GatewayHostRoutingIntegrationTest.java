@@ -1,4 +1,4 @@
-package com.ryuqq.gateway.integration;
+package com.ryuqq.gateway.integration.routing;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -12,9 +12,9 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.bootstrap.config.GatewayRoutingConfig.GatewayRoutingProperties;
-import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
-import com.ryuqq.gateway.integration.fixtures.PermissionTestFixture;
-import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
+import com.ryuqq.gateway.integration.helper.JwtTestFixture;
+import com.ryuqq.gateway.integration.helper.PermissionTestFixture;
+import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -47,10 +49,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 @SpringBootTest(
         classes = GatewayApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-        properties = {"spring.profiles.active=test"})
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 @Testcontainers
 @Tag("integration")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class GatewayHostRoutingIntegrationTest {
 
     static WireMockServer legacyWebServer;
@@ -75,7 +78,7 @@ class GatewayHostRoutingIntegrationTest {
 
     @Container
     static GenericContainer<?> redis =
-            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
+            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379).withReuse(true);
 
     @Autowired private WebTestClient webTestClient;
 
@@ -110,6 +113,9 @@ class GatewayHostRoutingIntegrationTest {
                         String.format(
                                 "singleServerConfig:\n  address: redis://%s:%d",
                                 redis.getHost(), redis.getFirstMappedPort()));
+
+        // Rate Limit 비활성화 (Host 라우팅 테스트에서는 Rate Limit 테스트 불필요)
+        registry.add("gateway.rate-limit.enabled", () -> "false");
 
         // Gateway Routing - Host-based routing 설정
         registry.add("gateway.routing.discovery.enabled", () -> "false");
@@ -325,11 +331,6 @@ class GatewayHostRoutingIntegrationTest {
         @Test
         @DisplayName("hosts 리스트는 수정 불가능해야 한다")
         void shouldReturnUnmodifiableHostsList() {
-            // 테스트용 서비스가 아닌 실제 서비스 중 hosts가 없는 경우
-            // 이 테스트에서는 동적으로 설정하므로 legacy-web과 legacy-admin만 존재
-            // 두 서비스 모두 hosts가 있으므로 hosts.isEmpty()인 케이스는 없음
-            // 대신 getHosts()가 unmodifiable list를 반환하는지 확인
-
             var legacyWeb =
                     routingProperties.getServices().stream()
                             .filter(s -> "legacy-web".equals(s.getId()))
@@ -351,9 +352,6 @@ class GatewayHostRoutingIntegrationTest {
         @Test
         @DisplayName("설정되지 않은 호스트로 요청 시 라우팅되지 않아야 한다")
         void shouldNotRouteWhenHostNotConfigured() {
-            // 설정되지 않은 호스트로 요청
-            // 라우트가 매칭되지 않으면 정적 리소스 핸들러로 폴백되어 404 발생
-            // GlobalExceptionHandler가 이를 500으로 래핑하지만, 메시지에 "404 NOT_FOUND" 포함
             webTestClient
                     .get()
                     .uri("/api/v1/products")

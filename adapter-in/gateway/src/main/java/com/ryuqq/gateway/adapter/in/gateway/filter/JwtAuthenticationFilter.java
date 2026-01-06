@@ -70,6 +70,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private final ObjectMapper objectMapper;
     private final AntPathMatcher pathMatcher;
     private final PublicPathsProperties publicPathsProperties;
+    private final ClientIpExtractor clientIpExtractor;
 
     /** JWT 인증을 건너뛸 전역 Public 경로 패턴 (Host 기반 서비스 제외) */
     private final List<String> globalPublicPaths;
@@ -78,13 +79,15 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             ValidateJwtUseCase validateJwtUseCase,
             RecordFailureUseCase recordFailureUseCase,
             ObjectMapper objectMapper,
-            PublicPathsProperties publicPathsProperties) {
+            PublicPathsProperties publicPathsProperties,
+            ClientIpExtractor clientIpExtractor) {
         this.validateJwtUseCase = validateJwtUseCase;
         this.recordFailureUseCase = recordFailureUseCase;
         this.objectMapper = objectMapper;
         this.pathMatcher = new AntPathMatcher();
         this.publicPathsProperties = publicPathsProperties;
         this.globalPublicPaths = publicPathsProperties.getAllPublicPaths();
+        this.clientIpExtractor = clientIpExtractor;
     }
 
     @Override
@@ -184,7 +187,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
      * <p>RecordFailureUseCase를 호출하여 IP별 실패 횟수를 증가시킵니다. 임계값 초과 시 IP가 차단됩니다.
      */
     private Mono<Void> recordFailureAndUnauthorized(ServerWebExchange exchange) {
-        String clientIp = ClientIpExtractor.extract(exchange);
+        String clientIp = clientIpExtractor.extract(exchange);
         RecordFailureCommand command = RecordFailureCommand.forInvalidJwt(clientIp);
 
         return recordFailureUseCase.execute(command).then(unauthorized(exchange));

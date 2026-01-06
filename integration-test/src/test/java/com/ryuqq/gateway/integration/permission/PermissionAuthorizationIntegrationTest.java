@@ -1,4 +1,4 @@
-package com.ryuqq.gateway.integration;
+package com.ryuqq.gateway.integration.permission;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
@@ -8,16 +8,16 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
-import com.ryuqq.gateway.integration.fixtures.JwtTestFixture;
-import com.ryuqq.gateway.integration.fixtures.PermissionTestFixture;
-import com.ryuqq.gateway.integration.fixtures.TenantConfigTestFixture;
+import com.ryuqq.gateway.integration.helper.JwtTestFixture;
+import com.ryuqq.gateway.integration.helper.PermissionTestFixture;
+import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -28,6 +28,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -57,23 +59,25 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(
         classes = GatewayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 @Testcontainers
+@Tag("integration")
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Import(PermissionAuthorizationIntegrationTest.TestGatewayConfig.class)
 class PermissionAuthorizationIntegrationTest {
 
     static WireMockServer wireMockServer;
 
-    @Container
-    static GenericContainer<?> redis =
-            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379);
-
-    @Autowired private WebTestClient webTestClient;
-
-    @BeforeAll
-    static void startWireMock() {
-        wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().port(8889));
+    static {
+        wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
         wireMockServer.start();
     }
+
+    @Container
+    static GenericContainer<?> redis =
+            new GenericContainer<>("redis:7-alpine").withExposedPorts(6379).withReuse(true);
+
+    @Autowired private WebTestClient webTestClient;
 
     @AfterAll
     static void stopWireMock() {
@@ -86,7 +90,8 @@ class PermissionAuthorizationIntegrationTest {
     static void configureProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.data.redis.host", redis::getHost);
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
-        registry.add("authhub.client.base-url", () -> "http://localhost:8889");
+        registry.add("authhub.client.base-url", () -> "http://localhost:" + wireMockServer.port());
+        registry.add("gateway.rate-limit.enabled", () -> "false");
         // Redisson 설정 (Testcontainers Redis 사용)
         registry.add(
                 "spring.redis.redisson.config",
@@ -103,7 +108,9 @@ class PermissionAuthorizationIntegrationTest {
             return builder.routes()
                     .route(
                             "permission-test-route",
-                            r -> r.path("/test/**").uri("http://localhost:8889"))
+                            r ->
+                                    r.path("/test/**")
+                                            .uri("http://localhost:" + wireMockServer.port()))
                     .build();
         }
     }
@@ -150,7 +157,7 @@ class PermissionAuthorizationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody("{\"message\":\"success\"}")));
 
-        // Mock Tenant Config API (GATEWAY-004 Tenant 격리 기능)
+        // Mock Tenant Config API
         wireMockServer.stubFor(
                 get(urlPathMatching("/api/v1/tenants/.+/config"))
                         .willReturn(
@@ -322,7 +329,7 @@ class PermissionAuthorizationIntegrationTest {
                     .expectStatus()
                     .isOk();
 
-            // then - 다음 요청에서 새로운 Spec이 적용됨 (AuthHub에서 다시 조회)
+            // then - 다음 요청에서 새로운 Spec이 적용됨
             webTestClient
                     .get()
                     .uri("/test/resource")
