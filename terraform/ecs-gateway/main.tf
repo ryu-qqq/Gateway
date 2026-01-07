@@ -130,10 +130,11 @@ module "log_streaming" {
 # Sentry DSN SSM Parameter (External - 수동 생성됨)
 # ========================================
 # SSM Parameter는 AWS Console/CLI로 수동 생성됨
+# 경로: /${project_name}/sentry/dsn (예: /gateway/sentry/dsn)
 # Atlantis IAM Role에 ssm:PutParameter 권한이 없어서 data source로 참조
 # ========================================
 data "aws_ssm_parameter" "sentry_dsn" {
-  name = "/connectly-gateway/sentry/dsn"
+  name = "/${var.project_name}/sentry/dsn"
 }
 
 # ========================================
