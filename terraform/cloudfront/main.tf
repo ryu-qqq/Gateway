@@ -115,9 +115,12 @@ resource "aws_cloudfront_cache_policy" "nextjs_image" {
 # ========================================
 
 # API Origin Request Policy - Forward all necessary headers
+# NOTE: X-Forwarded-For는 CloudFront가 자동 추가하지만, 명시적 whitelist 필요
+# - allViewerAndWhitelistCloudFront: 뷰어 헤더 + whitelist CloudFront 헤더 전달
+# - X-Forwarded-For: Rate Limiting을 위한 클라이언트 IP 추출에 필수
 resource "aws_cloudfront_origin_request_policy" "api_all_viewer" {
   name    = "${var.project_name}-api-all-viewer-${var.environment}"
-  comment = "Forward all viewer headers for API requests"
+  comment = "Forward all viewer headers + X-Forwarded-For for API requests"
 
   cookies_config {
     cookie_behavior = "all"
@@ -125,7 +128,11 @@ resource "aws_cloudfront_origin_request_policy" "api_all_viewer" {
   headers_config {
     header_behavior = "allViewerAndWhitelistCloudFront"
     headers {
-      items = ["CloudFront-Forwarded-Proto", "CloudFront-Is-Mobile-Viewer"]
+      items = [
+        "CloudFront-Forwarded-Proto",
+        "CloudFront-Is-Mobile-Viewer",
+        "CloudFront-Viewer-Address" # 클라이언트 IP:Port 포함 (X-Forwarded-For 대체)
+      ]
     }
   }
   query_strings_config {

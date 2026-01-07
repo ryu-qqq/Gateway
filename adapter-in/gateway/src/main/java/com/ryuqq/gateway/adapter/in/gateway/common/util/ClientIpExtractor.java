@@ -10,21 +10,22 @@ import org.springframework.web.server.ServerWebExchange;
 /**
  * 클라이언트 IP 추출 유틸리티
  *
- * <p>X-Forwarded-For 헤더 spoofing 방어를 위해 RemoteAddress를 기본으로 사용합니다.
+ * <p>AWS CloudFront/ALB 환경에서 클라이언트 IP를 안전하게 추출합니다.
+ *
+ * <p><strong>헤더 우선순위</strong>:
+ *
+ * <ol>
+ *   <li>CloudFront-Viewer-Address: CloudFront가 설정하는 신뢰할 수 있는 헤더 (IP:port 형식)
+ *   <li>X-Forwarded-For: 표준 프록시 헤더 (첫 번째 IP 사용)
+ *   <li>RemoteAddress: 직접 연결된 클라이언트 IP (fallback)
+ * </ol>
  *
  * <p><strong>보안 고려사항</strong>:
  *
  * <ul>
- *   <li>X-Forwarded-For는 클라이언트가 조작 가능 → 직접 신뢰하지 않음
- *   <li>신뢰할 수 있는 프록시(Load Balancer, CDN) 뒤에서만 X-Forwarded-For 사용
+ *   <li>CloudFront-Viewer-Address는 CloudFront가 설정하므로 신뢰 가능
+ *   <li>X-Forwarded-For는 클라이언트가 조작 가능 → CloudFront 뒤에서만 신뢰
  *   <li>프록시 없는 환경에서는 RemoteAddress만 사용
- * </ul>
- *
- * <p><strong>사용 모드</strong>:
- *
- * <ul>
- *   <li>Trusted Proxy Mode: 신뢰할 수 있는 프록시가 설정한 X-Forwarded-For 사용
- *   <li>Direct Mode: RemoteAddress만 사용 (기본값, 안전)
  * </ul>
  *
  * @author development-team
@@ -35,6 +36,7 @@ public class ClientIpExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(ClientIpExtractor.class);
 
+    private static final String CLOUDFRONT_VIEWER_ADDRESS = "CloudFront-Viewer-Address";
     private static final String X_FORWARDED_FOR_HEADER = "X-Forwarded-For";
     public static final String UNKNOWN_IP = "unknown";
 
@@ -53,31 +55,82 @@ public class ClientIpExtractor {
     /**
      * 클라이언트 IP 추출 (Trusted Proxy Mode)
      *
-     * <p>신뢰할 수 있는 프록시(Load Balancer, CDN) 뒤에서만 사용하세요. X-Forwarded-For 헤더의 첫 번째 IP를 사용합니다.
+     * <p>AWS CloudFront/ALB 뒤에서 사용합니다.
      *
-     * <p><strong>주의</strong>: 프록시 없는 환경에서 사용 시 IP spoofing 취약점이 발생합니다!
+     * <p><strong>추출 우선순위</strong>:
+     *
+     * <ol>
+     *   <li>CloudFront-Viewer-Address (IP:port 형식, CloudFront가 설정)
+     *   <li>X-Forwarded-For (첫 번째 IP)
+     *   <li>RemoteAddress (fallback)
+     * </ol>
      *
      * @param exchange ServerWebExchange
      * @return 클라이언트 IP (추출 불가 시 "unknown")
      */
     public String extractWithTrustedProxy(ServerWebExchange exchange) {
-        String xForwardedFor = exchange.getRequest().getHeaders().getFirst(X_FORWARDED_FOR_HEADER);
+        // 1. CloudFront-Viewer-Address 우선 (가장 신뢰할 수 있는 헤더)
+        String viewerAddress =
+                exchange.getRequest().getHeaders().getFirst(CLOUDFRONT_VIEWER_ADDRESS);
+        if (viewerAddress != null && !viewerAddress.isBlank()) {
+            String ip = extractIpFromViewerAddress(viewerAddress);
+            if (ip != null && isValidIpAddress(ip)) {
+                return ip;
+            }
+            log.warn(
+                    "Invalid CloudFront-Viewer-Address format: '{}'. Trying X-Forwarded-For.",
+                    viewerAddress);
+        }
 
+        // 2. X-Forwarded-For 헤더 확인
+        String xForwardedFor = exchange.getRequest().getHeaders().getFirst(X_FORWARDED_FOR_HEADER);
         if (xForwardedFor != null && !xForwardedFor.isBlank()) {
             String firstIp = xForwardedFor.split(",")[0].trim();
-
-            // IP 형식 검증 (spoofing 방어)
             if (isValidIpAddress(firstIp)) {
                 return firstIp;
             }
-
             log.warn(
                     "Invalid IP format in X-Forwarded-For header: '{}'. Falling back to"
                             + " RemoteAddress.",
                     firstIp);
+        } else {
+            log.debug(
+                    "X-Forwarded-For header is missing or empty. Available headers: {}",
+                    exchange.getRequest().getHeaders().keySet());
         }
 
+        // 3. RemoteAddress fallback
         return extractFromRemoteAddress(exchange);
+    }
+
+    /**
+     * CloudFront-Viewer-Address에서 IP 추출
+     *
+     * <p>형식: "IP:port" (예: "192.0.2.1:46532" 또는 "[2001:db8::1]:8080")
+     *
+     * @param viewerAddress CloudFront-Viewer-Address 헤더 값
+     * @return IP 주소 또는 null
+     */
+    private String extractIpFromViewerAddress(String viewerAddress) {
+        if (viewerAddress == null || viewerAddress.isBlank()) {
+            return null;
+        }
+
+        // IPv6 형식: [2001:db8::1]:8080
+        if (viewerAddress.startsWith("[")) {
+            int closeBracket = viewerAddress.indexOf(']');
+            if (closeBracket > 0) {
+                return viewerAddress.substring(1, closeBracket);
+            }
+        }
+
+        // IPv4 형식: 192.0.2.1:46532
+        int lastColon = viewerAddress.lastIndexOf(':');
+        if (lastColon > 0) {
+            return viewerAddress.substring(0, lastColon);
+        }
+
+        return viewerAddress;
     }
 
     /**

@@ -103,39 +103,92 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
                         });
     }
 
-    /** Rate Limit 헤더 추가 */
+    /**
+     * Rate Limit 헤더 추가
+     *
+     * <p>Actuator 경로는 응답이 이미 커밋된 상태일 수 있으므로 스킵합니다. 일반 경로에서도 응답이 이미 커밋된 경우
+     * UnsupportedOperationException이 발생할 수 있으므로 예외 처리로 방어합니다.
+     */
     private void addRateLimitHeaders(ServerWebExchange exchange, int limit, int remaining) {
-        // 기존 헤더가 있을 수 있으므로 User Rate Limit 정보로 업데이트
-        exchange.getResponse().getHeaders().set(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
-        exchange.getResponse()
-                .getHeaders()
-                .set(X_RATE_LIMIT_REMAINING_HEADER, String.valueOf(remaining));
+        String path = exchange.getRequest().getURI().getPath();
+
+        // Actuator 경로는 스킵 (ReadOnlyHttpHeaders 예외 방지)
+        if (isActuatorPath(path)) {
+            return;
+        }
+
+        // 응답이 이미 커밋된 경우 헤더 설정 불가 - 예외 방어
+        try {
+            if (!exchange.getResponse().isCommitted()) {
+                exchange.getResponse()
+                        .getHeaders()
+                        .set(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
+                exchange.getResponse()
+                        .getHeaders()
+                        .set(X_RATE_LIMIT_REMAINING_HEADER, String.valueOf(remaining));
+            }
+        } catch (UnsupportedOperationException e) {
+            // ReadOnlyHttpHeaders 예외 무시 (응답 이미 커밋됨)
+            log.debug("Unable to set rate limit headers - response already committed: {}", path);
+        }
+    }
+
+    /**
+     * Actuator 경로인지 확인
+     *
+     * @param path 요청 경로
+     * @return actuator 경로이면 true
+     */
+    private boolean isActuatorPath(String path) {
+        return path != null && path.startsWith("/actuator");
     }
 
     /** 429 Too Many Requests 응답 */
     private Mono<Void> tooManyRequests(
             ServerWebExchange exchange, int limit, int retryAfterSeconds) {
-        exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        exchange.getResponse().getHeaders().add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
-        exchange.getResponse().getHeaders().add(X_RATE_LIMIT_REMAINING_HEADER, "0");
-        exchange.getResponse()
-                .getHeaders()
-                .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
+        return Mono.defer(
+                () -> {
+                    // 응답이 이미 커밋된 경우 스킵
+                    if (exchange.getResponse().isCommitted()) {
+                        return Mono.empty();
+                    }
 
-        ErrorInfo error =
-                new ErrorInfo("USER_RATE_LIMIT_EXCEEDED", "사용자 요청 빈도가 너무 높습니다. 잠시 후 다시 시도해주세요.");
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
+                    exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+                    exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+                    exchange.getResponse()
+                            .getHeaders()
+                            .add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
+                    exchange.getResponse().getHeaders().add(X_RATE_LIMIT_REMAINING_HEADER, "0");
+                    exchange.getResponse()
+                            .getHeaders()
+                            .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
 
-        return writeResponse(exchange, errorResponse);
+                    ErrorInfo error =
+                            new ErrorInfo(
+                                    "USER_RATE_LIMIT_EXCEEDED",
+                                    "사용자 요청 빈도가 너무 높습니다. 잠시 후 다시 시도해주세요.");
+                    ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
+
+                    return writeResponse(exchange, errorResponse);
+                });
     }
 
-    /** JSON 응답 작성 */
+    /**
+     * JSON 응답 작성 (ByteBuf 메모리 누수 방지)
+     *
+     * <p>writeWith 실패 시 buffer를 명시적으로 해제합니다.
+     */
     private Mono<Void> writeResponse(ServerWebExchange exchange, ApiResponse<Void> response) {
         try {
             byte[] bytes = objectMapper.writeValueAsBytes(response);
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse().writeWith(Mono.just(buffer));
+            return exchange.getResponse()
+                    .writeWith(Mono.just(buffer))
+                    .doOnError(
+                            error -> {
+                                // writeWith 실패 시 buffer 해제 (ByteBuf LEAK 방지)
+                                org.springframework.core.io.buffer.DataBufferUtils.release(buffer);
+                            });
         } catch (JsonProcessingException e) {
             return exchange.getResponse().setComplete();
         }

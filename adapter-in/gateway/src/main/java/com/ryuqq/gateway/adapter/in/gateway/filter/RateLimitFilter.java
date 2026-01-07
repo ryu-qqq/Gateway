@@ -203,12 +203,22 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                 });
     }
 
-    /** JSON 응답 작성 */
+    /**
+     * JSON 응답 작성 (ByteBuf 메모리 누수 방지)
+     *
+     * <p>writeWith 실패 시 buffer를 명시적으로 해제합니다.
+     */
     private Mono<Void> writeResponse(ServerWebExchange exchange, ApiResponse<Void> response) {
         try {
             byte[] bytes = objectMapper.writeValueAsBytes(response);
             DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse().writeWith(Mono.just(buffer));
+            return exchange.getResponse()
+                    .writeWith(Mono.just(buffer))
+                    .doOnError(
+                            error -> {
+                                // writeWith 실패 시 buffer 해제 (ByteBuf LEAK 방지)
+                                org.springframework.core.io.buffer.DataBufferUtils.release(buffer);
+                            });
         } catch (JsonProcessingException e) {
             return exchange.getResponse().setComplete();
         }
