@@ -218,6 +218,11 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                             error -> {
                                 // writeWith 실패 시 buffer 해제 (ByteBuf LEAK 방지)
                                 org.springframework.core.io.buffer.DataBufferUtils.release(buffer);
+                            })
+                    .doOnCancel(
+                            () -> {
+                                // 클라이언트 연결 끊김/요청 취소 시 buffer 해제 (ByteBuf LEAK 방지)
+                                org.springframework.core.io.buffer.DataBufferUtils.release(buffer);
                             });
         } catch (JsonProcessingException e) {
             return exchange.getResponse().setComplete();

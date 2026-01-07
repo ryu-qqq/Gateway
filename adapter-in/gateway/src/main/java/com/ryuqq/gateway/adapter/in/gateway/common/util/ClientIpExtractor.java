@@ -1,6 +1,5 @@
 package com.ryuqq.gateway.adapter.in.gateway.common.util;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,10 +149,33 @@ public class ClientIpExtractor {
         return UNKNOWN_IP;
     }
 
+    // IPv4 정규식: 0-255.0-255.0-255.0-255
+    private static final String IPV4_PATTERN =
+            "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+
+    // IPv6 정규식: 간략화된 버전 (::, :: 축약 포함)
+    private static final String IPV6_PATTERN =
+            "^(([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|"
+                + "([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|"
+                + "([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|"
+                + "([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|"
+                + "([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|"
+                + "([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|"
+                + "[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|"
+                + "fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]+|"
+                + "::(ffff(:0{1,4})?:)?((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9])|"
+                + "([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1?[0-9])?[0-9])\\.){3}(25[0-5]|(2[0-4]|1?[0-9])?[0-9]))$";
+
+    private static final java.util.regex.Pattern IPV4_COMPILED =
+            java.util.regex.Pattern.compile(IPV4_PATTERN);
+    private static final java.util.regex.Pattern IPV6_COMPILED =
+            java.util.regex.Pattern.compile(IPV6_PATTERN);
+
     /**
-     * IP 주소 형식 검증 (Java 표준 라이브러리 사용)
+     * IP 주소 형식 검증 (정규식 기반 - DNS 조회 없음)
      *
-     * <p>IPv4, IPv6, IPv4-mapped IPv6 (::ffff:1.2.3.4) 등 모든 표준 형식 지원
+     * <p>IPv4, IPv6, IPv4-mapped IPv6 (::ffff:1.2.3.4) 등 모든 표준 형식 지원 InetAddress.getByName() 대신
+     * 정규식을 사용하여 악의적인 입력에 대한 DNS 조회를 방지합니다.
      *
      * @param ip 검증할 IP 문자열
      * @return 유효한 IP 주소 형식이면 true
@@ -163,11 +185,6 @@ public class ClientIpExtractor {
             return false;
         }
 
-        try {
-            InetAddress.getByName(ip);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return IPV4_COMPILED.matcher(ip).matches() || IPV6_COMPILED.matcher(ip).matches();
     }
 }

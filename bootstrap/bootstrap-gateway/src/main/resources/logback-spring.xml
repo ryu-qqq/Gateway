@@ -109,6 +109,9 @@
         </root>
 
         <logger name="com.ryuqq.gateway" level="DEBUG"/>
+
+        <!-- Observability SDK HTTP Logging (prod와 동일하게 설정) -->
+        <logger name="observability.http" level="INFO"/>
     </springProfile>
 
 </configuration>

@@ -129,7 +129,7 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
             }
         } catch (UnsupportedOperationException e) {
             // ReadOnlyHttpHeaders 예외 무시 (응답 이미 커밋됨)
-            log.debug("Unable to set rate limit headers - response already committed: {}", path);
+            log.warn("Unable to set rate limit headers - response already committed: {}", path);
         }
     }
 
@@ -153,15 +153,29 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
                         return Mono.empty();
                     }
 
-                    exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-                    exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-                    exchange.getResponse()
-                            .getHeaders()
-                            .add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
-                    exchange.getResponse().getHeaders().add(X_RATE_LIMIT_REMAINING_HEADER, "0");
-                    exchange.getResponse()
-                            .getHeaders()
-                            .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
+                    // TOCTOU 방어: 응답 커밋 후 헤더 수정 시 UnsupportedOperationException 발생 가능
+                    try {
+                        exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+                        exchange.getResponse()
+                                .getHeaders()
+                                .setContentType(MediaType.APPLICATION_JSON);
+                        exchange.getResponse()
+                                .getHeaders()
+                                .add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
+                        exchange.getResponse().getHeaders().add(X_RATE_LIMIT_REMAINING_HEADER, "0");
+                        exchange.getResponse()
+                                .getHeaders()
+                                .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
+                    } catch (UnsupportedOperationException | IllegalStateException e) {
+                        // ReadOnlyHttpHeaders 예외 - 응답이 이미 커밋됨
+                        log.warn(
+                                "Unable to set rate limit response headers - response already"
+                                        + " committed: {}",
+                                exchange.getRequest().getURI().getPath());
+                        if (exchange.getResponse().isCommitted()) {
+                            return Mono.empty();
+                        }
+                    }
 
                     ErrorInfo error =
                             new ErrorInfo(
@@ -187,6 +201,11 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
                     .doOnError(
                             error -> {
                                 // writeWith 실패 시 buffer 해제 (ByteBuf LEAK 방지)
+                                org.springframework.core.io.buffer.DataBufferUtils.release(buffer);
+                            })
+                    .doOnCancel(
+                            () -> {
+                                // 클라이언트 연결 끊김/요청 취소 시 buffer 해제 (ByteBuf LEAK 방지)
                                 org.springframework.core.io.buffer.DataBufferUtils.release(buffer);
                             });
         } catch (JsonProcessingException e) {

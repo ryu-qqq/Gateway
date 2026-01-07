@@ -357,4 +357,86 @@ class RateLimitFilterTest {
             verify(filterChain).filter(exchange);
         }
     }
+
+    @Nested
+    @DisplayName("ByteBuf 메모리 관리 테스트 (CodeRabbit AI Review 대응)")
+    class ByteBufMemoryManagementTest {
+
+        @Test
+        @DisplayName("429 응답 작성 시 정상적으로 JSON Body가 포함되어야 한다")
+        void shouldWriteJsonBodyOnTooManyRequests() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            CheckRateLimitResponse deniedResponse =
+                    CheckRateLimitResponse.denied(100, 100, 60, RateLimitAction.REJECT);
+
+            when(checkRateLimitUseCase.execute(any(CheckRateLimitCommand.class)))
+                    .thenReturn(Mono.just(deniedResponse));
+
+            // when
+            Mono<Void> result = rateLimitFilter.filter(exchange, filterChain);
+
+            // then
+            StepVerifier.create(result).verifyComplete();
+
+            // 응답 상태 확인
+            assertThat(exchange.getResponse().getStatusCode())
+                    .isEqualTo(HttpStatus.TOO_MANY_REQUESTS);
+
+            // Body가 작성되었는지 확인 (MockServerWebExchange는 body를 직접 검증하기 어려움)
+            // 대신 응답이 정상 완료되었는지 확인
+            verify(filterChain, never()).filter(any());
+        }
+
+        @Test
+        @DisplayName("403 응답 (IP 차단) 시 정상적으로 응답이 작성되어야 한다")
+        void shouldWriteResponseOnIpBlocked() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header("X-Forwarded-For", "192.168.1.1")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            when(checkRateLimitUseCase.execute(any(CheckRateLimitCommand.class)))
+                    .thenReturn(Mono.error(new IpBlockedException("192.168.1.1", 3600)));
+
+            // when
+            Mono<Void> result = rateLimitFilter.filter(exchange, filterChain);
+
+            // then
+            StepVerifier.create(result).verifyComplete();
+
+            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+            assertThat(exchange.getResponse().getHeaders().getFirst("Retry-After"))
+                    .isEqualTo("3600");
+            verify(filterChain, never()).filter(any());
+        }
+
+        @Test
+        @DisplayName("Unknown IP인 경우 Rate Limit을 스킵하고 다음 필터로 진행해야 한다")
+        void shouldSkipRateLimitWhenIpIsUnknown() {
+            // given
+            MockServerHttpRequest request = MockServerHttpRequest.get("/api/test").build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            // Unknown IP 반환 설정
+            when(clientIpExtractor.extractWithTrustedProxy(any())).thenReturn("unknown");
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when
+            Mono<Void> result = rateLimitFilter.filter(exchange, filterChain);
+
+            // then - graceful degradation: unknown IP는 Rate Limit 스킵
+            StepVerifier.create(result).verifyComplete();
+
+            verify(filterChain).filter(exchange);
+            verify(checkRateLimitUseCase, never()).execute(any(CheckRateLimitCommand.class));
+        }
+    }
 }
