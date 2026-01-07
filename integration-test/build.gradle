@@ -91,6 +91,11 @@ dependencies {
     // Assertions
     // ========================================
     testImplementation libs.assertj.core
+
+    // ========================================
+    // Observability (Prometheus metrics)
+    // ========================================
+    testImplementation libs.micrometer.prometheus
 }
 
 test {

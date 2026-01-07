@@ -191,7 +191,7 @@ observability:
   reactive-trace:
     enabled: true
     generate-if-missing: true  # traceId 없으면 생성 (필터 체인 진행 필수)
-  http:
+  reactive-http:  # WebFlux용 설정 (http → reactive-http)
     enabled: true
     log-request-body: false
     log-response-body: false

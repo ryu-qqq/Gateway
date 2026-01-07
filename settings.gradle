@@ -22,6 +22,11 @@ include 'adapter-out:authhub-client'
 include 'bootstrap:bootstrap-gateway'
 
 // ========================================
+// Integration Test Module
+// ========================================
+include 'integration-test'
+
+// ========================================
 // Project Structure
 // ========================================
 project(':domain').projectDir = file('domain')
@@ -32,3 +37,5 @@ project(':adapter-out:persistence-redis').projectDir = file('adapter-out/persist
 project(':adapter-out:authhub-client').projectDir = file('adapter-out/authhub-client')
 
 project(':bootstrap:bootstrap-gateway').projectDir = file('bootstrap/bootstrap-gateway')
+
+project(':integration-test').projectDir = file('integration-test')
