@@ -406,14 +406,5 @@ gateway:
       api.set-of.com: public
       admin.set-of.com: admin
 
-logging:
-  level:
-    root: WARN
-    com.ryuqq.gateway: INFO
-    org.springframework.cloud.gateway: INFO
-    org.springframework.web.reactive: WARN
-    org.springframework.web.server: WARN
-    io.netty: WARN
-    reactor.netty: WARN
-    io.lettuce: WARN
-    org.redisson: WARN
+# Logging은 logback-spring.xml에서 관리 (prod 프로파일)
+# application.yml의 logging.level 설정이 logback을 덮어쓰는 문제 방지
