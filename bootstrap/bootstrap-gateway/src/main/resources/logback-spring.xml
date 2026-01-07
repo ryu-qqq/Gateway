@@ -85,6 +85,9 @@
         <logger name="com.ryuqq.gateway" level="INFO"/>
         <logger name="org.springframework.cloud.gateway" level="INFO"/>
 
+        <!-- Observability SDK HTTP Logging -->
+        <logger name="observability.http" level="INFO"/>
+
         <!-- Reduce noise from common libraries -->
         <logger name="org.springframework.web" level="WARN"/>
         <logger name="org.springframework.web.reactive" level="WARN"/>
@@ -106,6 +109,9 @@
         </root>
 
         <logger name="com.ryuqq.gateway" level="DEBUG"/>
+
+        <!-- Observability SDK HTTP Logging (prod와 동일하게 설정) -->
+        <logger name="observability.http" level="INFO"/>
     </springProfile>
 
 </configuration>

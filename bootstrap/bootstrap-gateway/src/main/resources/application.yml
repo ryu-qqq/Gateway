@@ -12,9 +12,12 @@
 # ===============================================
 server:
   port: 8080
-  # CloudFront/ALB에서 전달하는 X-Forwarded-* 헤더 처리
-  # X-Forwarded-Host를 사용하여 원본 호스트 기반 라우팅 지원
-  forward-headers-strategy: framework
+  # X-Forwarded-* 헤더 처리 설정
+  # none: Spring의 ForwardedHeaderTransformer 비활성화
+  # - X-Forwarded-Host 기반 라우팅은 GatewayRoutingConfig에서 수동 처리
+  # - X-Forwarded-For는 ClientIpExtractor에서 직접 읽음
+  # framework 설정 시 ForwardedHeaderTransformer가 X-Forwarded-For를 제거하여 IP 추출 실패
+  forward-headers-strategy: none
 
 # ===============================================
 # Spring Configuration

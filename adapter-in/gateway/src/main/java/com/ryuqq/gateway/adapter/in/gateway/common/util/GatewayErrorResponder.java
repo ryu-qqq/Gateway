@@ -86,7 +86,9 @@ public class GatewayErrorResponder {
     }
 
     /**
-     * 지정된 HTTP 상태 코드로 에러 응답 반환
+     * 지정된 HTTP 상태 코드로 에러 응답 반환 (ByteBuf 메모리 누수 방지)
+     *
+     * <p>응답이 이미 커밋된 경우 스킵하고, writeWith 실패 시 buffer를 명시적으로 해제합니다.
      *
      * @param exchange ServerWebExchange
      * @param status HTTP 상태 코드
@@ -96,23 +98,45 @@ public class GatewayErrorResponder {
      */
     public Mono<Void> respond(
             ServerWebExchange exchange, HttpStatus status, String errorCode, String message) {
-        exchange.getResponse().setStatusCode(status);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        return Mono.defer(
+                () -> {
+                    // 응답이 이미 커밋된 경우 스킵 (ReadOnlyHttpHeaders 예외 방지)
+                    if (exchange.getResponse().isCommitted()) {
+                        return Mono.empty();
+                    }
 
-        ErrorInfo error = new ErrorInfo(errorCode, message);
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
+                    exchange.getResponse().setStatusCode(status);
+                    exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-        try {
-            byte[] bytes = objectMapper.writeValueAsBytes(errorResponse);
-            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse().writeWith(Mono.just(buffer));
-        } catch (JsonProcessingException e) {
-            log.error(
-                    "Failed to serialize error response: errorCode={}, message={}, exception={}",
-                    errorCode,
-                    message,
-                    e.getMessage());
-            return exchange.getResponse().setComplete();
-        }
+                    ErrorInfo error = new ErrorInfo(errorCode, message);
+                    ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
+
+                    try {
+                        byte[] bytes = objectMapper.writeValueAsBytes(errorResponse);
+                        DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
+                        return exchange.getResponse()
+                                .writeWith(Mono.just(buffer))
+                                .doOnError(
+                                        e -> {
+                                            // writeWith 실패 시 buffer 해제 (ByteBuf LEAK 방지)
+                                            org.springframework.core.io.buffer.DataBufferUtils
+                                                    .release(buffer);
+                                        })
+                                .doOnCancel(
+                                        () -> {
+                                            // 클라이언트 연결 끊김/요청 취소 시 buffer 해제 (ByteBuf LEAK 방지)
+                                            org.springframework.core.io.buffer.DataBufferUtils
+                                                    .release(buffer);
+                                        });
+                    } catch (JsonProcessingException e) {
+                        log.error(
+                                "Failed to serialize error response: errorCode={}, message={},"
+                                        + " exception={}",
+                                errorCode,
+                                message,
+                                e.getMessage());
+                        return exchange.getResponse().setComplete();
+                    }
+                });
     }
 }

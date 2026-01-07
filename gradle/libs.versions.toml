@@ -60,7 +60,7 @@ micrometer = "1.12.4"
 # ========================================
 # Observability Starter (JitPack)
 # ========================================
-observabilityStarter = "v1.1.1"
+observabilityStarter = "v1.2.1"
 
 # ========================================
 # Utilities
