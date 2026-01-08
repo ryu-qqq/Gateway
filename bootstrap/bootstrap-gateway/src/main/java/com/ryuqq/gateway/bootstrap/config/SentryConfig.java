@@ -1,23 +1,25 @@
 package com.ryuqq.gateway.bootstrap.config;
 
-import io.sentry.SentryEvent;
-import io.sentry.SentryOptions;
-import io.sentry.protocol.SentryException;
 import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import io.sentry.SentryEvent;
+import io.sentry.SentryOptions;
+import io.sentry.protocol.SentryException;
 
 /**
  * Sentry 노이즈 이벤트 필터링 설정
  *
- * <p>다음 유형의 이벤트를 필터링하여 Sentry 노이즈를 감소시킵니다:
+ * <p>
+ * 다음 유형의 이벤트를 필터링하여 Sentry 노이즈를 감소시킵니다:
  *
  * <ul>
- *   <li>Actuator 엔드포인트 관련 에러 (/actuator/*)
- *   <li>UnsupportedOperationException (Spring WebFlux + Sentry SDK 호환성 문제)
- *   <li>HTTP 404 응답 (정상적인 클라이언트 에러)
- *   <li>ReadOnlyHttpHeaders 관련 에러
- *   <li>RejectedExecutionException (Netty 종료 시점 이슈)
+ * <li>Actuator 엔드포인트 관련 에러 (/actuator/*)
+ * <li>UnsupportedOperationException (Spring WebFlux + Sentry SDK 호환성 문제)
+ * <li>HTTP 404 응답 (정상적인 클라이언트 에러)
+ * <li>ReadOnlyHttpHeaders 관련 에러
+ * <li>RejectedExecutionException (Netty 종료 시점 이슈)
+ * <li>ServerHttpResponse already committed 에러 (응답 이미 커밋된 경우)
  * </ul>
  *
  * @author development-team
@@ -27,16 +29,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SentryConfig {
 
-    private static final List<String> IGNORED_PATHS =
-            List.of(
-                    "/actuator/health",
-                    "/actuator/prometheus",
-                    "/actuator/metrics",
-                    "/actuator/info");
+    private static final String ACTUATOR_PATH_PREFIX = "/actuator/";
 
     private static final List<String> IGNORED_EXCEPTION_TYPES =
-            List.of(
-                    "java.lang.UnsupportedOperationException",
+            List.of("java.lang.UnsupportedOperationException",
                     "io.netty.util.concurrent.RejectedExecutionException");
 
     @Bean
@@ -58,6 +54,10 @@ public class SentryConfig {
                 return null;
             }
 
+            if (isResponseAlreadyCommittedError(event)) {
+                return null;
+            }
+
             return event;
         };
     }
@@ -67,7 +67,7 @@ public class SentryConfig {
         if (transaction == null) {
             return false;
         }
-        return IGNORED_PATHS.stream().anyMatch(transaction::contains);
+        return transaction.startsWith(ACTUATOR_PATH_PREFIX);
     }
 
     private boolean isIgnoredException(SentryEvent event) {
@@ -90,12 +90,21 @@ public class SentryConfig {
         }
         List<SentryException> exceptions = event.getExceptions();
         if (exceptions != null) {
-            return exceptions.stream()
-                    .anyMatch(
-                            ex -> {
-                                String value = ex.getValue();
-                                return value != null && value.contains("ReadOnlyHttpHeaders");
-                            });
+            return exceptions.stream().anyMatch(
+                    ex -> ex.getValue() != null && ex.getValue().contains("ReadOnlyHttpHeaders"));
+        }
+        return false;
+    }
+
+    private boolean isResponseAlreadyCommittedError(SentryEvent event) {
+        String message = event.getMessage() != null ? event.getMessage().getMessage() : null;
+        if (message != null && message.contains("ServerHttpResponse already committed")) {
+            return true;
+        }
+        List<SentryException> exceptions = event.getExceptions();
+        if (exceptions != null) {
+            return exceptions.stream().anyMatch(ex -> ex.getValue() != null
+                    && ex.getValue().contains("ServerHttpResponse already" + " committed"));
         }
         return false;
     }
