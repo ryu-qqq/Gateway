@@ -360,8 +360,8 @@ class GatewayHostRoutingIntegrationTest {
                     .expectStatus()
                     .is5xxServerError()
                     .expectBody()
-                    .jsonPath("$.error.message")
-                    .value(message -> assertThat((String) message).contains("404 NOT_FOUND"));
+                    .jsonPath("$.detail")
+                    .value(detail -> assertThat((String) detail).contains("404 NOT_FOUND"));
 
             // Legacy Web Server와 Admin Server 모두 요청을 받지 않아야 함
             legacyWebServer.verify(0, getRequestedFor(urlEqualTo("/api/v1/products")));
