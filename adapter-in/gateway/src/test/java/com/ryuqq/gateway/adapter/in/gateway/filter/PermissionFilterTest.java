@@ -2,10 +2,11 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authorization.dto.command.ValidatePermissionCommand;
 import com.ryuqq.gateway.application.authorization.dto.response.ValidatePermissionResponse;
@@ -39,13 +40,29 @@ class PermissionFilterTest {
 
     @Mock private GatewayFilterChain chain;
 
-    private ObjectMapper objectMapper;
+    @Mock private GatewayErrorResponder errorResponder;
+
     private PermissionFilter permissionFilter;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
-        permissionFilter = new PermissionFilter(validatePermissionUseCase, objectMapper);
+        lenient()
+                .when(errorResponder.forbidden(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return Mono.empty();
+                        });
+        lenient()
+                .when(errorResponder.internalServerError(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+                            return Mono.empty();
+                        });
+        permissionFilter = new PermissionFilter(validatePermissionUseCase, errorResponder);
     }
 
     private EndpointPermission createMockEndpoint() {
@@ -284,13 +301,9 @@ class PermissionFilterTest {
     class ErrorResponseTest {
 
         @Test
-        @DisplayName("JSON 직렬화 실패 시 빈 응답 반환")
-        void shouldReturnEmptyResponseWhenJsonSerializationFails() {
+        @DisplayName("denied 응답이 정상적으로 반환되는지 확인")
+        void shouldReturnDeniedResponseCorrectly() {
             // given
-            // ObjectMapper를 override하여 JsonProcessingException을 발생시키는 것은 어렵기 때문에
-            // JsonProcessingException이 발생했을 때 setComplete()가 호출되는 것을 테스트
-            // 실제 구현에서는 ApiResponse 직렬화가 실패할 경우가 거의 없으므로
-            // 이 테스트는 denied 응답이 정상적으로 반환되는지 확인하는 방향으로 변경
             ServerWebExchange exchange = createExchange("/api/v1/test", HttpMethod.GET);
             setUserAttributes(exchange, "user123", "tenant456", "hash789", Set.of("USER"));
 
@@ -302,57 +315,6 @@ class PermissionFilterTest {
             StepVerifier.create(permissionFilter.filter(exchange, chain)).verifyComplete();
 
             assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        }
-
-        @Test
-        @DisplayName("forbidden 응답에서 JSON 직렬화 실패 시 setComplete 호출")
-        void shouldCallSetCompleteWhenJsonSerializationFailsForForbidden() throws Exception {
-            // given
-            ObjectMapper mockObjectMapper = org.mockito.Mockito.mock(ObjectMapper.class);
-            when(mockObjectMapper.writeValueAsBytes(any()))
-                    .thenThrow(
-                            new com.fasterxml.jackson.core.JsonProcessingException(
-                                    "Mocked error") {});
-            PermissionFilter filterWithMockedMapper =
-                    new PermissionFilter(validatePermissionUseCase, mockObjectMapper);
-
-            ServerWebExchange exchange = createExchange("/api/v1/test", HttpMethod.GET);
-            setUserAttributes(exchange, "user123", "tenant456", "hash789", Set.of("USER"));
-
-            ValidatePermissionResponse deniedResponse = ValidatePermissionResponse.denied();
-            when(validatePermissionUseCase.execute(any(ValidatePermissionCommand.class)))
-                    .thenReturn(Mono.just(deniedResponse));
-
-            // when & then
-            StepVerifier.create(filterWithMockedMapper.filter(exchange, chain)).verifyComplete();
-
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        }
-
-        @Test
-        @DisplayName("internalError 응답에서 JSON 직렬화 실패 시 setComplete 호출")
-        void shouldCallSetCompleteWhenJsonSerializationFailsForInternalError() throws Exception {
-            // given
-            ObjectMapper mockObjectMapper = org.mockito.Mockito.mock(ObjectMapper.class);
-            when(mockObjectMapper.writeValueAsBytes(any()))
-                    .thenThrow(
-                            new com.fasterxml.jackson.core.JsonProcessingException(
-                                    "Mocked error") {});
-            PermissionFilter filterWithMockedMapper =
-                    new PermissionFilter(validatePermissionUseCase, mockObjectMapper);
-
-            ServerWebExchange exchange = createExchange("/api/v1/test", HttpMethod.GET);
-            setUserAttributes(exchange, "user123", "tenant456", "hash789", Set.of("USER"));
-
-            RuntimeException exception = new RuntimeException("Unexpected error");
-            when(validatePermissionUseCase.execute(any(ValidatePermissionCommand.class)))
-                    .thenReturn(Mono.error(exception));
-
-            // when & then
-            StepVerifier.create(filterWithMockedMapper.filter(exchange, chain)).verifyComplete();
-
-            assertThat(exchange.getResponse().getStatusCode())
-                    .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

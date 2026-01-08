@@ -7,9 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.RecordFailureUseCase;
@@ -51,10 +50,9 @@ class JwtAuthenticationFilterHostAwareTest {
 
     @Mock private ClientIpExtractor clientIpExtractor;
 
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @Mock private GatewayErrorResponder errorResponder;
 
-    private final ObjectMapper objectMapper =
-            new ObjectMapper().registerModule(new JavaTimeModule());
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
     void setUp() {
@@ -64,14 +62,22 @@ class JwtAuthenticationFilterHostAwareTest {
                 .thenReturn(List.of("/actuator/**", "/api/v1/auth/login"));
         lenient().when(clientIpExtractor.extractWithTrustedProxy(any())).thenReturn("127.0.0.1");
         lenient().when(clientIpExtractor.extract(any())).thenReturn("127.0.0.1");
+        lenient()
+                .when(errorResponder.unauthorized(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return Mono.empty();
+                        });
 
         jwtAuthenticationFilter =
                 new JwtAuthenticationFilter(
                         validateJwtUseCase,
                         recordFailureUseCase,
-                        objectMapper,
                         publicPathsProperties,
-                        clientIpExtractor);
+                        clientIpExtractor,
+                        errorResponder);
     }
 
     @Nested

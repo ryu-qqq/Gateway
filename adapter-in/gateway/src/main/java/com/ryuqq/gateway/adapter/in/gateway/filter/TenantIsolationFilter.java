@@ -1,9 +1,6 @@
 package com.ryuqq.gateway.adapter.in.gateway.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.tenant.dto.query.GetTenantConfigQuery;
 import com.ryuqq.gateway.application.tenant.port.in.query.GetTenantConfigUseCase;
@@ -13,9 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -56,12 +50,12 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
     private static final String MFA_REQUIRED_ATTRIBUTE = "mfaRequired";
 
     private final GetTenantConfigUseCase getTenantConfigUseCase;
-    private final ObjectMapper objectMapper;
+    private final GatewayErrorResponder errorResponder;
 
     public TenantIsolationFilter(
-            GetTenantConfigUseCase getTenantConfigUseCase, ObjectMapper objectMapper) {
+            GetTenantConfigUseCase getTenantConfigUseCase, GatewayErrorResponder errorResponder) {
         this.getTenantConfigUseCase = getTenantConfigUseCase;
-        this.objectMapper = objectMapper;
+        this.errorResponder = errorResponder;
     }
 
     @Override
@@ -113,22 +107,6 @@ public class TenantIsolationFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> internalError(ServerWebExchange exchange, String message) {
-        exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        ErrorInfo error = new ErrorInfo("TENANT_CONFIG_ERROR", message);
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
-
-        try {
-            byte[] bytes = objectMapper.writeValueAsBytes(errorResponse);
-            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse().writeWith(Mono.just(buffer));
-        } catch (JsonProcessingException e) {
-            log.error(
-                    "Failed to serialize error response: message={}, exception={}",
-                    message,
-                    e.getMessage());
-            return exchange.getResponse().setComplete();
-        }
+        return errorResponder.internalServerError(exchange, "TENANT_CONFIG_ERROR", message);
     }
 }

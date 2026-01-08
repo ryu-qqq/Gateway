@@ -1,9 +1,6 @@
 package com.ryuqq.gateway.adapter.in.gateway.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.RefreshAccessTokenCommand;
 import com.ryuqq.gateway.application.authentication.port.in.command.RefreshAccessTokenUseCase;
@@ -18,11 +15,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -88,15 +82,15 @@ public class TokenRefreshFilter implements GlobalFilter, Ordered {
 
     private final RefreshAccessTokenUseCase refreshAccessTokenUseCase;
     private final AuthHubClient authHubClient;
-    private final ObjectMapper objectMapper;
+    private final GatewayErrorResponder errorResponder;
 
     public TokenRefreshFilter(
             RefreshAccessTokenUseCase refreshAccessTokenUseCase,
             AuthHubClient authHubClient,
-            ObjectMapper objectMapper) {
+            GatewayErrorResponder errorResponder) {
         this.refreshAccessTokenUseCase = refreshAccessTokenUseCase;
         this.authHubClient = authHubClient;
-        this.objectMapper = objectMapper;
+        this.errorResponder = errorResponder;
     }
 
     @Override
@@ -285,28 +279,10 @@ public class TokenRefreshFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange, String code, String message) {
-        return writeErrorResponse(exchange, HttpStatus.UNAUTHORIZED, code, message);
+        return errorResponder.unauthorized(exchange, code, message);
     }
 
     private Mono<Void> serverError(ServerWebExchange exchange, String code, String message) {
-        return writeErrorResponse(exchange, HttpStatus.INTERNAL_SERVER_ERROR, code, message);
-    }
-
-    private Mono<Void> writeErrorResponse(
-            ServerWebExchange exchange, HttpStatus status, String code, String message) {
-
-        exchange.getResponse().setStatusCode(status);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        ErrorInfo error = new ErrorInfo(code, message);
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
-
-        try {
-            byte[] bytes = objectMapper.writeValueAsBytes(errorResponse);
-            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse().writeWith(Mono.just(buffer));
-        } catch (JsonProcessingException e) {
-            return exchange.getResponse().setComplete();
-        }
+        return errorResponder.internalServerError(exchange, code, message);
     }
 }

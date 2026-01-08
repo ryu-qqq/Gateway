@@ -1,10 +1,12 @@
 package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.domain.tenant.TenantConfig;
 import com.ryuqq.gateway.domain.tenant.vo.SessionConfig;
@@ -34,13 +36,21 @@ class MfaVerificationFilterTest {
 
     @Mock private GatewayFilterChain chain;
 
-    private ObjectMapper objectMapper;
+    @Mock private GatewayErrorResponder errorResponder;
+
     private MfaVerificationFilter mfaVerificationFilter;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
-        mfaVerificationFilter = new MfaVerificationFilter(objectMapper);
+        lenient()
+                .when(errorResponder.forbidden(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return Mono.empty();
+                        });
+        mfaVerificationFilter = new MfaVerificationFilter(errorResponder);
     }
 
     private TenantConfig createTenantConfig(String tenantId, boolean mfaRequired) {
@@ -173,8 +183,8 @@ class MfaVerificationFilterTest {
     class ErrorResponseTest {
 
         @Test
-        @DisplayName("forbidden 응답에 올바른 에러 코드 포함")
-        void shouldIncludeCorrectErrorCodeInForbiddenResponse() {
+        @DisplayName("forbidden 응답에 올바른 상태 코드 반환")
+        void shouldIncludeCorrectStatusCodeInForbiddenResponse() {
             // given
             ServerWebExchange exchange = createExchange("/api/v1/secure", HttpMethod.GET);
             TenantConfig tenantConfig = createTenantConfig("tenant-5", true);
@@ -185,31 +195,6 @@ class MfaVerificationFilterTest {
             StepVerifier.create(mfaVerificationFilter.filter(exchange, chain)).verifyComplete();
 
             // then
-            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-            assertThat(exchange.getResponse().getHeaders().getContentType())
-                    .hasToString("application/json");
-        }
-
-        @Test
-        @DisplayName("JSON 직렬화 실패 시 setComplete 호출")
-        void shouldCallSetCompleteWhenJsonSerializationFails() throws Exception {
-            // given
-            ObjectMapper mockObjectMapper = org.mockito.Mockito.mock(ObjectMapper.class);
-            when(mockObjectMapper.writeValueAsBytes(org.mockito.ArgumentMatchers.any()))
-                    .thenThrow(
-                            new com.fasterxml.jackson.core.JsonProcessingException(
-                                    "Mocked error") {});
-            MfaVerificationFilter filterWithMockedMapper =
-                    new MfaVerificationFilter(mockObjectMapper);
-
-            ServerWebExchange exchange = createExchange("/api/v1/secure", HttpMethod.GET);
-            TenantConfig tenantConfig = createTenantConfig("tenant-6", true);
-            exchange.getAttributes().put("tenantContext", tenantConfig);
-            exchange.getAttributes().put("mfaVerified", false);
-
-            // when & then
-            StepVerifier.create(filterWithMockedMapper.filter(exchange, chain)).verifyComplete();
-
             assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
         }
     }

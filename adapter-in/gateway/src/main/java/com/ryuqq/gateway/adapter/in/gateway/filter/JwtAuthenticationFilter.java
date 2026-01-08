@@ -1,10 +1,7 @@
 package com.ryuqq.gateway.adapter.in.gateway.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
 import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
@@ -17,10 +14,7 @@ import java.util.Set;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
@@ -67,10 +61,10 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private final ValidateJwtUseCase validateJwtUseCase;
     private final RecordFailureUseCase recordFailureUseCase;
-    private final ObjectMapper objectMapper;
     private final AntPathMatcher pathMatcher;
     private final PublicPathsProperties publicPathsProperties;
     private final ClientIpExtractor clientIpExtractor;
+    private final GatewayErrorResponder errorResponder;
 
     /** JWT 인증을 건너뛸 전역 Public 경로 패턴 (Host 기반 서비스 제외) */
     private final List<String> globalPublicPaths;
@@ -78,16 +72,16 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public JwtAuthenticationFilter(
             ValidateJwtUseCase validateJwtUseCase,
             RecordFailureUseCase recordFailureUseCase,
-            ObjectMapper objectMapper,
             PublicPathsProperties publicPathsProperties,
-            ClientIpExtractor clientIpExtractor) {
+            ClientIpExtractor clientIpExtractor,
+            GatewayErrorResponder errorResponder) {
         this.validateJwtUseCase = validateJwtUseCase;
         this.recordFailureUseCase = recordFailureUseCase;
-        this.objectMapper = objectMapper;
         this.pathMatcher = new AntPathMatcher();
         this.publicPathsProperties = publicPathsProperties;
         this.globalPublicPaths = publicPathsProperties.getAllPublicPaths();
         this.clientIpExtractor = clientIpExtractor;
+        this.errorResponder = errorResponder;
     }
 
     @Override
@@ -194,20 +188,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {
-        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        String traceId = exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE);
-        ErrorInfo error = new ErrorInfo("UNAUTHORIZED", "인증이 필요합니다");
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error, traceId);
-
-        try {
-            byte[] bytes = objectMapper.writeValueAsBytes(errorResponse);
-            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse().writeWith(Mono.just(buffer));
-        } catch (JsonProcessingException e) {
-            return exchange.getResponse().setComplete();
-        }
+        return errorResponder.unauthorized(exchange, "UNAUTHORIZED", "인증이 필요합니다");
     }
 
     /**

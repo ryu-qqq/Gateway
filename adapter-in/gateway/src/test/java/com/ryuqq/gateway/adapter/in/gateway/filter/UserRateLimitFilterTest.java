@@ -3,11 +3,12 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.dto.response.CheckRateLimitResponse;
@@ -43,13 +44,21 @@ class UserRateLimitFilterTest {
 
     @Mock private GatewayFilterChain filterChain;
 
-    private UserRateLimitFilter userRateLimitFilter;
+    @Mock private GatewayErrorResponder errorResponder;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private UserRateLimitFilter userRateLimitFilter;
 
     @BeforeEach
     void setUp() {
-        userRateLimitFilter = new UserRateLimitFilter(checkRateLimitUseCase, objectMapper);
+        lenient()
+                .when(errorResponder.tooManyRequests(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+                            return Mono.empty();
+                        });
+        userRateLimitFilter = new UserRateLimitFilter(checkRateLimitUseCase, errorResponder);
     }
 
     @Nested

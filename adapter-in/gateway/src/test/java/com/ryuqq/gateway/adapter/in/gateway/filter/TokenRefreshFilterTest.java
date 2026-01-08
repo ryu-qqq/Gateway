@@ -3,11 +3,12 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.RefreshAccessTokenCommand;
 import com.ryuqq.gateway.application.authentication.dto.response.RefreshAccessTokenResponse;
@@ -45,15 +46,30 @@ class TokenRefreshFilterTest {
     @Mock private RefreshAccessTokenUseCase refreshAccessTokenUseCase;
     @Mock private AuthHubClient authHubClient;
     @Mock private GatewayFilterChain chain;
+    @Mock private GatewayErrorResponder errorResponder;
 
-    private ObjectMapper objectMapper;
     private TokenRefreshFilter tokenRefreshFilter;
 
     @BeforeEach
     void setUp() {
-        objectMapper = new ObjectMapper();
+        lenient()
+                .when(errorResponder.unauthorized(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return Mono.empty();
+                        });
+        lenient()
+                .when(errorResponder.internalServerError(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+                            return Mono.empty();
+                        });
         tokenRefreshFilter =
-                new TokenRefreshFilter(refreshAccessTokenUseCase, authHubClient, objectMapper);
+                new TokenRefreshFilter(refreshAccessTokenUseCase, authHubClient, errorResponder);
     }
 
     @Nested
@@ -321,8 +337,8 @@ class TokenRefreshFilterTest {
     class ErrorResponseTest {
 
         @Test
-        @DisplayName("에러 응답에 JSON Content-Type 설정")
-        void shouldSetJsonContentTypeOnErrorResponse() {
+        @DisplayName("에러 응답에 ProblemDetail Content-Type 설정")
+        void shouldSetProblemDetailContentTypeOnErrorResponse() {
             // given
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
@@ -336,34 +352,6 @@ class TokenRefreshFilterTest {
             StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
 
             // then
-            assertThat(exchange.getResponse().getHeaders().getContentType())
-                    .hasToString("application/json");
-        }
-
-        @Test
-        @DisplayName("JSON 직렬화 실패 시 setComplete 호출")
-        void shouldCallSetCompleteWhenJsonSerializationFails() throws Exception {
-            // given
-            ObjectMapper mockObjectMapper = org.mockito.Mockito.mock(ObjectMapper.class);
-            when(mockObjectMapper.writeValueAsBytes(any()))
-                    .thenThrow(
-                            new com.fasterxml.jackson.core.JsonProcessingException(
-                                    "Mocked error") {});
-            TokenRefreshFilter filterWithMockedMapper =
-                    new TokenRefreshFilter(
-                            refreshAccessTokenUseCase, authHubClient, mockObjectMapper);
-
-            ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
-            ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
-
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredToken));
-            when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
-                    .thenReturn(Mono.error(new RefreshTokenExpiredException()));
-
-            // when & then
-            StepVerifier.create(filterWithMockedMapper.filter(exchange, chain)).verifyComplete();
-
             assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
         }
     }

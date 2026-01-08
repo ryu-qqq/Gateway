@@ -7,9 +7,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
@@ -59,10 +58,9 @@ class JwtAuthenticationFilterUnitTest {
 
     @Mock private ClientIpExtractor clientIpExtractor;
 
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @Mock private GatewayErrorResponder errorResponder;
 
-    private final ObjectMapper objectMapper =
-            new ObjectMapper().registerModule(new JavaTimeModule());
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /** 테스트용 Public Paths */
     private static final List<String> TEST_PUBLIC_PATHS =
@@ -73,13 +71,21 @@ class JwtAuthenticationFilterUnitTest {
         lenient().when(publicPathsProperties.getAllPublicPaths()).thenReturn(TEST_PUBLIC_PATHS);
         lenient().when(clientIpExtractor.extractWithTrustedProxy(any())).thenReturn("127.0.0.1");
         lenient().when(clientIpExtractor.extract(any())).thenReturn("127.0.0.1");
+        lenient()
+                .when(errorResponder.unauthorized(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                            return Mono.empty();
+                        });
         jwtAuthenticationFilter =
                 new JwtAuthenticationFilter(
                         validateJwtUseCase,
                         recordFailureUseCase,
-                        objectMapper,
                         publicPathsProperties,
-                        clientIpExtractor);
+                        clientIpExtractor,
+                        errorResponder);
     }
 
     /** recordFailureUseCase 기본 동작 설정 - 실패 기록이 필요한 테스트에서만 호출 */
