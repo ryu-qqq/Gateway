@@ -3,7 +3,9 @@ package com.ryuqq.gateway.adapter.out.redis.repository;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -82,6 +84,30 @@ public class IpBlockRedisRepository {
                 .getExpire(key)
                 .map(Duration::getSeconds)
                 .defaultIfEmpty(-2L);
+    }
+
+    /**
+     * 모든 차단된 IP 목록 조회
+     *
+     * <p>SCAN 명령어를 사용하여 프로덕션 환경에서도 안전하게 조회합니다.
+     *
+     * @return Flux&lt;String&gt; 차단된 IP 주소 목록
+     */
+    public Flux<String> findAllBlockedIps() {
+        ScanOptions scanOptions =
+                ScanOptions.scanOptions().match(IP_BLOCK_PREFIX + ":*").count(100).build();
+
+        return reactiveStringRedisTemplate.scan(scanOptions).map(this::extractIpFromKey);
+    }
+
+    /**
+     * Redis Key에서 IP 주소 추출
+     *
+     * @param key Redis Key (gateway:blocked_ip:192.168.1.100)
+     * @return IP 주소 (192.168.1.100)
+     */
+    private String extractIpFromKey(String key) {
+        return key.substring(IP_BLOCK_PREFIX.length() + 1);
     }
 
     /**
