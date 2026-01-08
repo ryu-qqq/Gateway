@@ -177,7 +177,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                             retryAfterSeconds);
 
                     // Prometheus 메트릭 기록
-                    gatewayMetrics.recordRateLimitExceeded(clientIp, method, path);
+                    gatewayMetrics.recordRateLimitExceeded(method, path);
 
                     // Rate Limit 헤더 추가
                     exchange.getResponse()
@@ -215,7 +215,7 @@ public class RateLimitFilter implements GlobalFilter, Ordered {
                             retryAfterSeconds);
 
                     // Prometheus 메트릭 기록
-                    gatewayMetrics.recordIpBlocked(clientIp, method, path);
+                    gatewayMetrics.recordIpBlocked(method, path);
 
                     // Retry-After 헤더 추가
                     exchange.getResponse()

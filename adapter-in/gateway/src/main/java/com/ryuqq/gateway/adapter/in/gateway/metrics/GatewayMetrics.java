@@ -4,6 +4,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
@@ -53,6 +55,9 @@ public class GatewayMetrics {
 
     private final MeterRegistry meterRegistry;
 
+    /** Counter 캐시 (태그 조합별) - 핫패스에서 매번 Counter.builder() 호출 방지 */
+    private final ConcurrentMap<String, Counter> counterCache = new ConcurrentHashMap<>();
+
     @SuppressFBWarnings(
             value = "EI_EXPOSE_REP2",
             justification = "MeterRegistry is a Spring-managed singleton bean injected via DI")
@@ -63,50 +68,73 @@ public class GatewayMetrics {
     /**
      * Rate Limit 초과 메트릭 기록
      *
-     * @param ip 클라이언트 IP (태그에 포함하지 않음)
      * @param method HTTP 메서드
      * @param path 요청 경로
      */
-    public void recordRateLimitExceeded(String ip, String method, String path) {
-        Counter.builder(METRIC_PREFIX + "_rate_limit_exceeded_total")
-                .description("Rate limit exceeded count")
-                .tag("method", sanitizeMethod(method))
-                .tag("path", normalizePath(path))
-                .register(meterRegistry)
+    public void recordRateLimitExceeded(String method, String path) {
+        String sanitizedMethod = sanitizeMethod(method);
+        String normalizedPath = normalizePath(path);
+        String cacheKey = "rate_limit:" + sanitizedMethod + ":" + normalizedPath;
+
+        counterCache
+                .computeIfAbsent(
+                        cacheKey,
+                        key ->
+                                Counter.builder(METRIC_PREFIX + "_rate_limit_exceeded_total")
+                                        .description("Rate limit exceeded count")
+                                        .tag("method", sanitizedMethod)
+                                        .tag("path", normalizedPath)
+                                        .register(meterRegistry))
                 .increment();
     }
 
     /**
      * IP 블락 메트릭 기록
      *
-     * @param ip 차단된 IP (태그에 포함하지 않음)
      * @param method HTTP 메서드
      * @param path 요청 경로
      */
-    public void recordIpBlocked(String ip, String method, String path) {
-        Counter.builder(METRIC_PREFIX + "_ip_blocked_total")
-                .description("IP blocked count")
-                .tag("method", sanitizeMethod(method))
-                .tag("path", normalizePath(path))
-                .register(meterRegistry)
+    public void recordIpBlocked(String method, String path) {
+        String sanitizedMethod = sanitizeMethod(method);
+        String normalizedPath = normalizePath(path);
+        String cacheKey = "ip_blocked:" + sanitizedMethod + ":" + normalizedPath;
+
+        counterCache
+                .computeIfAbsent(
+                        cacheKey,
+                        key ->
+                                Counter.builder(METRIC_PREFIX + "_ip_blocked_total")
+                                        .description("IP blocked count")
+                                        .tag("method", sanitizedMethod)
+                                        .tag("path", normalizedPath)
+                                        .register(meterRegistry))
                 .increment();
     }
 
     /**
      * 404 Not Found 메트릭 기록
      *
-     * @param ip 클라이언트 IP (태그에 포함하지 않음)
      * @param method HTTP 메서드
      * @param path 요청 경로
      * @param suspicious 의심스러운 요청 여부
      */
-    public void recordNotFound(String ip, String method, String path, boolean suspicious) {
-        Counter.builder(METRIC_PREFIX + "_not_found_total")
-                .description("Not found (404) count")
-                .tag("method", sanitizeMethod(method))
-                .tag("path", normalizePath(path))
-                .tag("suspicious", String.valueOf(suspicious))
-                .register(meterRegistry)
+    public void recordNotFound(String method, String path, boolean suspicious) {
+        String sanitizedMethod = sanitizeMethod(method);
+        String normalizedPath = normalizePath(path);
+        String suspiciousStr = String.valueOf(suspicious);
+        String cacheKey =
+                "not_found:" + sanitizedMethod + ":" + normalizedPath + ":" + suspiciousStr;
+
+        counterCache
+                .computeIfAbsent(
+                        cacheKey,
+                        key ->
+                                Counter.builder(METRIC_PREFIX + "_not_found_total")
+                                        .description("Not found (404) count")
+                                        .tag("method", sanitizedMethod)
+                                        .tag("path", normalizedPath)
+                                        .tag("suspicious", suspiciousStr)
+                                        .register(meterRegistry))
                 .increment();
     }
 
@@ -140,9 +168,14 @@ public class GatewayMetrics {
         boolean isKnownPath =
                 KNOWN_PATH_PREFIXES.stream()
                         .anyMatch(
-                                prefix ->
-                                        path.startsWith(prefix)
-                                                || path.equals(prefix.replace("/", "")));
+                                prefix -> {
+                                    // trailing slash 제거 후 비교 (예: "/api/" -> "/api")
+                                    String normalizedPrefix =
+                                            prefix.endsWith("/")
+                                                    ? prefix.substring(0, prefix.length() - 1)
+                                                    : prefix;
+                                    return path.startsWith(normalizedPrefix);
+                                });
 
         if (!isKnownPath) {
             // 알려지지 않은 경로 (봇 공격, 랜덤 경로 등) → "other"

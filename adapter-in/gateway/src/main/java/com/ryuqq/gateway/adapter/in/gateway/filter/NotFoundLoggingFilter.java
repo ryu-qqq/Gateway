@@ -45,7 +45,7 @@ public class NotFoundLoggingFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return GatewayFilterOrder.RESPONSE_LOGGING_FILTER;
+        return GatewayFilterOrder.NOT_FOUND_LOGGING_FILTER;
     }
 
     @Override
@@ -54,15 +54,19 @@ public class NotFoundLoggingFilter implements GlobalFilter, Ordered {
                 .then(
                         Mono.fromRunnable(
                                 () -> {
-                                    HttpStatusCode statusCode =
-                                            exchange.getResponse().getStatusCode();
+                                    try {
+                                        HttpStatusCode statusCode =
+                                                exchange.getResponse().getStatusCode();
 
-                                    if (statusCode == null) {
-                                        return;
-                                    }
+                                        if (statusCode == null) {
+                                            return;
+                                        }
 
-                                    if (HttpStatus.NOT_FOUND.equals(statusCode)) {
-                                        logNotFound(exchange);
+                                        if (HttpStatus.NOT_FOUND.equals(statusCode)) {
+                                            logNotFound(exchange);
+                                        }
+                                    } catch (Exception e) {
+                                        log.debug("Failed to log 404 request: {}", e.getMessage());
                                     }
                                 }));
     }
@@ -78,7 +82,7 @@ public class NotFoundLoggingFilter implements GlobalFilter, Ordered {
         boolean isSuspicious = isSuspiciousPath(path);
 
         // Prometheus 메트릭 기록
-        gatewayMetrics.recordNotFound(clientIp, method, path, isSuspicious);
+        gatewayMetrics.recordNotFound(method, path, isSuspicious);
 
         if (isSuspicious) {
             log.warn(
@@ -137,8 +141,8 @@ public class NotFoundLoggingFilter implements GlobalFilter, Ordered {
             return true;
         }
 
-        // 관리자 페이지
-        if (lowerPath.contains("/admin")
+        // 관리자 페이지 (우리 Admin API는 /admin/으로 시작하므로 제외)
+        if ((lowerPath.contains("/admin") && !lowerPath.startsWith("/admin/"))
                 || lowerPath.contains("/manager")
                 || lowerPath.contains("/console")) {
             return true;
@@ -158,6 +162,6 @@ public class NotFoundLoggingFilter implements GlobalFilter, Ordered {
                 || lowerPath.contains("/shell")
                 || lowerPath.contains("/eval")
                 || lowerPath.contains("/.well-known/security.txt")
-                || lowerPath.contains("/actuator") && !lowerPath.startsWith("/actuator");
+                || (lowerPath.contains("/actuator") && !lowerPath.startsWith("/actuator"));
     }
 }
