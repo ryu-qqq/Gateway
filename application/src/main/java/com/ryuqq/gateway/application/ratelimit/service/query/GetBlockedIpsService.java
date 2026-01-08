@@ -26,16 +26,14 @@ public class GetBlockedIpsService implements GetBlockedIpsUseCase {
     /**
      * 모든 차단된 IP 목록 조회
      *
+     * <p>N+1 문제를 방지하기 위해 IP와 TTL을 함께 조회합니다.
+     *
      * @return Flux&lt;BlockedIpResponse&gt; 차단된 IP 목록 (TTL 포함)
      */
     @Override
     public Flux<BlockedIpResponse> execute() {
         return ipBlockQueryPort
-                .findAllBlockedIps()
-                .flatMap(
-                        ip ->
-                                ipBlockQueryPort
-                                        .getBlockTtlSeconds(ip)
-                                        .map(ttl -> BlockedIpResponse.of(ip, ttl)));
+                .findAllBlockedIpsWithTtl()
+                .map(dto -> BlockedIpResponse.of(dto.ip(), dto.ttlSeconds()));
     }
 }

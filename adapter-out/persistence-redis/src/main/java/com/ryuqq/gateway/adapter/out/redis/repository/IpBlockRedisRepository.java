@@ -1,6 +1,8 @@
 package com.ryuqq.gateway.adapter.out.redis.repository;
 
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 import org.springframework.data.redis.core.ScanOptions;
@@ -27,8 +29,10 @@ import reactor.core.publisher.Mono;
 @Repository
 public class IpBlockRedisRepository {
 
+    private static final Logger logger = LoggerFactory.getLogger(IpBlockRedisRepository.class);
     private static final String IP_BLOCK_PREFIX = "gateway:blocked_ip";
     private static final String BLOCKED_VALUE = "blocked";
+    private static final int SCAN_COUNT = 100;
 
     private final ReactiveStringRedisTemplate reactiveStringRedisTemplate;
 
@@ -95,18 +99,62 @@ public class IpBlockRedisRepository {
      */
     public Flux<String> findAllBlockedIps() {
         ScanOptions scanOptions =
-                ScanOptions.scanOptions().match(IP_BLOCK_PREFIX + ":*").count(100).build();
+                ScanOptions.scanOptions().match(IP_BLOCK_PREFIX + ":*").count(SCAN_COUNT).build();
 
-        return reactiveStringRedisTemplate.scan(scanOptions).map(this::extractIpFromKey);
+        return reactiveStringRedisTemplate
+                .scan(scanOptions)
+                .map(this::extractIpFromKey)
+                .filter(ip -> ip != null); // malformed key 필터링
     }
+
+    /**
+     * 모든 차단된 IP 목록과 TTL을 함께 조회
+     *
+     * <p>N+1 문제를 방지하기 위해 SCAN + getExpire를 하나의 스트림에서 처리합니다.
+     *
+     * @return Flux&lt;BlockedIpWithTtl&gt; IP 주소와 TTL 정보
+     */
+    public Flux<BlockedIpWithTtl> findAllBlockedIpsWithTtl() {
+        ScanOptions scanOptions =
+                ScanOptions.scanOptions().match(IP_BLOCK_PREFIX + ":*").count(SCAN_COUNT).build();
+
+        return reactiveStringRedisTemplate
+                .scan(scanOptions)
+                .flatMap(
+                        key -> {
+                            String ip = extractIpFromKey(key);
+                            if (ip == null) {
+                                return Mono.empty(); // malformed key 스킵
+                            }
+                            return reactiveStringRedisTemplate
+                                    .getExpire(key)
+                                    .map(Duration::getSeconds)
+                                    .defaultIfEmpty(-2L)
+                                    .map(ttl -> new BlockedIpWithTtl(ip, ttl));
+                        });
+    }
+
+    /**
+     * IP와 TTL 정보를 담는 DTO
+     *
+     * @param ip IP 주소
+     * @param ttlSeconds 남은 시간 (초)
+     */
+    public record BlockedIpWithTtl(String ip, Long ttlSeconds) {}
 
     /**
      * Redis Key에서 IP 주소 추출
      *
+     * <p>방어적 프로그래밍: null 또는 malformed key에 대한 처리 포함
+     *
      * @param key Redis Key (gateway:blocked_ip:192.168.1.100)
-     * @return IP 주소 (192.168.1.100)
+     * @return IP 주소 (192.168.1.100), malformed key인 경우 null
      */
     private String extractIpFromKey(String key) {
+        if (key == null || key.length() <= IP_BLOCK_PREFIX.length() + 1) {
+            logger.warn("Malformed Redis key detected and skipped: {}", key);
+            return null;
+        }
         return key.substring(IP_BLOCK_PREFIX.length() + 1);
     }
 

@@ -2,11 +2,12 @@ package com.ryuqq.gateway.adapter.in.gateway.controller;
 
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
 import com.ryuqq.gateway.application.ratelimit.dto.response.BlockedIpResponse;
-import com.ryuqq.gateway.application.ratelimit.port.in.command.ResetRateLimitUseCase;
+import com.ryuqq.gateway.application.ratelimit.port.in.command.UnblockIpUseCase;
 import com.ryuqq.gateway.application.ratelimit.port.in.query.GetBlockedIpsUseCase;
-import com.ryuqq.gateway.application.ratelimit.port.out.command.IpBlockCommandPort;
+import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,26 +27,24 @@ import reactor.core.publisher.Mono;
  *   <li>DELETE /actuator/rate-limit/blocked-ips/{ip} - IP 차단 해제
  * </ul>
  *
- * <p><strong>보안</strong>: Actuator 경로로 노출되므로 Spring Security 또는 네트워크 레벨에서 접근 제어 필요
+ * <p><strong>보안</strong>: 이 엔드포인트는 네트워크 레벨(ALB/WAF/Security Group)에서 내부망 또는 관리자 IP만 접근 가능하도록 제한해야
+ * 합니다. Spring Security가 활성화된 경우 @PreAuthorize("hasRole('ADMIN')") 적용을 권장합니다.
  *
  * @author development-team
  * @since 1.0.0
  */
 @RestController
 @RequestMapping("/actuator/rate-limit")
+@Validated
 public class RateLimitAdminController {
 
     private final GetBlockedIpsUseCase getBlockedIpsUseCase;
-    private final IpBlockCommandPort ipBlockCommandPort;
-    private final ResetRateLimitUseCase resetRateLimitUseCase;
+    private final UnblockIpUseCase unblockIpUseCase;
 
     public RateLimitAdminController(
-            GetBlockedIpsUseCase getBlockedIpsUseCase,
-            IpBlockCommandPort ipBlockCommandPort,
-            ResetRateLimitUseCase resetRateLimitUseCase) {
+            GetBlockedIpsUseCase getBlockedIpsUseCase, UnblockIpUseCase unblockIpUseCase) {
         this.getBlockedIpsUseCase = getBlockedIpsUseCase;
-        this.ipBlockCommandPort = ipBlockCommandPort;
-        this.resetRateLimitUseCase = resetRateLimitUseCase;
+        this.unblockIpUseCase = unblockIpUseCase;
     }
 
     /**
@@ -68,21 +67,26 @@ public class RateLimitAdminController {
      *
      * <p>특정 IP의 차단을 해제합니다.
      *
-     * @param ip 차단 해제할 IP 주소
+     * @param ip 차단 해제할 IP 주소 (IPv4 형식)
      * @return Mono&lt;ResponseEntity&lt;ApiResponse&lt;String&gt;&gt;&gt;
      */
     @DeleteMapping("/blocked-ips/{ip}")
-    public Mono<ResponseEntity<ApiResponse<String>>> unblockIp(@PathVariable String ip) {
-        return ipBlockCommandPort
-                .unblock(ip)
+    public Mono<ResponseEntity<ApiResponse<String>>> unblockIp(
+            @PathVariable
+                    @Pattern(
+                            regexp =
+                                    "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
+                            message = "유효한 IPv4 주소 형식이 아닙니다")
+                    String ip) {
+        return unblockIpUseCase
+                .execute(ip)
                 .map(
                         success -> {
                             if (success) {
                                 return ResponseEntity.ok(
                                         ApiResponse.ofSuccess("IP " + ip + " 차단이 해제되었습니다."));
                             } else {
-                                return ResponseEntity.ok(
-                                        ApiResponse.ofSuccess("IP " + ip + "는 차단되어 있지 않습니다."));
+                                return ResponseEntity.noContent().build();
                             }
                         });
     }
