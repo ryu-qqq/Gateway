@@ -21,6 +21,7 @@ import org.springframework.core.Ordered;
  *   <li>TENANT_ISOLATION_FILTER (HIGHEST_PRECEDENCE + 5) - 테넌트 격리
  *   <li>PERMISSION_FILTER (HIGHEST_PRECEDENCE + 6) - 권한 검사
  *   <li>MFA_VERIFICATION_FILTER (HIGHEST_PRECEDENCE + 7) - MFA 검증
+ *   <li>NOT_FOUND_LOGGING_FILTER (LOWEST_PRECEDENCE) - 404 응답 로깅 (응답 후 실행)
  * </ol>
  *
  * <p><strong>Token Refresh 설계 결정</strong>:
@@ -62,6 +63,9 @@ public final class GatewayFilterOrder {
 
     /** MFA Verification Filter Order (HIGHEST_PRECEDENCE + 7) */
     public static final int MFA_VERIFICATION_FILTER = HIGHEST_PRECEDENCE + 7;
+
+    /** Not Found Logging Filter Order (LOWEST_PRECEDENCE) - 404 응답 로깅 */
+    public static final int NOT_FOUND_LOGGING_FILTER = Ordered.LOWEST_PRECEDENCE;
 
     private GatewayFilterOrder() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
