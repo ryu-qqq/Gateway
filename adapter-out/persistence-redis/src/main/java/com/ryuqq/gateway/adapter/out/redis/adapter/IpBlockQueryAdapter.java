@@ -3,6 +3,7 @@ package com.ryuqq.gateway.adapter.out.redis.adapter;
 import com.ryuqq.gateway.adapter.out.redis.repository.IpBlockRedisRepository;
 import com.ryuqq.gateway.application.ratelimit.port.out.query.IpBlockQueryPort;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -49,5 +50,27 @@ public class IpBlockQueryAdapter implements IpBlockQueryPort {
     @Override
     public Mono<Long> getBlockTtlSeconds(String ipAddress) {
         return ipBlockRedisRepository.getBlockTtl(ipAddress);
+    }
+
+    /**
+     * 모든 차단된 IP 목록 조회
+     *
+     * @return Flux&lt;String&gt; 차단된 IP 주소 목록
+     */
+    @Override
+    public Flux<String> findAllBlockedIps() {
+        return ipBlockRedisRepository.findAllBlockedIps();
+    }
+
+    /**
+     * 모든 차단된 IP 목록과 TTL을 함께 조회 (N+1 문제 방지)
+     *
+     * @return Flux&lt;BlockedIpWithTtl&gt; IP 주소와 TTL 정보
+     */
+    @Override
+    public Flux<IpBlockQueryPort.BlockedIpWithTtl> findAllBlockedIpsWithTtl() {
+        return ipBlockRedisRepository
+                .findAllBlockedIpsWithTtl()
+                .map(dto -> new IpBlockQueryPort.BlockedIpWithTtl(dto.ip(), dto.ttlSeconds()));
     }
 }
