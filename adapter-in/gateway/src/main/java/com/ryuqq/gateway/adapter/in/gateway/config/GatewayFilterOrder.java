@@ -63,6 +63,9 @@ public final class GatewayFilterOrder {
     /** MFA Verification Filter Order (HIGHEST_PRECEDENCE + 7) */
     public static final int MFA_VERIFICATION_FILTER = HIGHEST_PRECEDENCE + 7;
 
+    /** Response Logging Filter Order (LOWEST_PRECEDENCE) - 응답 후 404/에러 로깅 */
+    public static final int RESPONSE_LOGGING_FILTER = Ordered.LOWEST_PRECEDENCE;
+
     private GatewayFilterOrder() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }

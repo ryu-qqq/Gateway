@@ -256,15 +256,9 @@ management:
 # ===============================================
 # Logging
 # ===============================================
-logging:
-  level:
-    root: INFO
-    com.ryuqq.gateway: DEBUG
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.web.reactive: DEBUG
-
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+# 주의: logging.level 설정은 logback-spring.xml을 덮어씁니다.
+# 프로파일별 로그 레벨은 각 프로파일 섹션에서만 설정하세요.
+# prod 환경은 logback-spring.xml의 설정만 사용합니다.
 
 # ===============================================
 # Profile-Specific Configurations
@@ -285,7 +279,11 @@ spring:
 logging:
   level:
     root: DEBUG
-    com.ryuqq.gateway: TRACE
+    com.ryuqq.gateway: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web.reactive: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
 
 ---
 # ===============================================
