@@ -3,11 +3,12 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.tenant.dto.query.GetTenantConfigQuery;
 import com.ryuqq.gateway.application.tenant.dto.response.GetTenantConfigResponse;
@@ -49,13 +50,21 @@ class TenantIsolationFilterTest {
 
     @Mock private GatewayFilterChain filterChain;
 
-    private TenantIsolationFilter tenantIsolationFilter;
+    @Mock private GatewayErrorResponder errorResponder;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private TenantIsolationFilter tenantIsolationFilter;
 
     @BeforeEach
     void setUp() {
-        tenantIsolationFilter = new TenantIsolationFilter(getTenantConfigUseCase, objectMapper);
+        lenient()
+                .when(errorResponder.internalServerError(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+                            return Mono.empty();
+                        });
+        tenantIsolationFilter = new TenantIsolationFilter(getTenantConfigUseCase, errorResponder);
     }
 
     /** 테스트용 TenantConfig 생성 */

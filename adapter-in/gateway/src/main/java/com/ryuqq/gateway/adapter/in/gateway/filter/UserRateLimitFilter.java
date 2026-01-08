@@ -1,9 +1,6 @@
 package com.ryuqq.gateway.adapter.in.gateway.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.CheckRateLimitUseCase;
@@ -13,9 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -49,12 +43,12 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
     private static final String RETRY_AFTER_HEADER = "Retry-After";
 
     private final CheckRateLimitUseCase checkRateLimitUseCase;
-    private final ObjectMapper objectMapper;
+    private final GatewayErrorResponder errorResponder;
 
     public UserRateLimitFilter(
-            CheckRateLimitUseCase checkRateLimitUseCase, ObjectMapper objectMapper) {
+            CheckRateLimitUseCase checkRateLimitUseCase, GatewayErrorResponder errorResponder) {
         this.checkRateLimitUseCase = checkRateLimitUseCase;
-        this.objectMapper = objectMapper;
+        this.errorResponder = errorResponder;
     }
 
     @Override
@@ -155,10 +149,6 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
 
                     // TOCTOU 방어: 응답 커밋 후 헤더 수정 시 UnsupportedOperationException 발생 가능
                     try {
-                        exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
-                        exchange.getResponse()
-                                .getHeaders()
-                                .setContentType(MediaType.APPLICATION_JSON);
                         exchange.getResponse()
                                 .getHeaders()
                                 .add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
@@ -177,39 +167,10 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
                         }
                     }
 
-                    ErrorInfo error =
-                            new ErrorInfo(
-                                    "USER_RATE_LIMIT_EXCEEDED",
-                                    "사용자 요청 빈도가 너무 높습니다. 잠시 후 다시 시도해주세요.");
-                    ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
-
-                    return writeResponse(exchange, errorResponse);
+                    return errorResponder.tooManyRequests(
+                            exchange,
+                            "USER_RATE_LIMIT_EXCEEDED",
+                            "사용자 요청 빈도가 너무 높습니다. 잠시 후 다시 시도해주세요.");
                 });
-    }
-
-    /**
-     * JSON 응답 작성 (ByteBuf 메모리 누수 방지)
-     *
-     * <p>writeWith 실패 시 buffer를 명시적으로 해제합니다.
-     */
-    private Mono<Void> writeResponse(ServerWebExchange exchange, ApiResponse<Void> response) {
-        try {
-            byte[] bytes = objectMapper.writeValueAsBytes(response);
-            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse()
-                    .writeWith(Mono.just(buffer))
-                    .doOnError(
-                            error -> {
-                                // writeWith 실패 시 buffer 해제 (ByteBuf LEAK 방지)
-                                org.springframework.core.io.buffer.DataBufferUtils.release(buffer);
-                            })
-                    .doOnCancel(
-                            () -> {
-                                // 클라이언트 연결 끊김/요청 취소 시 buffer 해제 (ByteBuf LEAK 방지)
-                                org.springframework.core.io.buffer.DataBufferUtils.release(buffer);
-                            });
-        } catch (JsonProcessingException e) {
-            return exchange.getResponse().setComplete();
-        }
     }
 }

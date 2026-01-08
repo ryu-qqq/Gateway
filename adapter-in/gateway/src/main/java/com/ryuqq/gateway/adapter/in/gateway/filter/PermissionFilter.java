@@ -1,9 +1,6 @@
 package com.ryuqq.gateway.adapter.in.gateway.filter;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ApiResponse;
-import com.ryuqq.gateway.adapter.in.gateway.common.dto.ErrorInfo;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authorization.dto.command.ValidatePermissionCommand;
 import com.ryuqq.gateway.application.authorization.port.in.command.ValidatePermissionUseCase;
@@ -15,9 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
-import org.springframework.core.io.buffer.DataBuffer;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -52,12 +46,13 @@ public class PermissionFilter implements GlobalFilter, Ordered {
     private static final String ROLES_ATTRIBUTE = "roles";
 
     private final ValidatePermissionUseCase validatePermissionUseCase;
-    private final ObjectMapper objectMapper;
+    private final GatewayErrorResponder errorResponder;
 
     public PermissionFilter(
-            ValidatePermissionUseCase validatePermissionUseCase, ObjectMapper objectMapper) {
+            ValidatePermissionUseCase validatePermissionUseCase,
+            GatewayErrorResponder errorResponder) {
         this.validatePermissionUseCase = validatePermissionUseCase;
-        this.objectMapper = objectMapper;
+        this.errorResponder = errorResponder;
     }
 
     @Override
@@ -133,34 +128,10 @@ public class PermissionFilter implements GlobalFilter, Ordered {
     }
 
     private Mono<Void> forbidden(ServerWebExchange exchange, String message) {
-        exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        ErrorInfo error = new ErrorInfo("FORBIDDEN", message);
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
-
-        try {
-            byte[] bytes = objectMapper.writeValueAsBytes(errorResponse);
-            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse().writeWith(Mono.just(buffer));
-        } catch (JsonProcessingException e) {
-            return exchange.getResponse().setComplete();
-        }
+        return errorResponder.forbidden(exchange, "FORBIDDEN", message);
     }
 
     private Mono<Void> internalError(ServerWebExchange exchange) {
-        exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
-        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        ErrorInfo error = new ErrorInfo("INTERNAL_ERROR", "권한 검증 중 오류가 발생했습니다");
-        ApiResponse<Void> errorResponse = ApiResponse.ofFailure(error);
-
-        try {
-            byte[] bytes = objectMapper.writeValueAsBytes(errorResponse);
-            DataBuffer buffer = exchange.getResponse().bufferFactory().wrap(bytes);
-            return exchange.getResponse().writeWith(Mono.just(buffer));
-        } catch (JsonProcessingException e) {
-            return exchange.getResponse().setComplete();
-        }
+        return errorResponder.internalServerError(exchange, "INTERNAL_ERROR", "권한 검증 중 오류가 발생했습니다");
     }
 }

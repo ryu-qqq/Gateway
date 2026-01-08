@@ -9,8 +9,11 @@ import org.junit.jupiter.api.Test;
 /**
  * ApiResponse 단위 테스트
  *
+ * <p>ApiResponse는 성공 응답만 담당합니다. 에러 응답은 RFC 7807 ProblemDetail 형식을 사용합니다.
+ *
  * @author development-team
  * @since 1.0.0
+ * @see GatewayProblemDetail
  */
 @DisplayName("ApiResponse 단위 테스트")
 class ApiResponseTest {
@@ -29,11 +32,11 @@ class ApiResponseTest {
             ApiResponse<String> response = ApiResponse.ofSuccess(data);
 
             // then
-            assertThat(response.success()).isTrue();
+            assertThat(response.requestId()).isNotNull();
+            assertThat(response.requestId())
+                    .matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
             assertThat(response.data()).isEqualTo("test-data");
-            assertThat(response.error()).isNull();
             assertThat(response.timestamp()).isNotNull();
-            assertThat(response.traceId()).isNull();
         }
 
         @Test
@@ -43,83 +46,42 @@ class ApiResponseTest {
             ApiResponse<Void> response = ApiResponse.ofSuccess();
 
             // then
-            assertThat(response.success()).isTrue();
+            assertThat(response.requestId()).isNotNull();
+            assertThat(response.requestId())
+                    .matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
             assertThat(response.data()).isNull();
-            assertThat(response.error()).isNull();
             assertThat(response.timestamp()).isNotNull();
         }
-    }
-
-    @Nested
-    @DisplayName("실패 응답 생성")
-    class FailureResponseTest {
 
         @Test
-        @DisplayName("ErrorInfo로 실패 응답을 생성해야 한다")
-        void shouldCreateFailureResponseWithErrorInfo() {
+        @DisplayName("복잡한 객체 데이터로 성공 응답을 생성해야 한다")
+        void shouldCreateSuccessResponseWithComplexData() {
             // given
-            ErrorInfo error = new ErrorInfo("JWT_EXPIRED", "토큰이 만료되었습니다");
+            record TestData(String name, int value) {}
+            TestData data = new TestData("test", 42);
 
             // when
-            ApiResponse<Void> response = ApiResponse.ofFailure(error);
+            ApiResponse<TestData> response = ApiResponse.ofSuccess(data);
 
             // then
-            assertThat(response.success()).isFalse();
-            assertThat(response.data()).isNull();
-            assertThat(response.error()).isEqualTo(error);
+            assertThat(response.requestId()).isNotNull();
+            assertThat(response.requestId())
+                    .matches("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
+            assertThat(response.data()).isNotNull();
+            assertThat(response.data().name()).isEqualTo("test");
+            assertThat(response.data().value()).isEqualTo(42);
             assertThat(response.timestamp()).isNotNull();
-            assertThat(response.traceId()).isNull();
         }
 
         @Test
-        @DisplayName("ErrorInfo와 traceId로 실패 응답을 생성해야 한다")
-        void shouldCreateFailureResponseWithErrorInfoAndTraceId() {
-            // given
-            ErrorInfo error = new ErrorInfo("UNAUTHORIZED", "인증 실패");
-            String traceId = "trace-123456";
-
+        @DisplayName("매 호출마다 새로운 requestId가 생성되어야 한다")
+        void shouldGenerateUniqueRequestIdForEachCall() {
             // when
-            ApiResponse<Void> response = ApiResponse.ofFailure(error, traceId);
+            ApiResponse<String> response1 = ApiResponse.ofSuccess("data1");
+            ApiResponse<String> response2 = ApiResponse.ofSuccess("data2");
 
             // then
-            assertThat(response.success()).isFalse();
-            assertThat(response.data()).isNull();
-            assertThat(response.error()).isEqualTo(error);
-            assertThat(response.traceId()).isEqualTo("trace-123456");
-        }
-
-        @Test
-        @DisplayName("에러코드와 메시지로 실패 응답을 생성해야 한다")
-        void shouldCreateFailureResponseWithCodeAndMessage() {
-            // given
-            String errorCode = "FORBIDDEN";
-            String message = "권한이 부족합니다";
-
-            // when
-            ApiResponse<Void> response = ApiResponse.ofFailure(errorCode, message);
-
-            // then
-            assertThat(response.success()).isFalse();
-            assertThat(response.error().errorCode()).isEqualTo("FORBIDDEN");
-            assertThat(response.error().message()).isEqualTo("권한이 부족합니다");
-        }
-
-        @Test
-        @DisplayName("에러코드, 메시지, traceId로 실패 응답을 생성해야 한다")
-        void shouldCreateFailureResponseWithCodeMessageAndTraceId() {
-            // given
-            String errorCode = "INTERNAL_ERROR";
-            String message = "내부 서버 오류";
-            String traceId = "trace-789";
-
-            // when
-            ApiResponse<Void> response = ApiResponse.ofFailure(errorCode, message, traceId);
-
-            // then
-            assertThat(response.success()).isFalse();
-            assertThat(response.error().errorCode()).isEqualTo("INTERNAL_ERROR");
-            assertThat(response.error().message()).isEqualTo("내부 서버 오류");
-            assertThat(response.traceId()).isEqualTo("trace-789");
+            assertThat(response1.requestId()).isNotEqualTo(response2.requestId());
         }
     }
 }

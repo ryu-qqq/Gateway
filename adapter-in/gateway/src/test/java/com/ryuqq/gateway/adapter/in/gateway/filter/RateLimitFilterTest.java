@@ -8,9 +8,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
+import com.ryuqq.gateway.adapter.in.gateway.metrics.GatewayMetrics;
 import com.ryuqq.gateway.application.ratelimit.config.RateLimitProperties;
 import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand;
 import com.ryuqq.gateway.application.ratelimit.dto.response.CheckRateLimitResponse;
@@ -52,20 +53,44 @@ class RateLimitFilterTest {
 
     @Mock private ClientIpExtractor clientIpExtractor;
 
-    private RateLimitFilter rateLimitFilter;
+    @Mock private GatewayMetrics gatewayMetrics;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Mock private GatewayErrorResponder errorResponder;
+
+    private RateLimitFilter rateLimitFilter;
 
     @BeforeEach
     void setUp() {
         lenient().when(rateLimitProperties.isEnabled()).thenReturn(true);
         lenient().when(clientIpExtractor.extractWithTrustedProxy(any())).thenReturn("127.0.0.1");
+
+        // Mock errorResponder - 429 응답
+        lenient()
+                .when(errorResponder.tooManyRequests(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
+                            return Mono.empty();
+                        });
+
+        // Mock errorResponder - 403 응답
+        lenient()
+                .when(errorResponder.forbidden(any(), any(), any()))
+                .thenAnswer(
+                        invocation -> {
+                            MockServerWebExchange exchange = invocation.getArgument(0);
+                            exchange.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                            return Mono.empty();
+                        });
+
         rateLimitFilter =
                 new RateLimitFilter(
                         rateLimitProperties,
                         checkRateLimitUseCase,
-                        objectMapper,
-                        clientIpExtractor);
+                        clientIpExtractor,
+                        gatewayMetrics,
+                        errorResponder);
     }
 
     @Nested
