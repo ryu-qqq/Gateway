@@ -3,6 +3,7 @@ package com.ryuqq.gateway.adapter.in.gateway.common.util;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ryuqq.gateway.adapter.in.gateway.common.dto.GatewayProblemDetail;
+import com.ryuqq.gateway.adapter.in.gateway.filter.TraceIdFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -127,27 +128,9 @@ public class GatewayErrorResponder {
      */
     public Mono<Void> respond(
             ServerWebExchange exchange, HttpStatus status, String errorCode, String message) {
-        return Mono.defer(
-                () -> {
-                    if (exchange.getResponse().isCommitted()) {
-                        return Mono.empty();
-                    }
-
-                    String requestPath = exchange.getRequest().getPath().value();
-                    String requestId = extractRequestId(exchange);
-
-                    GatewayProblemDetail problemDetail =
-                            GatewayProblemDetail.builder()
-                                    .status(status.value())
-                                    .title(status.getReasonPhrase())
-                                    .detail(message)
-                                    .code(errorCode)
-                                    .instance(requestPath)
-                                    .requestId(requestId)
-                                    .build();
-
-                    return writeResponse(exchange, status, problemDetail);
-                });
+        GatewayProblemDetail problemDetail =
+                buildProblemDetail(exchange, status, errorCode, message);
+        return respond(exchange, status, problemDetail);
     }
 
     /**
@@ -167,6 +150,30 @@ public class GatewayErrorResponder {
                     }
                     return writeResponse(exchange, status, problemDetail);
                 });
+    }
+
+    /**
+     * ProblemDetail 객체 생성
+     *
+     * @param exchange ServerWebExchange
+     * @param status HTTP 상태 코드
+     * @param errorCode 에러 코드
+     * @param message 에러 메시지
+     * @return GatewayProblemDetail
+     */
+    private GatewayProblemDetail buildProblemDetail(
+            ServerWebExchange exchange, HttpStatus status, String errorCode, String message) {
+        String requestPath = exchange.getRequest().getPath().value();
+        String requestId = extractRequestId(exchange);
+
+        return GatewayProblemDetail.builder()
+                .status(status.value())
+                .title(status.getReasonPhrase())
+                .detail(message)
+                .code(errorCode)
+                .instance(requestPath)
+                .requestId(requestId)
+                .build();
     }
 
     private Mono<Void> writeResponse(
@@ -192,13 +199,12 @@ public class GatewayErrorResponder {
     }
 
     private String extractRequestId(ServerWebExchange exchange) {
-        // traceId 또는 requestId 헤더에서 추출
-        String traceId = exchange.getRequest().getHeaders().getFirst("X-Request-Id");
-        if (traceId != null) {
-            return traceId;
+        // TraceIdFilter가 설정한 Attribute에서 우선 추출
+        Object attr = exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE);
+        if (attr != null) {
+            return attr.toString();
         }
-        // Attribute에서 추출 시도
-        Object attr = exchange.getAttribute("traceId");
-        return attr != null ? attr.toString() : null;
+        // 헤더에서 추출 (fallback)
+        return exchange.getRequest().getHeaders().getFirst(TraceIdFilter.X_TRACE_ID_HEADER);
     }
 }

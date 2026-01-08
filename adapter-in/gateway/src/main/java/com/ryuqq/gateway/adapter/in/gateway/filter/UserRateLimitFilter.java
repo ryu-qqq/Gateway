@@ -151,11 +151,11 @@ public class UserRateLimitFilter implements GlobalFilter, Ordered {
                     try {
                         exchange.getResponse()
                                 .getHeaders()
-                                .add(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
-                        exchange.getResponse().getHeaders().add(X_RATE_LIMIT_REMAINING_HEADER, "0");
+                                .set(X_RATE_LIMIT_LIMIT_HEADER, String.valueOf(limit));
+                        exchange.getResponse().getHeaders().set(X_RATE_LIMIT_REMAINING_HEADER, "0");
                         exchange.getResponse()
                                 .getHeaders()
-                                .add(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
+                                .set(RETRY_AFTER_HEADER, String.valueOf(retryAfterSeconds));
                     } catch (UnsupportedOperationException | IllegalStateException e) {
                         // ReadOnlyHttpHeaders 예외 - 응답이 이미 커밋됨
                         log.warn(

@@ -95,10 +95,29 @@ public record GatewayProblemDetail(
                 title,
                 status,
                 detail,
-                instance != null ? URI.create(instance) : null,
+                parseInstanceUri(instance),
                 code,
                 Instant.now(),
                 requestId);
+    }
+
+    /**
+     * instance 문자열을 안전하게 URI로 파싱
+     *
+     * <p>잘못된 URI 문자열이 입력되면 null을 반환합니다.
+     *
+     * @param instance URI 문자열
+     * @return 파싱된 URI 또는 null
+     */
+    private static URI parseInstanceUri(String instance) {
+        if (instance == null || instance.isBlank()) {
+            return null;
+        }
+        try {
+            return URI.create(instance);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /** Builder 패턴 지원 */
@@ -106,6 +125,7 @@ public record GatewayProblemDetail(
         return new Builder();
     }
 
+    @SuppressWarnings("PMD.TooManyFields")
     public static class Builder {
 
         private URI type = DEFAULT_TYPE;
@@ -138,7 +158,7 @@ public record GatewayProblemDetail(
         }
 
         public Builder instance(String instance) {
-            this.instance = instance != null ? URI.create(instance) : null;
+            this.instance = parseInstanceUri(instance);
             return this;
         }
 

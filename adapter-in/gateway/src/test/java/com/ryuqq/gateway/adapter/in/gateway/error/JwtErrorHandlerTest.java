@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
 import org.springframework.mock.web.server.MockServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -35,19 +36,12 @@ class JwtErrorHandlerTest {
     @BeforeEach
     void setUp() {
         lenient()
-                .when(errorResponder.unauthorized(any(), any(), any()))
+                .when(errorResponder.respond(any(), any(HttpStatus.class), any(), any()))
                 .thenAnswer(
                         invocation -> {
                             MockServerWebExchange exchange = invocation.getArgument(0);
-                            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                            return Mono.empty();
-                        });
-        lenient()
-                .when(errorResponder.internalServerError(any(), any(), any()))
-                .thenAnswer(
-                        invocation -> {
-                            MockServerWebExchange exchange = invocation.getArgument(0);
-                            exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
+                            HttpStatusCode status = invocation.getArgument(1);
+                            exchange.getResponse().setStatusCode(status);
                             return Mono.empty();
                         });
         jwtErrorHandler = new JwtErrorHandler(errorResponder);
