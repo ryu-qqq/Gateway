@@ -77,9 +77,7 @@ jobs:
       # 테스트 실행 (단위 + ArchUnit) - 통합 테스트 제외
       # ----------------------------------------------------------------------
       - name: Run Tests
-        env:
-          SKIP_INTEGRATION_TESTS: 'true'
-        run: ./gradlew test --no-daemon
+        run: ./gradlew test -x :integration-test:test -x :adapter-out:persistence-redis:test --no-daemon
 
       # ----------------------------------------------------------------------
       # JaCoCo 커버리지 검증
