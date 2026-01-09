@@ -176,21 +176,25 @@ public class GatewayRoutingConfig {
     }
 
     /**
-     * Match host pattern against actual host
+     * Match host pattern against actual host (case-insensitive)
      *
      * <p>Supports wildcard patterns like "*.set-of.com"
+     *
+     * <p>RFC 7230: Host header field is case-insensitive
      *
      * @param pattern host pattern (e.g., "set-of.com", "*.set-of.com")
      * @param host actual host from request
      * @return true if matches
      */
     private boolean matchHost(String pattern, String host) {
-        if (pattern.equals(host)) {
+        if (pattern.equalsIgnoreCase(host)) {
             return true;
         }
         if (pattern.startsWith("*.")) {
-            String suffix = pattern.substring(1); // ".set-of.com"
-            return host.endsWith(suffix) || host.equals(pattern.substring(2));
+            String suffix = pattern.substring(1).toLowerCase(); // ".set-of.com"
+            String hostLower = host.toLowerCase();
+            return hostLower.endsWith(suffix)
+                    || hostLower.equals(pattern.substring(2).toLowerCase());
         }
         return false;
     }

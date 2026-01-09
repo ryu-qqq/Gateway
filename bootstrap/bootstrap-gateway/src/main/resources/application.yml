@@ -334,6 +334,42 @@ gateway:
       default-port: 8080
 
     services:
+      # ============================================
+      # Host-based Routes (MUST be registered FIRST)
+      # 호스트 기반 라우트는 path 기반 라우트보다 먼저 등록되어야 함
+      # 그렇지 않으면 /api/v1/auth/** 같은 패턴이 먼저 매칭됨
+      # ============================================
+
+      # Legacy Web API Service (Host-based routing)
+      # Handles: www.set-of.com, stage.set-of.com, set-of.com, server.set-of.net
+      - id: legacy-web
+        uri: ${LEGACY_WEB_URI:http://setof-commerce-legacy-api-prod.connectly.local:8088}
+        paths:
+          - /**
+        hosts:
+          - www.set-of.com
+          - stage.set-of.com
+          - set-of.com
+          - server.set-of.net
+        public-paths:
+          - /**
+
+      # Legacy Admin API Service (Host-based routing)
+      # Handles: admin.set-of.com, admin-server.set-of.net
+      - id: legacy-admin
+        uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-prod.connectly.local:8089}
+        paths:
+          - /**
+        hosts:
+          - admin.set-of.com
+          - admin-server.set-of.net
+        public-paths:
+          - /**
+
+      # ============================================
+      # Path-based Routes (API Gateway services)
+      # ============================================
+
       # AuthHub Service (port 8080)
       - id: authhub
         uri: http://authhub-web-api-prod.connectly.local:8080
@@ -371,36 +407,6 @@ gateway:
         port: 9090
         paths:
           - /api/v1/market/**
-
-      # ============================================
-      # Legacy Web API Service (Host-based routing)
-      # Handles: www.set-of.com, stage.set-of.com, set-of.com, server.set-of.net
-      # ============================================
-      - id: legacy-web
-        uri: ${LEGACY_WEB_URI:http://setof-commerce-legacy-api-prod.connectly.local:8088}
-        paths:
-          - /**
-        hosts:
-          - www.set-of.com
-          - stage.set-of.com
-          - set-of.com
-          - server.set-of.net
-        public-paths:
-          - /**
-
-      # ============================================
-      # Legacy Admin API Service (Host-based routing)
-      # Handles: admin.set-of.com, admin-server.set-of.net
-      # ============================================
-      - id: legacy-admin
-        uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-prod.connectly.local:8089}
-        paths:
-          - /**
-        hosts:
-          - admin.set-of.com
-          - admin-server.set-of.net
-        public-paths:
-          - /**
 
     host-mapping:
       api.set-of.com: public
