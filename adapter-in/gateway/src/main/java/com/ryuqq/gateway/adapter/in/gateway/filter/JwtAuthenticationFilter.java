@@ -221,7 +221,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     /**
      * 요청에서 Host 추출 (X-Forwarded-Host 우선)
      *
-     * <p>CloudFront나 ALB를 통해 들어오는 요청은 X-Forwarded-Host 헤더에 원본 Host가 있습니다.
+     * <p>CloudFront나 ALB를 통해 들어오는 요청은 X-Forwarded-Host 헤더에 원본 Host가 있습니다. X-Forwarded-Host가 쉼표로 구분된
+     * 여러 값을 포함할 수 있으므로 첫 번째 값만 사용합니다.
      *
      * @param exchange ServerWebExchange
      * @return Host 값 (포트 제외)
@@ -232,7 +233,9 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         // X-Forwarded-Host 우선 (CloudFront/ALB)
         String forwardedHost = headers.getFirst("X-Forwarded-Host");
         if (forwardedHost != null && !forwardedHost.isEmpty()) {
-            return removePort(forwardedHost);
+            // 쉼표로 구분된 경우 첫 번째 호스트만 사용
+            String firstHost = forwardedHost.split(",")[0].trim();
+            return removePort(firstHost);
         }
 
         // 기본 Host 헤더

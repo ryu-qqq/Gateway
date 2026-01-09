@@ -115,17 +115,26 @@ public class GatewayRoutingConfig {
                                                                             exchange.getRequest();
                                                                     // Check X-Forwarded-Host first
                                                                     // (CloudFront/ALB)
+                                                                    // X-Forwarded-Host may contain
+                                                                    // comma-separated values
                                                                     String forwardedHost =
                                                                             request.getHeaders()
                                                                                     .getFirst(
                                                                                             "X-Forwarded-Host");
                                                                     if (forwardedHost != null) {
+                                                                        // Parse comma-separated
+                                                                        // hosts, use first one
+                                                                        String firstHost =
+                                                                                forwardedHost
+                                                                                        .split(",")[
+                                                                                        0]
+                                                                                        .trim();
                                                                         return hosts.stream()
                                                                                 .anyMatch(
                                                                                         h ->
                                                                                                 matchHost(
                                                                                                         h,
-                                                                                                        forwardedHost));
+                                                                                                        firstHost));
                                                                     }
                                                                     // Fallback to Host header
                                                                     String host =
