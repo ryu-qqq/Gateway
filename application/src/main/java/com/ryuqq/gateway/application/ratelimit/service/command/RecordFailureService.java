@@ -7,6 +7,7 @@ import com.ryuqq.gateway.application.ratelimit.port.out.command.RateLimitCounter
 import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitKey;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitPolicy;
+import com.ryuqq.observability.logging.annotation.Loggable;
 import java.time.Duration;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -55,6 +56,7 @@ public class RecordFailureService implements RecordFailureUseCase {
      * @param command RecordFailureCommand
      * @return Mono&lt;Void&gt; 완료 시그널
      */
+    @Loggable(value = "실패 기록", includeArgs = false, slowThreshold = 100)
     @Override
     public Mono<Void> execute(RecordFailureCommand command) {
         RateLimitPolicy policy = RateLimitPolicy.defaultPolicy(command.limitType());

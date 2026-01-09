@@ -12,6 +12,7 @@ import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitAction;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitKey;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitPolicy;
+import com.ryuqq.observability.logging.annotation.Loggable;
 import java.time.Duration;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -67,6 +68,7 @@ public class CheckRateLimitService implements CheckRateLimitUseCase {
      * @param command CheckRateLimitCommand
      * @return Mono&lt;CheckRateLimitResponse&gt; (체크 결과)
      */
+    @Loggable(value = "Rate Limit 체크", includeArgs = false, slowThreshold = 100)
     @Override
     public Mono<CheckRateLimitResponse> execute(CheckRateLimitCommand command) {
         return checkIpBlockedFirst(command).flatMap(this::processRateLimitCheck);

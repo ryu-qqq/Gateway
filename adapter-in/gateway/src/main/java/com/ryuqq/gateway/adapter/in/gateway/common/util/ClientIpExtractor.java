@@ -76,7 +76,7 @@ public class ClientIpExtractor {
             if (ip != null && isValidIpAddress(ip)) {
                 return ip;
             }
-            log.warn(
+            log.debug(
                     "Invalid CloudFront-Viewer-Address format: '{}'. Trying X-Forwarded-For.",
                     viewerAddress);
         }
@@ -88,7 +88,7 @@ public class ClientIpExtractor {
             if (isValidIpAddress(firstIp)) {
                 return firstIp;
             }
-            log.warn(
+            log.debug(
                     "Invalid IP format in X-Forwarded-For header: '{}'. Falling back to"
                             + " RemoteAddress.",
                     firstIp);

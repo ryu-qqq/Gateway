@@ -11,6 +11,7 @@ import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenReusedExcep
 import com.ryuqq.gateway.domain.authentication.exception.TokenRefreshFailedException;
 import com.ryuqq.gateway.domain.authentication.vo.RefreshToken;
 import com.ryuqq.gateway.domain.authentication.vo.TokenPair;
+import com.ryuqq.observability.logging.annotation.Loggable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -82,6 +83,7 @@ public class RefreshAccessTokenService implements RefreshAccessTokenUseCase {
      * @param command RefreshAccessTokenCommand (tenantId, userId, refreshToken)
      * @return Mono&lt;RefreshAccessTokenResponse&gt; (새 Access Token + Refresh Token)
      */
+    @Loggable(value = "Access Token Refresh", includeArgs = false, slowThreshold = 1000)
     @Override
     public Mono<RefreshAccessTokenResponse> execute(RefreshAccessTokenCommand command) {
         String tenantId = command.tenantId();
