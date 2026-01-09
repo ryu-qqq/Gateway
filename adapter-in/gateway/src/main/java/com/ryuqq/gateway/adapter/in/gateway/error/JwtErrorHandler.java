@@ -48,17 +48,18 @@ public class JwtErrorHandler implements ErrorWebExceptionHandler {
         String errorCode = getErrorCode(ex);
         String message = getErrorMessage(ex);
 
-        // 500 에러만 Sentry 전송 (401은 비즈니스 에러이므로 제외)
-        if (status == HttpStatus.INTERNAL_SERVER_ERROR) {
+        // 500 에러만 Sentry 전송 (401은 비즈니스 에러, actuator는 내부 헬스체크이므로 제외)
+        String path = exchange.getRequest().getPath().value();
+        if (status == HttpStatus.INTERNAL_SERVER_ERROR && !isActuatorPath(path)) {
             String traceId = extractTraceId(exchange);
-            log.error(
-                    "Unexpected error occurred - traceId: {}, path: {}",
-                    traceId,
-                    exchange.getRequest().getPath().value(),
-                    ex);
+            log.error("Unexpected error occurred - traceId: {}, path: {}", traceId, path, ex);
         }
 
         return errorResponder.respond(exchange, status, errorCode, message);
+    }
+
+    private boolean isActuatorPath(String path) {
+        return path != null && path.startsWith("/actuator");
     }
 
     private String extractTraceId(ServerWebExchange exchange) {
