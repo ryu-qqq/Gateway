@@ -4,6 +4,7 @@ import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.filter.TraceIdFilter;
 import com.ryuqq.gateway.domain.authentication.exception.JwtExpiredException;
 import com.ryuqq.gateway.domain.authentication.exception.JwtInvalidException;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
@@ -61,11 +62,13 @@ public class JwtErrorHandler implements ErrorWebExceptionHandler {
     }
 
     private String extractTraceId(ServerWebExchange exchange) {
-        Object attr = exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE);
-        if (attr != null) {
-            return attr.toString();
-        }
-        return exchange.getRequest().getHeaders().getFirst(TraceIdFilter.X_TRACE_ID_HEADER);
+        return Optional.ofNullable(exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
+                .map(Object::toString)
+                .orElseGet(
+                        () ->
+                                exchange.getRequest()
+                                        .getHeaders()
+                                        .getFirst(TraceIdFilter.X_TRACE_ID_HEADER));
     }
 
     private HttpStatus getHttpStatus(Throwable ex) {
