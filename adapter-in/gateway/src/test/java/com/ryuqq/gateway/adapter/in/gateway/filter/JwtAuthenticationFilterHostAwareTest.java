@@ -231,6 +231,106 @@ class JwtAuthenticationFilterHostAwareTest {
             verify(validateJwtUseCase, never()).execute(any());
             verify(filterChain).filter(exchange);
         }
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 쉼표로 구분된 값이면 첫 번째 호스트를 사용해야 한다")
+        void shouldUseFirstHostWhenXForwardedHostContainsMultipleValues() {
+            // given - CloudFront/ALB 체인에서 쉼표 구분 헤더 전달
+            when(publicPathsProperties.getPublicPathsForHost("admin.set-of.com"))
+                    .thenReturn(List.of("/**"));
+
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/v1/admin/users")
+                            .header(HttpHeaders.HOST, "gateway-alb.local")
+                            .header(
+                                    "X-Forwarded-Host",
+                                    "admin.set-of.com, gateway-alb-prod.amazonaws.com")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            // then - 첫 번째 호스트 admin.set-of.com으로 매칭되어 JWT 스킵
+            verify(validateJwtUseCase, never()).execute(any());
+            verify(filterChain).filter(exchange);
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 쉼표로 구분되고 포트를 포함하면 첫 번째 호스트의 포트를 제거해야 한다")
+        void shouldRemovePortFromFirstHostInCommaSeparatedValues() {
+            // given
+            when(publicPathsProperties.getPublicPathsForHost("admin.set-of.com"))
+                    .thenReturn(List.of("/**"));
+
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/v1/admin/users")
+                            .header(HttpHeaders.HOST, "gateway-alb.local")
+                            .header(
+                                    "X-Forwarded-Host",
+                                    "admin.set-of.com:443, gateway-alb.local:8080")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            // then - 첫 번째 호스트에서 포트 제거 후 admin.set-of.com으로 매칭
+            verify(validateJwtUseCase, never()).execute(any());
+            verify(filterChain).filter(exchange);
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 빈 첫 번째 값으로 시작하면 첫 번째 유효한 호스트를 사용해야 한다")
+        void shouldUseFirstValidHostWhenXForwardedHostStartsWithEmpty() {
+            // given - 엣지 케이스: ", admin.set-of.com"
+            when(publicPathsProperties.getPublicPathsForHost("admin.set-of.com"))
+                    .thenReturn(List.of("/**"));
+
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/v1/admin/users")
+                            .header(HttpHeaders.HOST, "gateway-alb.local")
+                            .header("X-Forwarded-Host", ", admin.set-of.com")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            // then - 빈 값 건너뛰고 admin.set-of.com으로 매칭
+            verify(validateJwtUseCase, never()).execute(any());
+            verify(filterChain).filter(exchange);
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 공백만 있는 값으로 시작하면 첫 번째 유효한 호스트를 사용해야 한다")
+        void shouldSkipWhitespaceOnlyValuesInXForwardedHost() {
+            // given - 엣지 케이스: "  , admin.set-of.com"
+            when(publicPathsProperties.getPublicPathsForHost("admin.set-of.com"))
+                    .thenReturn(List.of("/**"));
+
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/v1/admin/users")
+                            .header(HttpHeaders.HOST, "gateway-alb.local")
+                            .header("X-Forwarded-Host", "  , admin.set-of.com")
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            when(filterChain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            // then - 공백만 있는 값 건너뛰고 admin.set-of.com으로 매칭
+            verify(validateJwtUseCase, never()).execute(any());
+            verify(filterChain).filter(exchange);
+        }
     }
 
     @Nested

@@ -121,20 +121,22 @@ public class GatewayRoutingConfig {
                                                                             request.getHeaders()
                                                                                     .getFirst(
                                                                                             "X-Forwarded-Host");
-                                                                    if (forwardedHost != null) {
+                                                                    if (forwardedHost != null
+                                                                            && !forwardedHost
+                                                                                    .isEmpty()) {
                                                                         // Parse comma-separated
-                                                                        // hosts, use first one
+                                                                        // hosts, use first valid
                                                                         String firstHost =
-                                                                                forwardedHost
-                                                                                        .split(",")[
-                                                                                        0]
-                                                                                        .trim();
-                                                                        return hosts.stream()
-                                                                                .anyMatch(
-                                                                                        h ->
-                                                                                                matchHost(
-                                                                                                        h,
-                                                                                                        firstHost));
+                                                                                extractFirstValidHost(
+                                                                                        forwardedHost);
+                                                                        if (firstHost != null) {
+                                                                            return hosts.stream()
+                                                                                    .anyMatch(
+                                                                                            h ->
+                                                                                                    matchHost(
+                                                                                                            h,
+                                                                                                            firstHost));
+                                                                        }
                                                                     }
                                                                     // Fallback to Host header
                                                                     String host =
@@ -144,7 +146,7 @@ public class GatewayRoutingConfig {
                                                                     if (host != null) {
                                                                         // Remove port if present
                                                                         String hostWithoutPort =
-                                                                                host.split(":")[0];
+                                                                                removePort(host);
                                                                         return hosts.stream()
                                                                                 .anyMatch(
                                                                                         h ->
@@ -191,6 +193,38 @@ public class GatewayRoutingConfig {
             return host.endsWith(suffix) || host.equals(pattern.substring(2));
         }
         return false;
+    }
+
+    /**
+     * 쉼표로 구분된 호스트 목록에서 첫 번째 유효한 호스트 추출
+     *
+     * <p>빈 값이나 공백만 있는 값은 건너뛰고 첫 번째 유효한 호스트를 반환합니다. 포트 번호가 있으면 제거합니다.
+     *
+     * @param hosts 쉼표로 구분된 호스트 문자열
+     * @return 첫 번째 유효한 호스트 (포트 제외) 또는 null
+     */
+    private String extractFirstValidHost(String hosts) {
+        for (String host : hosts.split(",")) {
+            String trimmed = host.trim();
+            if (!trimmed.isEmpty()) {
+                return removePort(trimmed);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Host에서 포트 번호 제거
+     *
+     * @param host Host 값 (예: "api.set-of.com:443")
+     * @return 포트 제거된 Host (예: "api.set-of.com")
+     */
+    private String removePort(String host) {
+        if (host == null) {
+            return null;
+        }
+        int colonIndex = host.indexOf(':');
+        return colonIndex > 0 ? host.substring(0, colonIndex) : host;
     }
 
     /**
