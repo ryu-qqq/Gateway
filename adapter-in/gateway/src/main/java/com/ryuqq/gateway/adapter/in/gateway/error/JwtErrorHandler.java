@@ -1,8 +1,12 @@
 package com.ryuqq.gateway.adapter.in.gateway.error;
 
 import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
+import com.ryuqq.gateway.adapter.in.gateway.filter.TraceIdFilter;
 import com.ryuqq.gateway.domain.authentication.exception.JwtExpiredException;
 import com.ryuqq.gateway.domain.authentication.exception.JwtInvalidException;
+import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -30,6 +34,8 @@ import reactor.core.publisher.Mono;
 @Order(-1)
 public class JwtErrorHandler implements ErrorWebExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtErrorHandler.class);
+
     private final GatewayErrorResponder errorResponder;
 
     public JwtErrorHandler(GatewayErrorResponder errorResponder) {
@@ -42,7 +48,27 @@ public class JwtErrorHandler implements ErrorWebExceptionHandler {
         String errorCode = getErrorCode(ex);
         String message = getErrorMessage(ex);
 
+        // 500 에러만 Sentry 전송 (401은 비즈니스 에러이므로 제외)
+        if (status == HttpStatus.INTERNAL_SERVER_ERROR) {
+            String traceId = extractTraceId(exchange);
+            log.error(
+                    "Unexpected error occurred - traceId: {}, path: {}",
+                    traceId,
+                    exchange.getRequest().getPath().value(),
+                    ex);
+        }
+
         return errorResponder.respond(exchange, status, errorCode, message);
+    }
+
+    private String extractTraceId(ServerWebExchange exchange) {
+        return Optional.ofNullable(exchange.getAttribute(TraceIdFilter.TRACE_ID_ATTRIBUTE))
+                .map(Object::toString)
+                .orElseGet(
+                        () ->
+                                exchange.getRequest()
+                                        .getHeaders()
+                                        .getFirst(TraceIdFilter.X_TRACE_ID_HEADER));
     }
 
     private HttpStatus getHttpStatus(Throwable ex) {

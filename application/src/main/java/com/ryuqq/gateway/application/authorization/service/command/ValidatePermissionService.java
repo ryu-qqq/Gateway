@@ -11,6 +11,7 @@ import com.ryuqq.gateway.domain.authorization.vo.EndpointPermission;
 import com.ryuqq.gateway.domain.authorization.vo.HttpMethod;
 import com.ryuqq.gateway.domain.authorization.vo.PermissionHash;
 import com.ryuqq.gateway.domain.authorization.vo.PermissionSpec;
+import com.ryuqq.observability.logging.annotation.Loggable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,6 +40,7 @@ public class ValidatePermissionService implements ValidatePermissionUseCase {
         this.getPermissionHashService = getPermissionHashService;
     }
 
+    @Loggable(value = "권한 검증", includeArgs = false, slowThreshold = 300)
     @Override
     public Mono<ValidatePermissionResponse> execute(ValidatePermissionCommand command) {
         HttpMethod method = HttpMethod.from(command.requestMethod());

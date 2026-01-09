@@ -3,22 +3,22 @@ package com.ryuqq.gateway.bootstrap.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import io.sentry.SentryEvent;
+import io.sentry.SentryOptions;
+import io.sentry.protocol.Message;
+import io.sentry.protocol.SentryException;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import io.sentry.SentryEvent;
-import io.sentry.SentryOptions;
-import io.sentry.protocol.Message;
-import io.sentry.protocol.SentryException;
 
 /**
  * SentryConfig Unit Test
  *
- * <p>
- * Sentry 노이즈 필터링 로직 검증
+ * <p>Sentry 노이즈 필터링 로직 검증
  *
  * @author development-team
  * @since 1.0.0
@@ -116,8 +116,9 @@ class SentryConfigTest {
         @DisplayName("UnsupportedOperationException은 필터링된다")
         void shouldFilterUnsupportedOperationException() {
             // given
-            SentryEvent event = createEventWithException("java.lang.UnsupportedOperationException",
-                    "Test message");
+            SentryEvent event =
+                    createEventWithException(
+                            "java.lang.UnsupportedOperationException", "Test message");
 
             // when
             SentryEvent result = callback.execute(event, null);
@@ -130,8 +131,9 @@ class SentryConfigTest {
         @DisplayName("RejectedExecutionException은 필터링된다")
         void shouldFilterRejectedExecutionException() {
             // given
-            SentryEvent event = createEventWithException(
-                    "io.netty.util.concurrent.RejectedExecutionException", "Test message");
+            SentryEvent event =
+                    createEventWithException(
+                            "io.netty.util.concurrent.RejectedExecutionException", "Test message");
 
             // when
             SentryEvent result = callback.execute(event, null);
@@ -240,8 +242,9 @@ class SentryConfigTest {
         @DisplayName("예외 값에 ReadOnlyHttpHeaders가 포함된 경우 필터링된다")
         void shouldFilterReadOnlyHttpHeadersInExceptionValue() {
             // given
-            SentryEvent event = createEventWithException("java.lang.Exception",
-                    "ReadOnlyHttpHeaders error occurred");
+            SentryEvent event =
+                    createEventWithException(
+                            "java.lang.Exception", "ReadOnlyHttpHeaders error occurred");
 
             // when
             SentryEvent result = callback.execute(event, null);
@@ -286,8 +289,10 @@ class SentryConfigTest {
         @DisplayName("예외 값에 ServerHttpResponse already committed가 포함된 경우 필터링된다")
         void shouldFilterServerHttpResponseAlreadyCommittedInExceptionValue() {
             // given
-            SentryEvent event = createEventWithException("java.lang.IllegalStateException",
-                    "ServerHttpResponse already committed");
+            SentryEvent event =
+                    createEventWithException(
+                            "java.lang.IllegalStateException",
+                            "ServerHttpResponse already committed");
 
             // when
             SentryEvent result = callback.execute(event, null);

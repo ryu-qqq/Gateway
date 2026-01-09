@@ -8,6 +8,7 @@ import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtU
 import com.ryuqq.gateway.application.authentication.service.query.GetPublicKeyService;
 import com.ryuqq.gateway.domain.authentication.vo.AccessToken;
 import com.ryuqq.gateway.domain.common.exception.DomainException;
+import com.ryuqq.observability.logging.annotation.Loggable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -62,6 +63,7 @@ public class ValidateJwtService implements ValidateJwtUseCase {
      * @param command ValidateJwtCommand
      * @return Mono&lt;ValidateJwtResponse&gt; (검증 결과)
      */
+    @Loggable(value = "JWT 검증", includeArgs = false, slowThreshold = 500)
     @Override
     public Mono<ValidateJwtResponse> execute(ValidateJwtCommand command) {
         return Mono.fromCallable(() -> jwtAssembler.toAccessToken(command))
