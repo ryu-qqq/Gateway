@@ -74,11 +74,11 @@ jobs:
       #   run: ./gradlew verifyVersionCatalog --no-daemon
 
       # ----------------------------------------------------------------------
-      # 테스트 실행 (단위 + ArchUnit) - 통합 테스트 제외
+      # 테스트 실행 (단위 + ArchUnit + 통합 테스트)
       # ----------------------------------------------------------------------
       - name: Run Tests
         env:
-          SKIP_INTEGRATION_TESTS: 'true'
+          TESTCONTAINERS_RYUK_DISABLED: 'true'
         run: ./gradlew test --no-daemon
 
       # ----------------------------------------------------------------------
