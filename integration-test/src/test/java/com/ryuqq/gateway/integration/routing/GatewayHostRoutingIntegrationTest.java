@@ -368,4 +368,117 @@ class GatewayHostRoutingIntegrationTest {
             legacyAdminServer.verify(0, getRequestedFor(urlEqualTo("/api/v1/products")));
         }
     }
+
+    @Nested
+    @DisplayName("X-Forwarded-Host 헤더 처리 테스트")
+    class XForwardedHostRoutingTest {
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 있으면 Host 헤더 대신 사용해야 한다")
+        void shouldUseXForwardedHostOverHostHeader() {
+            webTestClient
+                    .get()
+                    .uri("/api/v1/admin/users")
+                    .header("Host", "internal-alb.local")
+                    .header("X-Forwarded-Host", "admin.set-of.com")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody()
+                    .jsonPath("$.service")
+                    .isEqualTo("legacy-admin");
+
+            legacyAdminServer.verify(getRequestedFor(urlEqualTo("/api/v1/admin/users")));
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 쉼표로 구분된 값이면 첫 번째 호스트로 라우팅해야 한다")
+        void shouldUseFirstHostWhenXForwardedHostContainsMultipleValues() {
+            webTestClient
+                    .get()
+                    .uri("/api/v1/admin/users")
+                    .header("Host", "gateway-alb.local")
+                    .header("X-Forwarded-Host", "admin.set-of.com, gateway-alb-prod.amazonaws.com")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody()
+                    .jsonPath("$.service")
+                    .isEqualTo("legacy-admin");
+
+            legacyAdminServer.verify(getRequestedFor(urlEqualTo("/api/v1/admin/users")));
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host에 포트가 포함되어 있으면 포트를 제거해야 한다")
+        void shouldRemovePortFromXForwardedHost() {
+            webTestClient
+                    .get()
+                    .uri("/api/v1/products")
+                    .header("Host", "internal-alb.local")
+                    .header("X-Forwarded-Host", "stage.set-of.com:443")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody()
+                    .jsonPath("$.service")
+                    .isEqualTo("legacy-web");
+
+            legacyWebServer.verify(getRequestedFor(urlEqualTo("/api/v1/products")));
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 쉼표로 구분되고 포트를 포함하면 첫 번째 호스트의 포트를 제거해야 한다")
+        void shouldRemovePortFromFirstHostInCommaSeparatedValues() {
+            webTestClient
+                    .get()
+                    .uri("/api/v1/admin/settings")
+                    .header("Host", "gateway-alb.local")
+                    .header("X-Forwarded-Host", "admin.set-of.com:443, gateway-alb.local:8080")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody()
+                    .jsonPath("$.service")
+                    .isEqualTo("legacy-admin");
+
+            legacyAdminServer.verify(getRequestedFor(urlEqualTo("/api/v1/admin/settings")));
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 빈 첫 번째 값으로 시작하면 첫 번째 유효한 호스트를 사용해야 한다")
+        void shouldUseFirstValidHostWhenXForwardedHostStartsWithEmpty() {
+            webTestClient
+                    .get()
+                    .uri("/api/v1/admin/users")
+                    .header("Host", "gateway-alb.local")
+                    .header("X-Forwarded-Host", ", admin.set-of.com")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody()
+                    .jsonPath("$.service")
+                    .isEqualTo("legacy-admin");
+
+            legacyAdminServer.verify(getRequestedFor(urlEqualTo("/api/v1/admin/users")));
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host가 공백만 있는 값으로 시작하면 첫 번째 유효한 호스트를 사용해야 한다")
+        void shouldSkipWhitespaceOnlyValuesInXForwardedHost() {
+            webTestClient
+                    .get()
+                    .uri("/api/v1/products")
+                    .header("Host", "gateway-alb.local")
+                    .header("X-Forwarded-Host", "  , stage.set-of.com")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectBody()
+                    .jsonPath("$.service")
+                    .isEqualTo("legacy-web");
+
+            legacyWebServer.verify(getRequestedFor(urlEqualTo("/api/v1/products")));
+        }
+    }
 }

@@ -221,7 +221,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     /**
      * 요청에서 Host 추출 (X-Forwarded-Host 우선)
      *
-     * <p>CloudFront나 ALB를 통해 들어오는 요청은 X-Forwarded-Host 헤더에 원본 Host가 있습니다.
+     * <p>CloudFront나 ALB를 통해 들어오는 요청은 X-Forwarded-Host 헤더에 원본 Host가 있습니다. X-Forwarded-Host가 쉼표로 구분된
+     * 여러 값을 포함할 수 있으므로 첫 번째 유효한 값만 사용합니다.
      *
      * @param exchange ServerWebExchange
      * @return Host 값 (포트 제외)
@@ -232,12 +233,34 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         // X-Forwarded-Host 우선 (CloudFront/ALB)
         String forwardedHost = headers.getFirst("X-Forwarded-Host");
         if (forwardedHost != null && !forwardedHost.isEmpty()) {
-            return removePort(forwardedHost);
+            // 쉼표로 구분된 경우 첫 번째 유효한 호스트 사용
+            String firstValidHost = extractFirstValidHost(forwardedHost);
+            if (firstValidHost != null) {
+                return removePort(firstValidHost);
+            }
         }
 
         // 기본 Host 헤더
         String host = headers.getFirst(HttpHeaders.HOST);
         return removePort(host);
+    }
+
+    /**
+     * 쉼표로 구분된 호스트 목록에서 첫 번째 유효한 호스트 추출
+     *
+     * <p>빈 값이나 공백만 있는 값은 건너뛰고 첫 번째 유효한 호스트를 반환합니다.
+     *
+     * @param hosts 쉼표로 구분된 호스트 문자열
+     * @return 첫 번째 유효한 호스트 또는 null
+     */
+    private String extractFirstValidHost(String hosts) {
+        for (String host : hosts.split(",")) {
+            String trimmed = host.trim();
+            if (!trimmed.isEmpty()) {
+                return trimmed;
+            }
+        }
+        return null;
     }
 
     /**
