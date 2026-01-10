@@ -41,12 +41,16 @@ spring:
   cloud:
     gateway:
       # Global CORS Configuration
+      # NOTE: CloudFront에서 CORS 헤더를 추가하므로, Gateway에서는 허용 정책만 설정
+      # allowedOriginPatterns: "*"는 모든 origin을 허용하면서 credentials도 지원
       globalcors:
         cors-configurations:
           '[/**]':
-            allowed-origins: "*"
+            allowedOriginPatterns: "*"
             allowed-methods: "*"
             allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
 
       # Routes (configured programmatically in GatewayRoutingConfig)
       routes: []
