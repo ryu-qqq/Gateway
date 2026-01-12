@@ -1,5 +1,7 @@
 package com.ryuqq.gateway.bootstrap;
 
+import java.security.Security;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
@@ -44,6 +46,14 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 @SpringBootApplication(scanBasePackages = "com.ryuqq.gateway")
 @ConfigurationPropertiesScan(basePackages = "com.ryuqq.gateway")
 public class GatewayApplication {
+
+    // DNS 캐싱 설정 (Cloud Map DNS 조회 최적화)
+    static {
+        // 성공한 DNS 조회 결과 30초 캐싱 (기본: 30초, -1은 영구 캐싱)
+        Security.setProperty("networkaddress.cache.ttl", "30");
+        // 실패한 DNS 조회 결과 5초 캐싱 (기본: 10초)
+        Security.setProperty("networkaddress.cache.negative.ttl", "5");
+    }
 
     /**
      * Application entry point

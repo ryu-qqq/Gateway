@@ -55,6 +55,20 @@ spring:
       # Routes (configured programmatically in GatewayRoutingConfig)
       routes: []
 
+      # ===============================================
+      # HTTP Client Configuration (Reactor Netty)
+      # ===============================================
+      # Gateway → Backend 서비스 간 HTTP 연결 설정
+      # 기본값이 너무 느슨하여 병목 발생 가능
+      httpclient:
+        connect-timeout: 3000           # 연결 타임아웃 3초 (기본: OS 기본값 ~75초)
+        response-timeout: 30s           # 응답 타임아웃 30초 (기본: 무제한)
+        pool:
+          type: elastic                 # elastic: 필요시 확장, fixed: 고정 크기
+          max-connections: 1000         # 최대 커넥션 수
+          acquire-timeout: 3000         # 커넥션 획득 대기 3초 (기본: 45초)
+          max-idle-time: 20s            # 유휴 커넥션 유지 시간
+
   # ===============================================
   # Redis (Public Key Cache)
   # ===============================================

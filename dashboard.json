@@ -1,825 +1,3559 @@
 {
-  "uid": "connectly-gateway-core",
-  "title": "Connectly Gateway - Core Metrics",
-  "timezone": "browser",
-  "schemaVersion": 38,
-  "version": 8,
-  "refresh": "10s",
-  "tags": ["gateway", "prod", "core"],
-  "templating": {
-    "list": [
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 13,
+    "links": [],
+    "panels": [
       {
-        "name": "datasource",
-        "type": "datasource",
-        "query": "prometheus",
-        "current": { "text": "AMP-prod", "value": "AMP-prod" }
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 100,
+        "title": "📊 Overview",
+        "type": "row"
       },
       {
-        "name": "job",
-        "type": "query",
         "datasource": "$datasource",
-        "query": "label_values(up, job)",
-        "current": { "text": "gateway-metrics", "value": "gateway-metrics" }
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "green",
+                  "value": 2
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 0,
+          "y": 1
+        },
+        "id": 1,
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(up{job=\"$job\"})",
+            "legendFormat": "UP",
+            "refId": "A"
+          }
+        ],
+        "title": "Instances UP",
+        "type": "stat"
       },
       {
-        "name": "application",
-        "type": "query",
         "datasource": "$datasource",
-        "query": "label_values(jvm_memory_used_bytes, application)",
-        "current": { "text": "connectly-gateway", "value": "connectly-gateway" }
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 1,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 4,
+          "y": 1
+        },
+        "id": 2,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+            "legendFormat": "RPS",
+            "refId": "A"
+          }
+        ],
+        "title": "Total RPS",
+        "type": "stat"
       },
       {
-        "name": "task_id",
-        "label": "ECS Task ID",
-        "type": "query",
         "datasource": "$datasource",
-        "query": "label_values(up{job=\"$job\"}, aws_ecs_task_id)",
-        "regex": "/.+/",
-        "includeAll": true,
-        "multi": true,
-        "refresh": 2
-      }
-    ]
-  },
-  "panels": [
-    {
-      "id": 100,
-      "type": "row",
-      "title": "📊 Overview",
-      "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 },
-      "collapsed": false
-    },
-    {
-      "id": 1,
-      "type": "stat",
-      "title": "Instances UP",
-      "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(up{job=\"$job\"})",
-          "legendFormat": "UP"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] },
-        "colorMode": "background"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "red", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "green", "value": 2 }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": 2,
-      "type": "stat",
-      "title": "Total RPS",
-      "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "RPS"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] }
-      },
-      "fieldConfig": {
-        "defaults": { "unit": "reqps", "decimals": 1 }
-      }
-    },
-    {
-      "id": 3,
-      "type": "stat",
-      "title": "Avg Latency",
-      "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"$job\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "Avg"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "decimals": 3,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.5 },
-              { "color": "red", "value": 1 }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": 4,
-      "type": "stat",
-      "title": "P99 Latency",
-      "gridPos": { "x": 12, "y": 1, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "P99"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "decimals": 3,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "red", "value": 2 }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": 5,
-      "type": "stat",
-      "title": "Error Rate %",
-      "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
-          "legendFormat": "Error %"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "decimals": 2,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "red", "value": 5 }
-            ]
-          }
-        }
-      }
-    },
-    {
-      "id": 6,
-      "type": "stat",
-      "title": "Heap Usage %",
-      "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "avg(jvm_memory_used_bytes{job=\"$job\",area=\"heap\"} / jvm_memory_max_bytes{job=\"$job\",area=\"heap\"}) * 100",
-          "legendFormat": "Heap %"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "decimals": 1,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 70 },
-              { "color": "red", "value": 85 }
-            ]
-          }
-        }
-      }
-    },
-
-    {
-      "id": 200,
-      "type": "row",
-      "title": "🚀 Traffic & Latency",
-      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 },
-      "collapsed": false
-    },
-    {
-      "id": 10,
-      "type": "timeseries",
-      "title": "Request Rate (RPS)",
-      "gridPos": { "x": 0, "y": 6, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "Total RPS"
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 3,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 0.5
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
         },
-        {
-          "expr": "sum by (aws_ecs_task_id) (rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "{{aws_ecs_task_id}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "reqps" }
-      }
-    },
-    {
-      "id": 11,
-      "type": "timeseries",
-      "title": "Response Time (P50 / P95 / P99)",
-      "gridPos": { "x": 12, "y": 6, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "P50"
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 8,
+          "y": 1
         },
-        {
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "P95"
+        "id": 3,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
         },
-        {
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "P99"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "s" }
-      }
-    },
-
-    {
-      "id": 300,
-      "type": "row",
-      "title": "⚠️ Errors & Status Codes",
-      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 1 },
-      "collapsed": false
-    },
-    {
-      "id": 20,
-      "type": "timeseries",
-      "title": "HTTP Status Code Distribution",
-      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"2..\"}[1m]))",
-          "legendFormat": "2xx Success"
-        },
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"4..\"}[1m]))",
-          "legendFormat": "4xx Client Error"
-        },
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m]))",
-          "legendFormat": "5xx Server Error"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "reqps" },
-        "overrides": [
-          { "matcher": { "id": "byName", "options": "2xx Success" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "4xx Client Error" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "5xx Server Error" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
-        ]
-      }
-    },
-    {
-      "id": 21,
-      "type": "timeseries",
-      "title": "Error Rate % (5xx / Total)",
-      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
-          "legendFormat": "Error Rate %"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "color": { "mode": "fixed", "fixedColor": "red" },
-          "custom": { "fillOpacity": 20 }
-        }
-      }
-    },
-
-    {
-      "id": 400,
-      "type": "row",
-      "title": "☕ JVM Metrics",
-      "gridPos": { "x": 0, "y": 23, "w": 24, "h": 1 },
-      "collapsed": false
-    },
-    {
-      "id": 30,
-      "type": "timeseries",
-      "title": "Heap Memory Used",
-      "gridPos": { "x": 0, "y": 24, "w": 6, "h": 6 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id=~\"$task_id\"})",
-          "legendFormat": "{{aws_ecs_task_id}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "bytes", "color": { "mode": "palette-classic" } }
-      }
-    },
-    {
-      "id": 31,
-      "type": "timeseries",
-      "title": "Heap Usage %",
-      "gridPos": { "x": 6, "y": 24, "w": 6, "h": 6 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id=~\"$task_id\"}) / sum by (aws_ecs_task_id) (jvm_memory_max_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id=~\"$task_id\"}) * 100",
-          "legendFormat": "{{aws_ecs_task_id}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 70 },
-              { "color": "red", "value": 85 }
-            ]
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_sum{job=\"$job\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+            "legendFormat": "Avg",
+            "refId": "A"
           }
-        }
-      }
-    },
-    {
-      "id": 32,
-      "type": "timeseries",
-      "title": "Non-Heap Memory",
-      "gridPos": { "x": 12, "y": 24, "w": 6, "h": 6 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\",aws_ecs_task_id=~\"$task_id\"})",
-          "legendFormat": "{{aws_ecs_task_id}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "bytes", "color": { "mode": "palette-classic" } }
-      }
-    },
-    {
-      "id": 33,
-      "type": "timeseries",
-      "title": "Live Threads",
-      "gridPos": { "x": 18, "y": 24, "w": 6, "h": 6 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "jvm_threads_live_threads{job=\"$job\",aws_ecs_task_id=~\"$task_id\"}",
-          "legendFormat": "{{aws_ecs_task_id}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "short", "color": { "mode": "palette-classic" } }
-      }
-    },
-    {
-      "id": 34,
-      "type": "timeseries",
-      "title": "GC Pause Time",
-      "gridPos": { "x": 0, "y": 30, "w": 12, "h": 6 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_sum{job=\"$job\",aws_ecs_task_id=~\"$task_id\"}[5m]))",
-          "legendFormat": "{{aws_ecs_task_id}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "s", "color": { "mode": "palette-classic" } }
-      }
-    },
-    {
-      "id": 35,
-      "type": "timeseries",
-      "title": "GC Count / min",
-      "gridPos": { "x": 12, "y": 30, "w": 12, "h": 6 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_count{job=\"$job\",aws_ecs_task_id=~\"$task_id\"}[1m])) * 60",
-          "legendFormat": "{{aws_ecs_task_id}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "short", "color": { "mode": "palette-classic" } }
-      }
-    },
-
-    {
-      "id": 500,
-      "type": "row",
-      "title": "🔗 Gateway Routing (by Route ID)",
-      "gridPos": { "x": 0, "y": 40, "w": 24, "h": 1 },
-      "collapsed": false
-    },
-    {
-      "id": 40,
-      "type": "timeseries",
-      "title": "Request Rate by Route",
-      "description": "Spring Cloud Gateway route별 요청 처리량",
-      "gridPos": { "x": 0, "y": 41, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (routeId) (rate(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "{{routeId}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "reqps" }
+        ],
+        "title": "Avg Latency",
+        "type": "stat"
       },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right" }
-      }
-    },
-    {
-      "id": 41,
-      "type": "timeseries",
-      "title": "Latency P95 by Route",
-      "description": "Spring Cloud Gateway route별 P95 응답시간",
-      "gridPos": { "x": 12, "y": 41, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.95, sum by (le, routeId) (rate(spring_cloud_gateway_requests_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "{{routeId}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "s" }
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 3,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 2
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 12,
+          "y": 1
+        },
+        "id": 4,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+            "legendFormat": "P99",
+            "refId": "A"
+          }
+        ],
+        "title": "P99 Latency",
+        "type": "stat"
       },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right" }
-      }
-    },
-    {
-      "id": 42,
-      "type": "timeseries",
-      "title": "Route Outcome Distribution",
-      "description": "라우팅 결과별 분포 (SUCCESSFUL, CLIENT_ERROR 등)",
-      "gridPos": { "x": 0, "y": 49, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (outcome) (rate(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "{{outcome}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "reqps" },
-        "overrides": [
-          { "matcher": { "id": "byName", "options": "SUCCESSFUL" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "CLIENT_ERROR" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "SERVER_ERROR" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
-        ]
-      }
-    },
-    {
-      "id": 43,
-      "type": "table",
-      "title": "Route Status Summary",
-      "description": "라우트별 현재 상태 요약",
-      "gridPos": { "x": 12, "y": 49, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (routeId, outcome) (increase(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[5m]))",
-          "legendFormat": "{{routeId}} - {{outcome}}",
-          "format": "table",
-          "instant": true
-        }
-      ],
-      "transformations": [
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "routeId": { "operation": "groupby", "aggregations": [] },
-              "outcome": { "operation": "groupby", "aggregations": [] },
-              "Value": { "operation": "aggregate", "aggregations": ["sum"] }
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 2,
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 5
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 16,
+          "y": 1
+        },
+        "id": 5,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
+            "legendFormat": "Error %",
+            "refId": "A"
+          }
+        ],
+        "title": "Error Rate %",
+        "type": "stat"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 1,
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 70
+                },
+                {
+                  "color": "red",
+                  "value": 85
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 20,
+          "y": 1
+        },
+        "id": 6,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "last"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "avg(jvm_memory_used_bytes{job=\"$job\",area=\"heap\"} / jvm_memory_max_bytes{job=\"$job\",area=\"heap\"}) * 100",
+            "legendFormat": "Heap %",
+            "refId": "A"
+          }
+        ],
+        "title": "Heap Usage %",
+        "type": "stat"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 5
+        },
+        "id": 200,
+        "title": "🚀 Traffic & Latency",
+        "type": "row"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 6
+        },
+        "id": 10,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+            "legendFormat": "Total RPS",
+            "refId": "A"
+          },
+          {
+            "expr": "sum by (aws_ecs_task_id) (rate(http_server_requests_seconds_count{job=\"$job\"}[1m]))",
+            "legendFormat": "{{aws_ecs_task_id}}",
+            "refId": "B"
+          }
+        ],
+        "title": "Request Rate (RPS)",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 6
+        },
+        "id": 11,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum by (le) (rate(http_server_requests_seconds_bucket{job=\"$job\"}[1m])))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "title": "Response Time (P50 / P95 / P99)",
+        "type": "timeseries"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 14
+        },
+        "id": 300,
+        "title": "⚠️ Errors & Status Codes",
+        "type": "row"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "2xx Success"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "4xx Client Error"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "yellow",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "5xx Server Error"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 15
+        },
+        "id": 20,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"2..\"}[1m]))",
+            "legendFormat": "2xx Success",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"4..\"}[1m]))",
+            "legendFormat": "4xx Client Error",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m]))",
+            "legendFormat": "5xx Server Error",
+            "refId": "C"
+          }
+        ],
+        "title": "HTTP Status Code Distribution",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "red",
+              "mode": "fixed"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 20,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 15
+        },
+        "id": 21,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum(rate(http_server_requests_seconds_count{job=\"$job\",status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
+            "legendFormat": "Error Rate %",
+            "refId": "A"
+          }
+        ],
+        "title": "Error Rate % (5xx / Total)",
+        "type": "timeseries"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 23
+        },
+        "id": 400,
+        "title": "☕ JVM Metrics",
+        "type": "row"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "bytes"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 0,
+          "y": 24
+        },
+        "id": 30,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id=~\"$task_id\"})",
+            "legendFormat": "{{aws_ecs_task_id}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Heap Memory Used",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 70
+                },
+                {
+                  "color": "red",
+                  "value": 85
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 6,
+          "y": 24
+        },
+        "id": 31,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id=~\"$task_id\"}) / sum by (aws_ecs_task_id) (jvm_memory_max_bytes{job=\"$job\",area=\"heap\",aws_ecs_task_id=~\"$task_id\"}) * 100",
+            "legendFormat": "{{aws_ecs_task_id}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Heap Usage %",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "bytes"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 12,
+          "y": 24
+        },
+        "id": 32,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (aws_ecs_task_id) (jvm_memory_used_bytes{job=\"$job\",area=\"nonheap\",aws_ecs_task_id=~\"$task_id\"})",
+            "legendFormat": "{{aws_ecs_task_id}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Non-Heap Memory",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 6,
+          "x": 18,
+          "y": 24
+        },
+        "id": 33,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "jvm_threads_live_threads{job=\"$job\",aws_ecs_task_id=~\"$task_id\"}",
+            "legendFormat": "{{aws_ecs_task_id}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Live Threads",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 0,
+          "y": 30
+        },
+        "id": 34,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_sum{job=\"$job\",aws_ecs_task_id=~\"$task_id\"}[5m]))",
+            "legendFormat": "{{aws_ecs_task_id}}",
+            "refId": "A"
+          }
+        ],
+        "title": "GC Pause Time",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 12,
+          "x": 12,
+          "y": 30
+        },
+        "id": 35,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (aws_ecs_task_id) (rate(jvm_gc_pause_seconds_count{job=\"$job\",aws_ecs_task_id=~\"$task_id\"}[1m])) * 60",
+            "legendFormat": "{{aws_ecs_task_id}}",
+            "refId": "A"
+          }
+        ],
+        "title": "GC Count / min",
+        "type": "timeseries"
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 36
+        },
+        "id": 500,
+        "title": "🔗 Gateway Routing (by Route ID)",
+        "type": "row"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "Spring Cloud Gateway route별 요청 처리량",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 37
+        },
+        "id": 40,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (routeId) (rate(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[1m]))",
+            "legendFormat": "{{routeId}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Request Rate by Route",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "Spring Cloud Gateway route별 P95 응답시간",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 37
+        },
+        "id": 41,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le, routeId) (rate(spring_cloud_gateway_requests_seconds_bucket{job=\"$job\"}[1m])))",
+            "legendFormat": "{{routeId}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Latency P95 by Route",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "라우팅 결과별 분포 (SUCCESSFUL, CLIENT_ERROR 등)",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "reqps"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "SUCCESSFUL"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "CLIENT_ERROR"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "yellow",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "SERVER_ERROR"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 45
+        },
+        "id": 42,
+        "options": {
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (outcome) (rate(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[1m]))",
+            "legendFormat": "{{outcome}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Route Outcome Distribution",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "라우트별 현재 상태 요약",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "inspect": false
+            },
+            "decimals": 0,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 45
+        },
+        "id": 43,
+        "options": {
+          "cellHeight": "sm",
+          "footer": {
+            "countRows": false,
+            "fields": "",
+            "reducer": [
+              "sum"
+            ],
+            "show": false
+          },
+          "showHeader": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum by (routeId, outcome) (increase(spring_cloud_gateway_requests_seconds_count{job=\"$job\"}[5m]))",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "{{routeId}} - {{outcome}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Route Status Summary",
+        "transformations": [
+          {
+            "id": "groupBy",
+            "options": {
+              "fields": {
+                "Value": {
+                  "aggregations": [
+                    "sum"
+                  ],
+                  "operation": "aggregate"
+                },
+                "outcome": {
+                  "aggregations": [],
+                  "operation": "groupby"
+                },
+                "routeId": {
+                  "aggregations": [],
+                  "operation": "groupby"
+                }
+              }
             }
           }
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "short", "decimals": 0 }
-      }
-    },
-
-    {
-      "id": 600,
-      "type": "row",
-      "title": "🔴 Redis Metrics",
-      "gridPos": { "x": 0, "y": 57, "w": 24, "h": 1 },
-      "collapsed": false
-    },
-    {
-      "id": 50,
-      "type": "stat",
-      "title": "Active Connections",
-      "description": "현재 사용 중인 Redis 연결 수",
-      "gridPos": { "x": 0, "y": 58, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(lettuce_pool_active{job=\"$job\"})",
-          "legendFormat": "Active"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] },
-        "colorMode": "background"
+        ],
+        "type": "table"
       },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 12 },
-              { "color": "red", "value": 15 }
-            ]
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 53
+        },
+        "id": 550,
+        "title": "🌐 HTTP Client (Gateway → Backend)",
+        "type": "row"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "백엔드 연결 대기 중인 요청 수 (병목 핵심 지표)",
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 5
+                },
+                {
+                  "color": "red",
+                  "value": 20
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 0,
+          "y": 54
+        },
+        "id": 551,
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["last"],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(reactor_netty_connection_provider_pending_connections{job=\"$job\"}) or vector(0)",
+            "legendFormat": "Pending",
+            "refId": "A"
           }
-        }
-      }
-    },
-    {
-      "id": 51,
-      "type": "stat",
-      "title": "Idle Connections",
-      "description": "유휴 상태의 Redis 연결 수",
-      "gridPos": { "x": 4, "y": 58, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(lettuce_pool_idle{job=\"$job\"})",
-          "legendFormat": "Idle"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] },
-        "colorMode": "background"
+        ],
+        "title": "⚠️ Pending Connections",
+        "type": "stat"
       },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 2 },
-              { "color": "red", "value": 1 }
-            ]
+      {
+        "datasource": "$datasource",
+        "description": "현재 사용 중인 백엔드 연결 수",
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 800
+                },
+                {
+                  "color": "red",
+                  "value": 950
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 4,
+          "y": 54
+        },
+        "id": 552,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["last"],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(reactor_netty_connection_provider_active_connections{job=\"$job\"}) or vector(0)",
+            "legendFormat": "Active",
+            "refId": "A"
           }
-        }
-      }
-    },
-    {
-      "id": 52,
-      "type": "stat",
-      "title": "Pending Requests",
-      "description": "연결 대기 중인 요청 수",
-      "gridPos": { "x": 8, "y": 58, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(lettuce_pool_pending{job=\"$job\"}) or vector(0)",
-          "legendFormat": "Pending"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] },
-        "colorMode": "background"
+        ],
+        "title": "Active Connections",
+        "type": "stat"
       },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 1 },
-              { "color": "red", "value": 5 }
-            ]
+      {
+        "datasource": "$datasource",
+        "description": "유휴 상태의 백엔드 연결 수",
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 50
+                },
+                {
+                  "color": "red",
+                  "value": 10
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 8,
+          "y": 54
+        },
+        "id": 553,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["last"],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(reactor_netty_connection_provider_idle_connections{job=\"$job\"}) or vector(0)",
+            "legendFormat": "Idle",
+            "refId": "A"
           }
-        }
-      }
-    },
-    {
-      "id": 53,
-      "type": "stat",
-      "title": "Command Rate",
-      "description": "초당 Redis 명령어 처리량",
-      "gridPos": { "x": 12, "y": 58, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "ops/s"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] }
+        ],
+        "title": "Idle Connections",
+        "type": "stat"
       },
-      "fieldConfig": {
-        "defaults": { "unit": "ops", "decimals": 1 }
-      }
-    },
-    {
-      "id": 54,
-      "type": "stat",
-      "title": "Avg Latency",
-      "description": "평균 Redis 명령어 응답 시간",
-      "gridPos": { "x": 16, "y": 58, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(lettuce_command_completion_seconds_sum{job=\"$job\"}[1m])) / sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "Avg"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] }
-      },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "s",
-          "decimals": 4,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.01 },
-              { "color": "red", "value": 0.05 }
-            ]
+      {
+        "datasource": "$datasource",
+        "description": "커넥션 풀 사용률 (Active / Max)",
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 1,
+            "mappings": [],
+            "max": 100,
+            "min": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 70
+                },
+                {
+                  "color": "red",
+                  "value": 90
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 12,
+          "y": 54
+        },
+        "id": 554,
+        "options": {
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["last"],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "(sum(reactor_netty_connection_provider_active_connections{job=\"$job\"}) / sum(reactor_netty_connection_provider_max_connections{job=\"$job\"})) * 100 or vector(0)",
+            "legendFormat": "Usage %",
+            "refId": "A"
           }
-        }
-      }
-    },
-    {
-      "id": 55,
-      "type": "stat",
-      "title": "Error Rate",
-      "description": "Redis 명령어 실패율",
-      "gridPos": { "x": 20, "y": 58, "w": 4, "h": 4 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(lettuce_command_completion_seconds_count{job=\"$job\",status=\"ERROR\"}[1m])) / sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
-          "legendFormat": "Error %"
-        }
-      ],
-      "options": {
-        "reduceOptions": { "calcs": ["last"] },
-        "colorMode": "background"
+        ],
+        "title": "Pool Usage %",
+        "type": "stat"
       },
-      "fieldConfig": {
-        "defaults": {
-          "unit": "percent",
-          "decimals": 2,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.1 },
-              { "color": "red", "value": 1 }
-            ]
+      {
+        "datasource": "$datasource",
+        "description": "커넥션 획득 평균 시간 (병목 시 급증)",
+        "fieldConfig": {
+          "defaults": {
+            "decimals": 3,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 0.1
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 16,
+          "y": 54
+        },
+        "id": 555,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "area",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["last"],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(reactor_netty_connection_provider_pending_connections_time_seconds_bucket{job=\"$job\"}[1m]))) or vector(0)",
+            "legendFormat": "P95",
+            "refId": "A"
           }
-        }
+        ],
+        "title": "Acquire Time P95",
+        "type": "stat"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "최대 허용 커넥션 수",
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 4,
+          "x": 20,
+          "y": 54
+        },
+        "id": 556,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": ["last"],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "pluginVersion": "10.4.1",
+        "targets": [
+          {
+            "expr": "sum(reactor_netty_connection_provider_max_connections{job=\"$job\"}) or vector(1000)",
+            "legendFormat": "Max",
+            "refId": "A"
+          }
+        ],
+        "title": "Max Connections",
+        "type": "stat"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "HTTP Client 커넥션 풀 사용량 추이",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Active"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Idle"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Pending"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Max"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "purple",
+                    "mode": "fixed"
+                  }
+                },
+                {
+                  "id": "custom.lineStyle",
+                  "value": {
+                    "dash": [10, 10],
+                    "fill": "dash"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 58
+        },
+        "id": 557,
+        "options": {
+          "legend": {
+            "calcs": ["last", "max"],
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum(reactor_netty_connection_provider_active_connections{job=\"$job\"}) or vector(0)",
+            "legendFormat": "Active",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(reactor_netty_connection_provider_idle_connections{job=\"$job\"}) or vector(0)",
+            "legendFormat": "Idle",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(reactor_netty_connection_provider_pending_connections{job=\"$job\"}) or vector(0)",
+            "legendFormat": "Pending",
+            "refId": "C"
+          },
+          {
+            "expr": "sum(reactor_netty_connection_provider_max_connections{job=\"$job\"}) or vector(1000)",
+            "legendFormat": "Max",
+            "refId": "D"
+          }
+        ],
+        "title": "Connection Pool Usage",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "Backend 서비스별 연결 상태",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 58
+        },
+        "id": 558,
+        "options": {
+          "legend": {
+            "calcs": ["last"],
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum by (remote_address) (reactor_netty_connection_provider_active_connections{job=\"$job\"})",
+            "legendFormat": "{{remote_address}}",
+            "refId": "A"
+          }
+        ],
+        "title": "Active Connections by Backend",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "HTTP Client 응답 시간 분포 (Gateway → Backend)",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "line",
+              "fillOpacity": 0,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "none"
+              },
+              "thresholdsStyle": {
+                "mode": "line"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1
+                },
+                {
+                  "color": "red",
+                  "value": 3
+                }
+              ]
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 66
+        },
+        "id": 559,
+        "options": {
+          "legend": {
+            "calcs": ["last", "max"],
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum by (le) (rate(reactor_netty_http_client_response_time_seconds_bucket{job=\"$job\"}[1m])))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(reactor_netty_http_client_response_time_seconds_bucket{job=\"$job\"}[1m])))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum by (le) (rate(reactor_netty_http_client_response_time_seconds_bucket{job=\"$job\"}[1m])))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "title": "Backend Response Time (P50/P95/P99)",
+        "type": "timeseries"
+      },
+      {
+        "datasource": "$datasource",
+        "description": "HTTP Client 연결 및 타임아웃 에러",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "",
+              "axisPlacement": "auto",
+              "barAlignment": 0,
+              "drawStyle": "bars",
+              "fillOpacity": 50,
+              "gradientMode": "none",
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 1,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "auto",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "normal"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                }
+              ]
+            },
+            "unit": "short"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Connect Timeout"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "orange",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Response Timeout"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Connection Refused"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "dark-red",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 66
+        },
+        "id": 560,
+        "options": {
+          "legend": {
+            "calcs": ["sum"],
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "expr": "sum(increase(reactor_netty_http_client_connect_time_seconds_count{job=\"$job\",status=\"ERROR\"}[5m])) or vector(0)",
+            "legendFormat": "Connect Timeout",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(increase(reactor_netty_http_client_response_time_seconds_count{job=\"$job\",status=\"ERROR\"}[5m])) or vector(0)",
+            "legendFormat": "Response Timeout",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(increase(reactor_netty_connection_provider_pending_connections_time_seconds_count{job=\"$job\",status=\"ERROR\"}[5m])) or vector(0)",
+            "legendFormat": "Acquire Timeout",
+            "refId": "C"
+          }
+        ],
+        "title": "Connection Errors & Timeouts",
+        "type": "timeseries"
+      },
+      {
+        "collapsed": true,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 74
+        },
+        "id": 600,
+        "panels": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "$datasource"
+            },
+            "description": "현재 사용 중인 Redis 연결 수",
+            "fieldConfig": {
+              "defaults": {
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 12
+                    },
+                    {
+                      "color": "red",
+                      "value": 15
+                    }
+                  ]
+                },
+                "unit": "short"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 4,
+              "x": 0,
+              "y": 54
+            },
+            "id": 50,
+            "options": {
+              "colorMode": "background",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "last"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "10.4.1",
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "ef4r3izgbak8wb"
+                },
+                "editorMode": "code",
+                "expr": "sum(lettuce_pool_active{job=\"$job\"})",
+                "legendFormat": "Active",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Active Connections",
+            "type": "stat"
+          },
+          {
+            "datasource": "$datasource",
+            "description": "유휴 상태의 Redis 연결 수",
+            "fieldConfig": {
+              "defaults": {
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 2
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                },
+                "unit": "short"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 4,
+              "x": 4,
+              "y": 54
+            },
+            "id": 51,
+            "options": {
+              "colorMode": "background",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "last"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "10.4.1",
+            "targets": [
+              {
+                "expr": "sum(lettuce_pool_idle{job=\"$job\"})",
+                "legendFormat": "Idle",
+                "refId": "A"
+              }
+            ],
+            "title": "Idle Connections",
+            "type": "stat"
+          },
+          {
+            "datasource": "$datasource",
+            "description": "연결 대기 중인 요청 수",
+            "fieldConfig": {
+              "defaults": {
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 1
+                    },
+                    {
+                      "color": "red",
+                      "value": 5
+                    }
+                  ]
+                },
+                "unit": "short"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 4,
+              "x": 8,
+              "y": 54
+            },
+            "id": 52,
+            "options": {
+              "colorMode": "background",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "last"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "10.4.1",
+            "targets": [
+              {
+                "expr": "sum(lettuce_pool_pending{job=\"$job\"}) or vector(0)",
+                "legendFormat": "Pending",
+                "refId": "A"
+              }
+            ],
+            "title": "Pending Requests",
+            "type": "stat"
+          },
+          {
+            "datasource": "$datasource",
+            "description": "초당 Redis 명령어 처리량",
+            "fieldConfig": {
+              "defaults": {
+                "decimals": 1,
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "ops"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 4,
+              "x": 12,
+              "y": 54
+            },
+            "id": 53,
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "last"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "10.4.1",
+            "targets": [
+              {
+                "expr": "sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
+                "legendFormat": "ops/s",
+                "refId": "A"
+              }
+            ],
+            "title": "Command Rate",
+            "type": "stat"
+          },
+          {
+            "datasource": "$datasource",
+            "description": "평균 Redis 명령어 응답 시간",
+            "fieldConfig": {
+              "defaults": {
+                "decimals": 4,
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 0.01
+                    },
+                    {
+                      "color": "red",
+                      "value": 0.05
+                    }
+                  ]
+                },
+                "unit": "s"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 4,
+              "x": 16,
+              "y": 54
+            },
+            "id": 54,
+            "options": {
+              "colorMode": "value",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "last"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "10.4.1",
+            "targets": [
+              {
+                "expr": "sum(rate(lettuce_command_completion_seconds_sum{job=\"$job\"}[1m])) / sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
+                "legendFormat": "Avg",
+                "refId": "A"
+              }
+            ],
+            "title": "Avg Latency",
+            "type": "stat"
+          },
+          {
+            "datasource": "$datasource",
+            "description": "Redis 명령어 실패율",
+            "fieldConfig": {
+              "defaults": {
+                "decimals": 2,
+                "mappings": [],
+                "max": 100,
+                "min": 0,
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "yellow",
+                      "value": 0.1
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                },
+                "unit": "percent"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 4,
+              "x": 20,
+              "y": 54
+            },
+            "id": 55,
+            "options": {
+              "colorMode": "background",
+              "graphMode": "area",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "reduceOptions": {
+                "calcs": [
+                  "last"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "10.4.1",
+            "targets": [
+              {
+                "expr": "sum(rate(lettuce_command_completion_seconds_count{job=\"$job\",status=\"ERROR\"}[1m])) / sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m])) * 100 or vector(0)",
+                "legendFormat": "Error %",
+                "refId": "A"
+              }
+            ],
+            "title": "Error Rate",
+            "type": "stat"
+          },
+          {
+            "datasource": "$datasource",
+            "description": "Redis 연결 풀 사용량 추이",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "short"
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Active"
+                  },
+                  "properties": [
+                    {
+                      "id": "color",
+                      "value": {
+                        "fixedColor": "blue",
+                        "mode": "fixed"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Idle"
+                  },
+                  "properties": [
+                    {
+                      "id": "color",
+                      "value": {
+                        "fixedColor": "green",
+                        "mode": "fixed"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Pending"
+                  },
+                  "properties": [
+                    {
+                      "id": "color",
+                      "value": {
+                        "fixedColor": "orange",
+                        "mode": "fixed"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 58
+            },
+            "id": 60,
+            "options": {
+              "legend": {
+                "calcs": [],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "single",
+                "sort": "none"
+              }
+            },
+            "targets": [
+              {
+                "expr": "sum(lettuce_pool_active{job=\"$job\"})",
+                "legendFormat": "Active",
+                "refId": "A"
+              },
+              {
+                "expr": "sum(lettuce_pool_idle{job=\"$job\"})",
+                "legendFormat": "Idle",
+                "refId": "B"
+              },
+              {
+                "expr": "sum(lettuce_pool_pending{job=\"$job\"}) or vector(0)",
+                "legendFormat": "Pending",
+                "refId": "C"
+              }
+            ],
+            "title": "Connection Pool Usage",
+            "type": "timeseries"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "$datasource"
+            },
+            "description": "인스턴스별 Redis 명령어 처리량",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "ops"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 58
+            },
+            "id": 61,
+            "options": {
+              "legend": {
+                "calcs": [],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "single",
+                "sort": "none"
+              }
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "ef4r3izgbak8wb"
+                },
+                "editorMode": "code",
+                "expr": "",
+                "legendFormat": "__auto",
+                "range": true,
+                "refId": "A"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "ef4r3izgbak8wb"
+                },
+                "expr": "sum by (aws_ecs_task_id) (rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
+                "legendFormat": "{{aws_ecs_task_id}}",
+                "refId": "B"
+              }
+            ],
+            "title": "Command Rate by Instance",
+            "type": "timeseries"
+          },
+          {
+            "datasource": "$datasource",
+            "description": "Redis 명령어 응답 시간 분포",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "s"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 66
+            },
+            "id": 62,
+            "options": {
+              "legend": {
+                "calcs": [],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "single",
+                "sort": "none"
+              }
+            },
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.50, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
+                "legendFormat": "P50",
+                "refId": "A"
+              },
+              {
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
+                "legendFormat": "P95",
+                "refId": "B"
+              },
+              {
+                "expr": "histogram_quantile(0.99, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
+                "legendFormat": "P99",
+                "refId": "C"
+              }
+            ],
+            "title": "Command Latency (P50 / P95 / P99)",
+            "type": "timeseries"
+          },
+          {
+            "datasource": "$datasource",
+            "description": "명령어 유형별 처리량 (GET, SET, INCR 등)",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "drawStyle": "line",
+                  "fillOpacity": 0,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "auto",
+                  "spanNulls": false,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                },
+                "unit": "ops"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 66
+            },
+            "id": 63,
+            "options": {
+              "legend": {
+                "calcs": [],
+                "displayMode": "table",
+                "placement": "right",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "single",
+                "sort": "none"
+              }
+            },
+            "targets": [
+              {
+                "expr": "sum by (command) (rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m])) > 0",
+                "legendFormat": "{{command}}",
+                "refId": "A"
+              }
+            ],
+            "title": "Command Rate by Type",
+            "type": "timeseries"
+          }
+        ],
+        "title": "🔴 Redis Metrics",
+        "type": "row"
       }
-    },
-    {
-      "id": 60,
-      "type": "timeseries",
-      "title": "Connection Pool Usage",
-      "description": "Redis 연결 풀 사용량 추이",
-      "gridPos": { "x": 0, "y": 62, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
+    ],
+    "refresh": "10s",
+    "schemaVersion": 39,
+    "tags": [
+      "gateway",
+      "prod",
+      "core"
+    ],
+    "templating": {
+      "list": [
         {
-          "expr": "sum(lettuce_pool_active{job=\"$job\"})",
-          "legendFormat": "Active"
+          "current": {
+            "selected": false,
+            "text": "AMP-prod",
+            "value": "ef4r3izgbak8wb"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "multi": false,
+          "name": "datasource",
+          "options": [],
+          "query": "prometheus",
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "type": "datasource"
         },
         {
-          "expr": "sum(lettuce_pool_idle{job=\"$job\"})",
-          "legendFormat": "Idle"
+          "current": {
+            "selected": false,
+            "text": "gateway-metrics",
+            "value": "gateway-metrics"
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "definition": "",
+          "hide": 0,
+          "includeAll": false,
+          "multi": false,
+          "name": "job",
+          "options": [],
+          "query": "label_values(up, job)",
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
         },
         {
-          "expr": "sum(lettuce_pool_pending{job=\"$job\"}) or vector(0)",
-          "legendFormat": "Pending"
+          "current": {
+            "selected": false,
+            "text": "connectly-gateway",
+            "value": "connectly-gateway"
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "definition": "",
+          "hide": 0,
+          "includeAll": false,
+          "multi": false,
+          "name": "application",
+          "options": [],
+          "query": "label_values(jvm_memory_used_bytes, application)",
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
+        },
+        {
+          "current": {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "$datasource"
+          },
+          "definition": "",
+          "hide": 0,
+          "includeAll": true,
+          "label": "ECS Task ID",
+          "multi": true,
+          "name": "task_id",
+          "options": [],
+          "query": "label_values(up{job=\"$job\"}, aws_ecs_task_id)",
+          "refresh": 2,
+          "regex": "/.+/",
+          "skipUrlSync": false,
+          "sort": 0,
+          "type": "query"
         }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "short" },
-        "overrides": [
-          { "matcher": { "id": "byName", "options": "Active" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "Idle" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
-          { "matcher": { "id": "byName", "options": "Pending" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
-        ]
-      }
+      ]
     },
-    {
-      "id": 61,
-      "type": "timeseries",
-      "title": "Command Rate by Instance",
-      "description": "인스턴스별 Redis 명령어 처리량",
-      "gridPos": { "x": 12, "y": 62, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum(rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "Total"
-        },
-        {
-          "expr": "sum by (aws_ecs_task_id) (rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m]))",
-          "legendFormat": "{{aws_ecs_task_id}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "ops" }
-      }
+    "time": {
+      "from": "now-6h",
+      "to": "now"
     },
-    {
-      "id": 62,
-      "type": "timeseries",
-      "title": "Command Latency (P50 / P95 / P99)",
-      "description": "Redis 명령어 응답 시간 분포",
-      "gridPos": { "x": 0, "y": 70, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.50, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "P50"
-        },
-        {
-          "expr": "histogram_quantile(0.95, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "P95"
-        },
-        {
-          "expr": "histogram_quantile(0.99, sum by (le) (rate(lettuce_command_completion_seconds_bucket{job=\"$job\"}[1m])))",
-          "legendFormat": "P99"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "s" }
-      }
-    },
-    {
-      "id": 63,
-      "type": "timeseries",
-      "title": "Command Rate by Type",
-      "description": "명령어 유형별 처리량 (GET, SET, INCR 등)",
-      "gridPos": { "x": 12, "y": 70, "w": 12, "h": 8 },
-      "datasource": "$datasource",
-      "targets": [
-        {
-          "expr": "sum by (command) (rate(lettuce_command_completion_seconds_count{job=\"$job\"}[1m])) > 0",
-          "legendFormat": "{{command}}"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": { "unit": "ops" }
-      },
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right" }
-      }
-    }
-  ]
-}
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "Connectly Gateway - Core Metrics",
+    "uid": "connectly-gateway-core",
+    "version": 3,
+    "weekStart": ""
+  }
