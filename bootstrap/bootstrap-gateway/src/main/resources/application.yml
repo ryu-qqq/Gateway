@@ -68,6 +68,8 @@ spring:
           max-connections: 1000         # 최대 커넥션 수
           acquire-timeout: 3000         # 커넥션 획득 대기 3초 (기본: 45초)
           max-idle-time: 20s            # 유휴 커넥션 유지 시간
+          metrics: true                 # Connection Pool 메트릭 활성화
+          name: gateway-pool            # 메트릭 태그용 pool 이름
 
   # ===============================================
   # Redis (Public Key Cache)

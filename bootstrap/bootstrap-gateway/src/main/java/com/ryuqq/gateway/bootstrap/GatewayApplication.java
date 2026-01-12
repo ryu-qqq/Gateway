@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.bootstrap;
 
 import java.security.Security;
-
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
