@@ -1,8 +1,13 @@
 package com.ryuqq.gateway.bootstrap.config;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Metrics;
 import io.netty.channel.ChannelOption;
+import jakarta.annotation.PostConstruct;
 import java.net.URI;
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +41,10 @@ import reactor.netty.resources.ConnectionProvider;
 @Configuration
 public class HttpClientMetricsConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(HttpClientMetricsConfig.class);
+
+    private final MeterRegistry meterRegistry;
+
     @Value("${spring.cloud.gateway.httpclient.pool.max-connections:1000}")
     private int maxConnections;
 
@@ -54,6 +63,25 @@ public class HttpClientMetricsConfig {
     @Value("${spring.cloud.gateway.httpclient.response-timeout:30s}")
     private Duration responseTimeout;
 
+    public HttpClientMetricsConfig(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+    }
+
+    /**
+     * Micrometer Global Registry에 Spring의 MeterRegistry 등록
+     *
+     * <p>Reactor Netty는 기본적으로 Micrometer의 Global Registry를 사용합니다. Spring Boot의 MeterRegistry를
+     * Global Registry에 추가하여 Prometheus로 메트릭이 노출되도록 합니다.
+     */
+    @PostConstruct
+    public void registerMicrometerGlobalRegistry() {
+        // Spring Boot의 MeterRegistry를 Micrometer Global Registry에 추가
+        Metrics.addRegistry(meterRegistry);
+        log.info(
+                "Registered Spring MeterRegistry to Micrometer Global Registry for Reactor Netty"
+                        + " metrics");
+    }
+
     /**
      * Gateway용 HttpClient (Connection Pool 메트릭 활성화)
      *
@@ -71,8 +99,16 @@ public class HttpClientMetricsConfig {
                         .maxConnections(maxConnections)
                         .pendingAcquireTimeout(Duration.ofMillis(acquireTimeout))
                         .maxIdleTime(maxIdleTime)
-                        .metrics(true) // Connection Pool 메트릭 활성화
+                        .metrics(true) // Connection Pool 메트릭 활성화 (Global Registry 사용)
                         .build();
+
+        log.info(
+                "Created ConnectionProvider '{}' with metrics enabled: maxConnections={},"
+                        + " acquireTimeout={}ms, maxIdleTime={}",
+                poolName,
+                maxConnections,
+                acquireTimeout,
+                maxIdleTime);
 
         // HttpClient 생성 (ConnectionProvider + 타임아웃 + 메트릭)
         return HttpClient.create(connectionProvider)
