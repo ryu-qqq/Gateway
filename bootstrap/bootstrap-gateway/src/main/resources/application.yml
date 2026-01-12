@@ -40,6 +40,17 @@ spring:
   # ===============================================
   cloud:
     gateway:
+      # ===============================================
+      # Gateway Metrics (Prometheus)
+      # ===============================================
+      # spring_cloud_gateway_requests_seconds_* 메트릭 활성화
+      # 대시보드: Route별 RPS, Latency P95, Outcome Distribution
+      metrics:
+        enabled: true
+        tags:
+          path:
+            enabled: true  # 경로별 메트릭 (카디널리티 주의)
+
       # Global CORS Configuration
       # NOTE: CloudFront에서 CORS 헤더를 추가하므로, Gateway에서는 허용 정책만 설정
       # allowedOriginPatterns: "*"는 모든 origin을 허용하면서 credentials도 지원
@@ -267,8 +278,13 @@ management:
     distribution:
       percentiles-histogram:
         http.server.requests: true
+        http.client.requests: true
+        spring.cloud.gateway.requests: true
+        reactor.netty.http.client: true
       percentiles:
         http.server.requests: 0.5,0.95,0.99
+        http.client.requests: 0.5,0.95,0.99
+        spring.cloud.gateway.requests: 0.5,0.95,0.99
       slo:
         http.server.requests: 100ms,500ms,1s,5s
     export:
