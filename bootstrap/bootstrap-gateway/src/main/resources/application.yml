@@ -452,7 +452,7 @@ gateway:
 
       # Template Service
       - id: template
-        uri: http://spring-template-cluster-prod.connectly.local:8080
+        uri: http://spring-template-web-api-prod.connectly.local:8080
         paths:
           - /api/v1/templates/**
         public-paths:
