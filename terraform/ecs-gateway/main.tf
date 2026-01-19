@@ -600,7 +600,7 @@ module "ecs_service" {
   # Auto Scaling
   enable_autoscaling        = true
   autoscaling_min_capacity  = 2
-  autoscaling_max_capacity  = 10
+  autoscaling_max_capacity  = 5
   autoscaling_target_cpu    = 70
   autoscaling_target_memory = 80
 
