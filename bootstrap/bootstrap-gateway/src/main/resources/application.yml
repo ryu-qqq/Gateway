@@ -175,11 +175,7 @@ gateway:
         port: 9090
         paths:
           - /api/v1/market/**
-        public-paths:
-          - /api/v1/market/swagger-ui/**
-          - /api/v1/market/swagger-ui.html
-          - /api/v1/market/api-docs/**
-          - /api/v1/market/docs/**
+        public-paths: []
 
       # ============================================
       # Commerce Service
@@ -207,6 +203,16 @@ gateway:
         paths:
           - /api/v1/crawling/**
         public-paths: []
+
+      # ============================================
+      # Template Service
+      # ============================================
+      - id: template
+        uri: ${TEMPLATE_URI:http://localhost:8084}
+        paths:
+          - /api/v1/templates/**
+        public-paths:
+          - /api/v1/templates/**
 
     # Host-based routing mapping (for production)
     host-mapping:
@@ -443,6 +449,14 @@ gateway:
         port: 9090
         paths:
           - /api/v1/market/**
+
+      # Template Service
+      - id: template
+        uri: http://spring-template-cluster-prod.connectly.local:8080
+        paths:
+          - /api/v1/templates/**
+        public-paths:
+          - /api/v1/templates/**
 
     host-mapping:
       api.set-of.com: public
