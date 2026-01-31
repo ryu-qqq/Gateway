@@ -1,0 +1,58 @@
+# ===============================================
+# Redis Configuration - Production Environment
+# ===============================================
+# 운영 환경 전용 설정
+# 공통 설정은 redis.yml 참조
+#
+# Prod에서는 전용 Redis 사용 (/gateway/elasticache/*)
+#
+# @author Development Team
+# @since 1.0.0
+# ===============================================
+
+spring:
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      # ElastiCache 비밀번호 미사용
+
+      # SSL 설정 (AWS ElastiCache 등)
+      ssl:
+        enabled: ${REDIS_SSL_ENABLED:false}
+
+      lettuce:
+        pool:
+          max-active: 32
+          max-idle: 16
+          min-idle: 8
+          max-wait: 3000ms
+
+      # Cluster 모드 (선택)
+      # cluster:
+      #   nodes: ${REDIS_CLUSTER_NODES}
+      #   max-redirects: 3
+
+      # Sentinel 모드 (선택)
+      # sentinel:
+      #   master: ${REDIS_SENTINEL_MASTER:mymaster}
+      #   nodes: ${REDIS_SENTINEL_NODES}
+
+redisson:
+  # Production: Cluster 모드 사용 시
+  # cluster-servers-config:
+  #   node-addresses:
+  #     - "redis://${REDIS_NODE_1}:6379"
+  #     - "redis://${REDIS_NODE_2}:6379"
+  #     - "redis://${REDIS_NODE_3}:6379"
+  #   password: ${REDIS_PASSWORD}
+  #   scan-interval: 2000
+  #   master-connection-pool-size: 16
+  #   slave-connection-pool-size: 16
+
+  single-server-config:
+    address: "redis://${SPRING_DATA_REDIS_HOST}:${SPRING_DATA_REDIS_PORT:6379}"
+    # ElastiCache 비밀번호 미사용
+    connection-pool-size: 32
+    connection-minimum-idle-size: 8
+    ssl-enable-endpoint-identification: ${REDIS_SSL_ENABLED:false}

@@ -1,15 +1,16 @@
 package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.JwtPayloadParser;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.RefreshAccessTokenCommand;
 import com.ryuqq.gateway.application.authentication.port.in.command.RefreshAccessTokenUseCase;
-import com.ryuqq.gateway.application.authentication.port.out.client.AuthHubClient;
 import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenExpiredException;
 import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenInvalidException;
 import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenMissingException;
 import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenReusedException;
 import com.ryuqq.gateway.domain.authentication.exception.TokenRefreshFailedException;
+import com.ryuqq.gateway.domain.authentication.vo.ExpiredTokenInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -35,7 +36,7 @@ import reactor.core.publisher.Mono;
  * <ul>
  *   <li>Authorization 헤더에 Bearer 토큰이 존재
  *   <li>Cookie에 refresh_token이 존재
- *   <li>Access Token이 만료된 경우 (AuthHub에서 확인)
+ *   <li>Access Token이 만료된 경우 (JWT payload에서 확인)
  * </ul>
  *
  * <p><strong>처리 흐름</strong>:
@@ -81,15 +82,15 @@ public class TokenRefreshFilter implements GlobalFilter, Ordered {
     private static final String COOKIE_SAME_SITE = "Strict";
 
     private final RefreshAccessTokenUseCase refreshAccessTokenUseCase;
-    private final AuthHubClient authHubClient;
+    private final JwtPayloadParser jwtPayloadParser;
     private final GatewayErrorResponder errorResponder;
 
     public TokenRefreshFilter(
             RefreshAccessTokenUseCase refreshAccessTokenUseCase,
-            AuthHubClient authHubClient,
+            JwtPayloadParser jwtPayloadParser,
             GatewayErrorResponder errorResponder) {
         this.refreshAccessTokenUseCase = refreshAccessTokenUseCase;
-        this.authHubClient = authHubClient;
+        this.jwtPayloadParser = jwtPayloadParser;
         this.errorResponder = errorResponder;
     }
 
@@ -119,45 +120,40 @@ public class TokenRefreshFilter implements GlobalFilter, Ordered {
         String accessToken = authHeader.substring(BEARER_PREFIX.length());
         String refreshTokenValue = refreshTokenCookie.getValue();
 
-        // AuthHub에서 Access Token 만료 여부 확인
-        return authHubClient
-                .extractExpiredTokenInfo(accessToken)
-                .flatMap(
-                        tokenInfo -> {
-                            // 토큰이 만료되지 않았으면 갱신 불필요 → 다음 필터로
-                            if (!tokenInfo.isExpired()) {
-                                log.debug("Access token is not expired, skipping token refresh");
-                                return chain.filter(exchange);
-                            }
+        // JWT payload에서 만료 여부 및 사용자 정보 추출 (서명 검증 없음)
+        ExpiredTokenInfo tokenInfo;
+        try {
+            tokenInfo = jwtPayloadParser.extractTokenInfo(accessToken);
+        } catch (JwtPayloadParser.JwtParseException e) {
+            // JWT 파싱 실패 시 → 다음 필터로 (JWT_AUTH_FILTER에서 처리)
+            log.debug(
+                    "Failed to parse JWT payload, delegating to JWT auth filter: {}",
+                    e.getMessage());
+            return chain.filter(exchange);
+        }
 
-                            // 만료된 토큰에서 userId와 tenantId 추출
-                            Long userId = tokenInfo.userId();
-                            String tenantId = tokenInfo.tenantId();
+        // 토큰이 만료되지 않았으면 갱신 불필요 → 다음 필터로
+        if (!tokenInfo.isExpired()) {
+            log.debug("Access token is not expired, skipping token refresh");
+            return chain.filter(exchange);
+        }
 
-                            if (userId == null || tenantId == null) {
-                                log.warn("Could not extract userId or tenantId from expired token");
-                                return chain.filter(exchange);
-                            }
+        // 만료된 토큰에서 userId와 tenantId 추출
+        Long userId = tokenInfo.userId();
+        String tenantId = tokenInfo.tenantId();
 
-                            log.debug(
-                                    "Access token expired, attempting refresh for tenant:{},"
-                                            + " user:{}",
-                                    tenantId,
-                                    userId);
+        if (userId == null || tenantId == null) {
+            log.warn("Could not extract userId or tenantId from expired token");
+            return chain.filter(exchange);
+        }
 
-                            // Token Refresh 실행
-                            return executeTokenRefresh(
-                                    exchange, chain, tenantId, userId, refreshTokenValue);
-                        })
-                .onErrorResume(
-                        e -> {
-                            // AuthHub 호출 실패 시 (예: 유효하지 않은 서명) → 다음 필터로 (JWT_AUTH_FILTER에서 처리)
-                            log.debug(
-                                    "Failed to extract token info, delegating to JWT auth filter:"
-                                            + " {}",
-                                    e.getMessage());
-                            return chain.filter(exchange);
-                        });
+        log.debug(
+                "Access token expired, attempting refresh for tenant:{}, user:{}",
+                tenantId,
+                userId);
+
+        // Token Refresh 실행
+        return executeTokenRefresh(exchange, chain, tenantId, userId, refreshTokenValue);
     }
 
     /** Token Refresh 실행 */

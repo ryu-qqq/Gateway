@@ -1,48 +1,88 @@
 # ===============================================
-# Persistence Redis Adapter Configuration
+# Redis Configuration (Lettuce + Redisson)
+# ===============================================
+# Spring Boot 3.5.x + Java 21 기준
+# Lettuce: 캐싱, 세션, 단순 K-V 조회
+# Redisson: 분산락, 분산 자료구조
+#
+# 환경별 설정은 redis-{profile}.yml 참조
+# - redis-local.yml: 로컬 개발 환경
+# - redis-stage.yml: 스테이징 환경
+# - redis-prod.yml: 운영 환경
+#
+# @author Development Team
+# @since 1.0.0
 # ===============================================
 
+# ===============================================
 # Common Redis Settings
+# ===============================================
 spring:
   data:
     redis:
+      # ===============================================
+      # Connection Settings
+      # ===============================================
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:0}
+
+      # Command Timeout
       timeout: 3000ms
+
+      # Client Name (모니터링용)
+      client-name: ${spring.application.name:gateway}-${HOSTNAME:unknown}
+
+      # ===============================================
+      # Lettuce Connection Pool (Caching)
+      # ===============================================
       lettuce:
         pool:
+          # Pool Size 권장값: CPU cores * 2
           max-active: 16
           max-idle: 8
           min-idle: 4
-          max-wait: 3000ms
+          max-wait: 2000ms
+          time-between-eviction-runs: 30000ms
 
----
-# ===============================================
-# Production Profile
-# ===============================================
-# SECURITY: REDIS_PASSWORD 환경 변수 설정 필수!
-# 빈 패스워드는 프로덕션에서 허용되지 않습니다.
-# ===============================================
-spring:
-  config:
-    activate:
-      on-profile: prod
+        # Shutdown Timeout
+        shutdown-timeout: 200ms
 
-  data:
+  # ===============================================
+  # Redis Cache Settings
+  # ===============================================
+  cache:
+    type: redis
     redis:
-      host: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD}
+      # Default TTL (30분)
+      time-to-live: 1800000
+      # Key Prefix
+      key-prefix: "cache::"
+      # Null 값 캐싱 허용 (캐시 펜싱 방지)
+      cache-null-values: true
+      # Prefix 사용
+      use-key-prefix: true
 
----
 # ===============================================
-# Test Profile
+# Redisson Configuration (Distributed Lock)
 # ===============================================
-spring:
-  config:
-    activate:
-      on-profile: test
+redisson:
+  # Single Server Mode (Default)
+  single-server-config:
+    address: "redis://${SPRING_DATA_REDIS_HOST:localhost}:${SPRING_DATA_REDIS_PORT:6379}"
+    database: ${REDIS_DATABASE:0}
 
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      password:
+    # Connection Pool
+    connection-pool-size: 16
+    connection-minimum-idle-size: 4
+    idle-connection-timeout: 10000
+    connect-timeout: 3000
+    timeout: 3000
+
+    # Retry Settings
+    retry-attempts: 3
+    retry-interval: 1500
+
+  # Thread Settings
+  threads: 4
+  netty-threads: 4

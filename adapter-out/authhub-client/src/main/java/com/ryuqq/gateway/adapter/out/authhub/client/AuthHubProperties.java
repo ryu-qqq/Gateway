@@ -117,15 +117,6 @@ public class AuthHubProperties {
     }
 
     /**
-     * 만료 토큰 정보 추출 엔드포인트 조회
-     *
-     * @return Extract expired info endpoint path
-     */
-    public String getExtractExpiredInfoEndpoint() {
-        return endpoints.getExtractExpiredInfo();
-    }
-
-    /**
      * Tenant Config 엔드포인트 조회
      *
      * @return Tenant config endpoint path
@@ -162,7 +153,6 @@ public class AuthHubProperties {
         // Authentication endpoints
         private String jwks = "/api/v1/auth/jwks";
         private String refresh = "/api/v1/auth/refresh";
-        private String extractExpiredInfo = "/api/v1/auth/extract-expired-info";
 
         // Tenant endpoints
         private String tenantConfig = "/api/v1/tenants/{tenantId}/config";
@@ -185,14 +175,6 @@ public class AuthHubProperties {
 
         public void setRefresh(String refresh) {
             this.refresh = refresh;
-        }
-
-        public String getExtractExpiredInfo() {
-            return extractExpiredInfo;
-        }
-
-        public void setExtractExpiredInfo(String extractExpiredInfo) {
-            this.extractExpiredInfo = extractExpiredInfo;
         }
 
         public String getTenantConfig() {

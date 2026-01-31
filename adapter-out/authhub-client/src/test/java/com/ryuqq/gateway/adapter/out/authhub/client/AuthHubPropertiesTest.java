@@ -80,8 +80,6 @@ class AuthHubPropertiesTest {
             // then
             assertThat(properties.getJwksEndpoint()).isEqualTo("/api/v1/auth/jwks");
             assertThat(properties.getRefreshEndpoint()).isEqualTo("/api/v1/auth/refresh");
-            assertThat(properties.getExtractExpiredInfoEndpoint())
-                    .isEqualTo("/api/v1/auth/extract-expired-info");
             assertThat(properties.getTenantConfigEndpoint())
                     .isEqualTo("/api/v1/tenants/{tenantId}/config");
             assertThat(properties.getPermissionSpecEndpoint())

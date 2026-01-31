@@ -9,11 +9,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
+import com.ryuqq.gateway.adapter.in.gateway.common.util.JwtPayloadParser;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
 import com.ryuqq.gateway.application.authentication.dto.command.RefreshAccessTokenCommand;
 import com.ryuqq.gateway.application.authentication.dto.response.RefreshAccessTokenResponse;
 import com.ryuqq.gateway.application.authentication.port.in.command.RefreshAccessTokenUseCase;
-import com.ryuqq.gateway.application.authentication.port.out.client.AuthHubClient;
 import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenExpiredException;
 import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenInvalidException;
 import com.ryuqq.gateway.domain.authentication.exception.RefreshTokenMissingException;
@@ -44,7 +44,7 @@ import reactor.test.StepVerifier;
 class TokenRefreshFilterTest {
 
     @Mock private RefreshAccessTokenUseCase refreshAccessTokenUseCase;
-    @Mock private AuthHubClient authHubClient;
+    @Mock private JwtPayloadParser jwtPayloadParser;
     @Mock private GatewayFilterChain chain;
     @Mock private GatewayErrorResponder errorResponder;
 
@@ -69,7 +69,7 @@ class TokenRefreshFilterTest {
                             return Mono.empty();
                         });
         tokenRefreshFilter =
-                new TokenRefreshFilter(refreshAccessTokenUseCase, authHubClient, errorResponder);
+                new TokenRefreshFilter(refreshAccessTokenUseCase, jwtPayloadParser, errorResponder);
     }
 
     @Nested
@@ -102,7 +102,7 @@ class TokenRefreshFilterTest {
             StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
 
             verify(chain).filter(exchange);
-            verify(authHubClient, never()).extractExpiredTokenInfo(anyString());
+            verify(jwtPayloadParser, never()).extractTokenInfo(anyString());
         }
 
         @Test
@@ -120,7 +120,7 @@ class TokenRefreshFilterTest {
             StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
 
             verify(chain).filter(exchange);
-            verify(authHubClient, never()).extractExpiredTokenInfo(anyString());
+            verify(jwtPayloadParser, never()).extractTokenInfo(anyString());
         }
 
         @Test
@@ -138,7 +138,7 @@ class TokenRefreshFilterTest {
             StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
 
             verify(chain).filter(exchange);
-            verify(authHubClient, never()).extractExpiredTokenInfo(anyString());
+            verify(jwtPayloadParser, never()).extractTokenInfo(anyString());
         }
 
         @Test
@@ -147,8 +147,7 @@ class TokenRefreshFilterTest {
             // given
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo notExpiredToken = new ExpiredTokenInfo(false, 1L, "tenant-1");
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(notExpiredToken));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(notExpiredToken);
             when(chain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
@@ -164,8 +163,8 @@ class TokenRefreshFilterTest {
             // given
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo expiredTokenWithoutIds = new ExpiredTokenInfo(true, null, null);
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredTokenWithoutIds));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123"))
+                    .thenReturn(expiredTokenWithoutIds);
             when(chain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
@@ -176,12 +175,12 @@ class TokenRefreshFilterTest {
         }
 
         @Test
-        @DisplayName("AuthHub 호출 실패 시 다음 필터로 진행")
-        void shouldProceedWhenAuthHubCallFails() {
+        @DisplayName("JWT 파싱 실패 시 다음 필터로 진행")
+        void shouldProceedWhenJwtParseFails() {
             // given
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.error(new RuntimeException("AuthHub unavailable")));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123"))
+                    .thenThrow(new JwtPayloadParser.JwtParseException("Invalid JWT"));
             when(chain.filter(exchange)).thenReturn(Mono.empty());
 
             // when & then
@@ -210,8 +209,7 @@ class TokenRefreshFilterTest {
             RefreshAccessTokenResponse refreshResponse =
                     new RefreshAccessTokenResponse(mockTokenPair);
 
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredToken));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
             when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
                     .thenReturn(Mono.just(refreshResponse));
             when(chain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
@@ -243,8 +241,7 @@ class TokenRefreshFilterTest {
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
 
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredToken));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
             when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
                     .thenReturn(Mono.error(new RefreshTokenReusedException("token-id-123")));
 
@@ -261,8 +258,7 @@ class TokenRefreshFilterTest {
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
 
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredToken));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
             when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
                     .thenReturn(Mono.error(new RefreshTokenExpiredException()));
 
@@ -279,8 +275,7 @@ class TokenRefreshFilterTest {
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
 
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredToken));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
             when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
                     .thenReturn(Mono.error(new RefreshTokenInvalidException("Invalid signature")));
 
@@ -297,8 +292,7 @@ class TokenRefreshFilterTest {
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
 
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredToken));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
             when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
                     .thenReturn(Mono.error(new RefreshTokenMissingException()));
 
@@ -315,8 +309,7 @@ class TokenRefreshFilterTest {
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
 
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredToken));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
             when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
                     .thenReturn(
                             Mono.error(
@@ -343,8 +336,7 @@ class TokenRefreshFilterTest {
             ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
             ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
 
-            when(authHubClient.extractExpiredTokenInfo("access-token-123"))
-                    .thenReturn(Mono.just(expiredToken));
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
             when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
                     .thenReturn(Mono.error(new RefreshTokenExpiredException()));
 

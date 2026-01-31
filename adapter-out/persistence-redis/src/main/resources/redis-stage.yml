@@ -1,0 +1,36 @@
+# ===============================================
+# Redis Configuration - Stage Environment
+# ===============================================
+# 스테이징 환경 전용 설정
+# 공통 설정은 redis.yml 참조
+#
+# Stage에서는 공유 Redis 사용 (/shared/stage/elasticache/*)
+#
+# @author Development Team
+# @since 1.0.0
+# ===============================================
+
+spring:
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      # ElastiCache 비밀번호 미사용
+
+      # SSL 설정 (Stage: TLS 비활성화)
+      ssl:
+        enabled: false
+
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+          max-wait: 2000ms
+
+redisson:
+  single-server-config:
+    address: "redis://${SPRING_DATA_REDIS_HOST}:${SPRING_DATA_REDIS_PORT:6379}"
+    connection-pool-size: 16
+    connection-minimum-idle-size: 4
+    ssl-enable-endpoint-identification: false

@@ -28,7 +28,6 @@ authhub:
       # Authentication endpoints
       jwks: /api/v1/auth/jwks
       refresh: /api/v1/auth/refresh
-      extract-expired-info: /api/v1/auth/extract-expired-info
 
       # Tenant endpoints (Internal API)
       tenant-config: /api/v1/internal/tenants/{tenantId}/config
@@ -78,7 +77,7 @@ spring:
 
 authhub:
   client:
-    base-url: http://localhost:9090
+    base-url: http://localhost:8080
     webclient:
       wire-logging-enabled: true
 
@@ -93,9 +92,22 @@ spring:
 
 authhub:
   client:
-    base-url: http://localhost:9090
+    base-url: http://localhost:8080
     webclient:
       wire-logging-enabled: true
+
+---
+# ===============================================
+# Stage Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: stage
+
+authhub:
+  client:
+    base-url: http://authhub-web-api-stage.connectly.local:8080
 
 ---
 # ===============================================
@@ -108,7 +120,6 @@ spring:
 
 authhub:
   client:
-    # Cloud Map 내부 DNS 사용 (VPC 내부 통신)
     base-url: http://authhub-web-api-prod.connectly.local:8080
     webclient:
       wire-logging-enabled: false

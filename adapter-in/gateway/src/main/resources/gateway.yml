@@ -1,0 +1,175 @@
+# ===============================================
+# Gateway Configuration
+# ===============================================
+# Spring Cloud Gateway + Netty HTTP Client settings
+# Metrics, CORS, Rate Limit, Observability
+#
+# @since 1.0.0
+# ===============================================
+
+# ===============================================
+# Spring Cloud Gateway
+# ===============================================
+spring:
+  cloud:
+    gateway:
+      # ===============================================
+      # Gateway Metrics (Prometheus)
+      # ===============================================
+      # spring_cloud_gateway_requests_seconds_* 메트릭 활성화
+      # 대시보드: Route별 RPS, Latency P95, Outcome Distribution
+      metrics:
+        enabled: true
+        tags:
+          path:
+            enabled: true  # 경로별 메트릭 (카디널리티 주의)
+
+      # Global CORS Configuration
+      # NOTE: CloudFront에서 CORS 헤더를 추가하므로, Gateway에서는 허용 정책만 설정
+      # allowedOriginPatterns: "*"는 모든 origin을 허용하면서 credentials도 지원
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowed-methods: "*"
+            allowed-headers: "*"
+            allow-credentials: true
+            max-age: 3600
+
+      # Routes (configured programmatically in GatewayRoutingConfig)
+      routes: []
+
+      # ===============================================
+      # HTTP Client Configuration (Reactor Netty)
+      # ===============================================
+      # Gateway → Backend 서비스 간 HTTP 연결 설정
+      # 기본값이 너무 느슨하여 병목 발생 가능
+      httpclient:
+        connect-timeout: 3000           # 연결 타임아웃 3초 (기본: OS 기본값 ~75초)
+        response-timeout: 30s           # 응답 타임아웃 30초 (기본: 무제한)
+        pool:
+          type: fixed                   # fixed: 고정 크기 (elastic은 max-connections 무시)
+          max-connections: 1000         # 최대 커넥션 수 (fixed 타입에서만 적용)
+          acquire-timeout: 3000         # 커넥션 획득 대기 3초 (기본: 45초)
+          max-idle-time: 20s            # 유휴 커넥션 유지 시간
+          metrics: true                 # Connection Pool 메트릭 활성화
+          name: gateway-pool            # 메트릭 태그용 pool 이름
+
+# ===============================================
+# JWT Configuration
+# ===============================================
+jwt:
+  public-key-cache-ttl: 3600  # 1 hour (seconds)
+
+# ===============================================
+# Gateway Custom Configuration
+# ===============================================
+# Convention-based routing with AWS Cloud Map Service Discovery
+#
+# Routing Strategy:
+#   - discovery.enabled=true: http://{service-id}.{namespace}:{port}
+#   - discovery.enabled=false: use static 'uri' from configuration
+#
+# Public Endpoints (no JWT required):
+#   - Defined in each service's 'public-paths' list
+# ===============================================
+gateway:
+  # ===============================================
+  # Rate Limit Configuration
+  # ===============================================
+  # IP/USER: 500 req/min, ENDPOINT: 1000 req/min
+  # AWS 환경에서 X-Forwarded-For 헤더 기반 IP 추출
+  rate-limit:
+    enabled: true
+    ip-limit: 500        # IP당 분당 요청 제한 (기본 100 → 500)
+    user-limit: 500      # 사용자당 분당 요청 제한 (기본 100 → 500)
+    endpoint-limit: 1000 # 엔드포인트당 분당 요청 제한 (기본값 유지)
+
+  routing:
+    discovery:
+      namespace: connectly.local
+      default-port: 8080
+
+    # Host-based routing mapping
+    host-mapping:
+      api.set-of.com: public
+      admin.set-of.com: admin
+
+# ===============================================
+# Observability (TraceId + MDC Context Propagation)
+# ===============================================
+# MdcContextLifterHook으로 Reactor Context → MDC 자동 전파
+# 기존 TraceIdFilter(GlobalFilter)는 X-Trace-Id 헤더 존재 시 재사용
+observability:
+  reactive-trace:
+    enabled: true
+    generate-if-missing: true  # traceId 없으면 생성 (필터 체인 진행 필수)
+  reactive-http:  # WebFlux용 설정 (http → reactive-http)
+    enabled: true
+    log-request-body: false
+    log-response-body: false
+    exclude-paths:
+      - /actuator/**
+    exclude-headers:
+      - Authorization
+      - Cookie
+      - X-Service-Token
+
+---
+# ===============================================
+# Local Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: local
+
+gateway:
+  routing:
+    discovery:
+      enabled: false
+
+---
+# ===============================================
+# Test Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: test
+
+gateway:
+  routing:
+    discovery:
+      enabled: false
+
+---
+# ===============================================
+# Stage Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: stage
+
+gateway:
+  routing:
+    discovery:
+      enabled: true
+
+    host-mapping:
+      stage-api.set-of.com: public
+
+---
+# ===============================================
+# Production Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+gateway:
+  routing:
+    discovery:
+      enabled: true
