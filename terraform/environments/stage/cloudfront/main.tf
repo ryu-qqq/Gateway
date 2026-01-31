@@ -335,3 +335,5 @@ resource "aws_route53_record" "stage" {
     evaluate_target_health = false
   }
 }
+
+# Atlantis trigger: Initial stage deployment
