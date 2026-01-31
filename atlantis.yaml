@@ -27,35 +27,35 @@ projects:
     dir: terraform/environments/prod/ecr
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
 
   - name: gateway-ecs-cluster-prod
     dir: terraform/environments/prod/ecs-cluster
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
 
   - name: gateway-elasticache-prod
     dir: terraform/environments/prod/elasticache
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
 
   - name: gateway-ecs-gateway-prod
     dir: terraform/environments/prod/ecs-gateway
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
 
   - name: gateway-cloudfront-prod
     dir: terraform/environments/prod/cloudfront
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
 
   # ============================================================================
@@ -66,14 +66,14 @@ projects:
     dir: terraform/environments/stage/ecr
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
 
   - name: gateway-ecs-cluster-stage
     dir: terraform/environments/stage/ecs-cluster
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
 
   # Stage는 공유 Redis 사용 (elasticache 없음)
@@ -82,12 +82,12 @@ projects:
     dir: terraform/environments/stage/ecs-gateway
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
 
   - name: gateway-cloudfront-stage
     dir: terraform/environments/stage/cloudfront
     workspace: default
     autoplan:
-      when_modified: ["**/*.tf", "**/*.tfvars"]
+      when_modified: ["*.tf", "*.tfvars"]
       enabled: true
