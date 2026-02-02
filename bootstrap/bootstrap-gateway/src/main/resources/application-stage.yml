@@ -41,8 +41,23 @@ gateway:
       # 호스트 기반 라우트는 path 기반 라우트보다 먼저 등록되어야 함
       # ============================================
 
+      # ============================================
+      # New Web API v2 (Strangler Fig Pattern)
+      # /api/v2/** 경로만 새 서비스로 라우팅
+      # 반드시 legacy-web보다 먼저 등록되어야 함!
+      # ============================================
+      - id: new-web-v2
+        uri: ${NEW_WEB_URI:http://setof-commerce-web-api-stage.connectly.local:8080}
+        paths:
+          - /api/v2/**
+        hosts:
+          - stage.set-of.com
+        public-paths:
+          - /api/v2/auth/**
+
       # Legacy Web API Service (Host-based routing)
       # Handles: stage.set-of.com
+      # Strangler Fig Pattern: v2 외 모든 경로는 레거시로 라우팅
       - id: legacy-web
         uri: ${LEGACY_WEB_URI:http://setof-commerce-legacy-api-stage.connectly.local:8088}
         paths:
@@ -52,9 +67,23 @@ gateway:
         public-paths:
           - /**
 
+      # ============================================
+      # New Admin API v2 (Strangler Fig Pattern)
+      # /api/v2/** 경로만 새 서비스로 라우팅
+      # 반드시 legacy-admin보다 먼저 등록되어야 함!
+      # ============================================
+      - id: new-admin-v2
+        uri: ${NEW_ADMIN_URI:http://setof-commerce-web-api-admin-stage.connectly.local:8080}
+        paths:
+          - /api/v2/**
+        hosts:
+          - stage-admin.set-of.com
+        public-paths:
+          - /api/v2/auth/**
+
       # Legacy Admin API Service (Host-based routing)
       # Handles: stage-admin.set-of.com
-      # Strangler Fig Pattern 테스트를 위한 Stage Admin 라우팅
+      # Strangler Fig Pattern: v2 외 모든 경로는 레거시로 라우팅
       - id: legacy-admin
         uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-stage.connectly.local:8089}
         paths:
