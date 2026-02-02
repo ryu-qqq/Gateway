@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.data.redis.connection.ReactiveRedisConnectionFactory;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -63,6 +64,8 @@ public abstract class GatewayIntegrationTest {
 
     @Autowired protected WebTestClient webTestClient;
 
+    @Autowired protected ReactiveRedisConnectionFactory redisConnectionFactory;
+
     @LocalServerPort protected int port;
 
     @DynamicPropertySource
@@ -93,7 +96,19 @@ public abstract class GatewayIntegrationTest {
     @BeforeEach
     void setUpBase() {
         resetWireMockServers();
+        cleanupRedisTestData();
         setupDefaultWireMockStubs();
+    }
+
+    /** Cleanup Redis test data to ensure test isolation. */
+    protected void cleanupRedisTestData() {
+        if (redisConnectionFactory != null) {
+            redisConnectionFactory
+                    .getReactiveConnection()
+                    .serverCommands()
+                    .flushDb()
+                    .block();
+        }
     }
 
     /** Reset all WireMock servers. */
@@ -117,9 +132,9 @@ public abstract class GatewayIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
-        // Permission Spec endpoint
+        // Permission Spec endpoint (Internal API)
         authHubWireMock.stubFor(
-                get(urlEqualTo("/api/v1/permissions/spec"))
+                get(urlEqualTo("/api/v1/internal/endpoint-permissions/spec"))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
@@ -128,9 +143,9 @@ public abstract class GatewayIntegrationTest {
                                                 PermissionTestFixture
                                                         .legacyServicesPermissionSpec())));
 
-        // Tenant Config endpoint
+        // Tenant Config endpoint (Internal API)
         authHubWireMock.stubFor(
-                get(WireMock.urlPathMatching("/api/v1/tenants/.+/config"))
+                get(WireMock.urlPathMatching("/api/v1/internal/tenants/.+/config"))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)

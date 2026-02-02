@@ -297,15 +297,32 @@ public final class JwtTestFixture {
      * @return userId Long 값 (숫자 부분만 추출, 없으면 해시값)
      */
     private static Long extractUserIdAsLong(String subject) {
-        if (subject == null) {
+        if (subject == null || subject.isBlank()) {
             return null;
         }
         // "user-123" 형식에서 숫자 부분 추출 시도
         String numberPart = subject.replaceAll("[^0-9]", "");
         if (!numberPart.isEmpty()) {
-            return Long.parseLong(numberPart);
+            try {
+                return Long.parseLong(numberPart);
+            } catch (NumberFormatException e) {
+                // 숫자가 Long 범위를 초과하면 해시값 사용
+                return generatePositiveHashCode(subject);
+            }
         }
         // 숫자가 없으면 해시값 사용
-        return (long) Math.abs(subject.hashCode());
+        return generatePositiveHashCode(subject);
+    }
+
+    /**
+     * 항상 양수인 해시 코드를 생성합니다.
+     *
+     * @param value 해시 대상 문자열
+     * @return 양수 해시 값
+     */
+    private static Long generatePositiveHashCode(String value) {
+        int hashCode = value.hashCode();
+        // Integer.MIN_VALUE의 경우 Math.abs()가 음수를 반환하므로 별도 처리
+        return hashCode == Integer.MIN_VALUE ? 1L : (long) Math.abs(hashCode);
     }
 }
