@@ -59,7 +59,7 @@ jobs:
   build-gateway:
     name: Build gateway
     needs: test
-    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@v1
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
     with:
       ecr-repository: gateway-prod
       component: gateway
@@ -75,7 +75,7 @@ jobs:
   deploy-gateway:
     name: Deploy gateway
     needs: build-gateway
-    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@v1
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
     with:
       ecs-cluster: gateway-cluster-prod
       ecs-service: gateway-prod
@@ -102,7 +102,7 @@ jobs:
     name: Deployment Notification
     needs: [deploy-gateway, update-terraform-tags]
     if: always()
-    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@v1
+    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
     with:
       project-name: Connectly Gateway
       environment: prod
