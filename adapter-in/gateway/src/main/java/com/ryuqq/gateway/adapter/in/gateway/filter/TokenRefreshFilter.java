@@ -73,6 +73,7 @@ public class TokenRefreshFilter implements GlobalFilter, Ordered {
     private static final String USER_ID_ATTRIBUTE = "userId";
     private static final String TENANT_ID_ATTRIBUTE = "tenantId";
     private static final String X_USER_ID_HEADER = "X-User-Id";
+    private static final String X_NEW_ACCESS_TOKEN_HEADER = "X-New-Access-Token";
     private static final String BEARER_PREFIX = "Bearer ";
 
     /** Refresh Token Cookie 설정 */
@@ -203,7 +204,14 @@ public class TokenRefreshFilter implements GlobalFilter, Ordered {
                             ServerWebExchange mutatedExchange =
                                     exchange.mutate().request(mutatedRequest).build();
 
+                            // 새 Refresh Token Cookie 설정
                             mutatedExchange.getResponse().addCookie(newRefreshTokenCookie);
+
+                            // 새 Access Token을 Response Header로 전달 (클라이언트 저장용)
+                            mutatedExchange
+                                    .getResponse()
+                                    .getHeaders()
+                                    .add(X_NEW_ACCESS_TOKEN_HEADER, response.accessTokenValue());
 
                             // Exchange Attribute 업데이트 (다음 필터에서 사용)
                             mutatedExchange

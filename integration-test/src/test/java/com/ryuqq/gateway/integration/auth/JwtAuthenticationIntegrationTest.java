@@ -2,7 +2,9 @@ package com.ryuqq.gateway.integration.auth;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -278,6 +280,113 @@ class JwtAuthenticationIntegrationTest {
                     .exchange()
                     .expectStatus()
                     .isOk();
+        }
+    }
+
+    @Nested
+    @DisplayName("Token Refresh 시나리오")
+    class TokenRefreshTest {
+
+        @BeforeEach
+        void setupTokenRefreshMock() {
+            // AuthHub token refresh endpoint mock
+            wireMockServer.stubFor(
+                    post(urlEqualTo("/api/v1/auth/refresh"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
+{
+    "accessToken": "new-access-token-from-authhub",
+    "refreshToken": "new-refresh-token-from-authhub"
+}
+""")));
+        }
+
+        @Test
+        @DisplayName("만료된 토큰 + refresh_token 쿠키로 요청 시 X-New-Access-Token 헤더가 반환되어야 한다")
+        void shouldReturnNewAccessTokenHeaderOnTokenRefresh() {
+            // given
+            String expiredJwt = JwtTestFixture.anExpiredJwt();
+
+            // when & then
+            webTestClient
+                    .get()
+                    .uri("/test/resource")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredJwt)
+                    .cookie("refresh_token", "valid-refresh-token")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectHeader()
+                    .exists("X-New-Access-Token")
+                    .expectHeader()
+                    .value(
+                            "X-New-Access-Token",
+                            value -> assertThat(value).isEqualTo("new-access-token-from-authhub"));
+        }
+
+        @Test
+        @DisplayName("만료된 토큰 + refresh_token 쿠키로 요청 시 새 refresh_token 쿠키가 설정되어야 한다")
+        void shouldSetNewRefreshTokenCookieOnTokenRefresh() {
+            // given
+            String expiredJwt = JwtTestFixture.anExpiredJwt();
+
+            // when & then
+            webTestClient
+                    .get()
+                    .uri("/test/resource")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredJwt)
+                    .cookie("refresh_token", "valid-refresh-token")
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectCookie()
+                    .exists("refresh_token")
+                    .expectCookie()
+                    .value(
+                            "refresh_token",
+                            value -> assertThat(value).isEqualTo("new-refresh-token-from-authhub"))
+                    .expectCookie()
+                    .httpOnly("refresh_token", true)
+                    .expectCookie()
+                    .secure("refresh_token", true);
+        }
+
+        @Test
+        @DisplayName("유효한 토큰 요청 시 X-New-Access-Token 헤더가 없어야 한다")
+        void shouldNotReturnNewAccessTokenHeaderWhenTokenValid() {
+            // given
+            String validJwt = JwtTestFixture.aValidJwt();
+
+            // when & then
+            webTestClient
+                    .get()
+                    .uri("/test/resource")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                    .exchange()
+                    .expectStatus()
+                    .isOk()
+                    .expectHeader()
+                    .doesNotExist("X-New-Access-Token");
+        }
+
+        @Test
+        @DisplayName("만료된 토큰 + refresh_token 없이 요청 시 401 반환")
+        void shouldReturn401WhenExpiredTokenWithoutRefreshToken() {
+            // given
+            String expiredJwt = JwtTestFixture.anExpiredJwt();
+
+            // when & then - refresh_token 쿠키 없이 요청
+            webTestClient
+                    .get()
+                    .uri("/test/resource")
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredJwt)
+                    .exchange()
+                    .expectStatus()
+                    .isUnauthorized();
         }
     }
 }
