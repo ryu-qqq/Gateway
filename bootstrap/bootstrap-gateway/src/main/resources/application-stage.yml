@@ -52,6 +52,18 @@ gateway:
         public-paths:
           - /**
 
+      # Legacy Admin API Service (Host-based routing)
+      # Handles: stage-admin.set-of.com
+      # Strangler Fig Pattern 테스트를 위한 Stage Admin 라우팅
+      - id: legacy-admin
+        uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-stage.connectly.local:8089}
+        paths:
+          - /**
+        hosts:
+          - stage-admin.set-of.com
+        public-paths:
+          - /**
+
       # ============================================
       # Path-based Routes (API Gateway services)
       # ============================================

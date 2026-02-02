@@ -152,7 +152,7 @@ resource "aws_cloudfront_response_headers_policy" "api_cors" {
     }
 
     access_control_allow_origins {
-      items = ["https://set-of.com", "https://stage.set-of.com", "https://www.set-of.com"]
+      items = ["https://set-of.com", "https://stage.set-of.com", "https://www.set-of.com", "https://stage-admin.set-of.com"]
     }
 
     access_control_max_age_sec = 86400
@@ -336,4 +336,95 @@ resource "aws_route53_record" "stage" {
   }
 }
 
-# Atlantis trigger: Initial stage deployment
+# ========================================
+# CloudFront Distribution - Stage Admin (stage-admin.set-of.com)
+# ========================================
+# Strangler Fig Pattern 테스트를 위한 Stage Admin CloudFront
+# 모든 요청 → Gateway ALB → Legacy Admin 또는 New Service
+# ========================================
+resource "aws_cloudfront_distribution" "admin_stage" {
+  enabled             = true
+  is_ipv6_enabled     = true
+  comment             = "stage-admin.set-of.com - Admin API Gateway routing (Stage)"
+  default_root_object = ""
+  price_class         = "PriceClass_200"
+  aliases             = ["stage-admin.set-of.com"]
+
+  # ========================================
+  # Origin: Gateway ALB (모든 요청 → Gateway → Legacy Admin 또는 New Service)
+  # ========================================
+  origin {
+    domain_name = data.aws_lb.gateway.dns_name
+    origin_id   = "gateway-alb"
+
+    custom_origin_config {
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "http-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
+    }
+
+    # Gateway가 호스트를 인식할 수 있도록 X-Forwarded-Host 헤더 추가
+    custom_header {
+      name  = "X-Forwarded-Host"
+      value = "stage-admin.set-of.com"
+    }
+  }
+
+  # ========================================
+  # Default Cache Behavior → Gateway (API 전용, 캐싱 없음)
+  # ========================================
+  default_cache_behavior {
+    allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "gateway-alb"
+
+    cache_policy_id            = aws_cloudfront_cache_policy.api_no_cache.id
+    origin_request_policy_id   = aws_cloudfront_origin_request_policy.api_all_viewer.id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.api_cors.id
+
+    viewer_protocol_policy = "https-only"
+    compress               = false
+  }
+
+  # ========================================
+  # SSL Certificate
+  # ========================================
+  viewer_certificate {
+    acm_certificate_arn      = data.aws_acm_certificate.cloudfront_cert.arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  # ========================================
+  # Restrictions (No geo restrictions)
+  # ========================================
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+
+  tags = merge(local.common_tags, {
+    Name = "${var.project_name}-cloudfront-admin-${var.environment}"
+  })
+}
+
+# ========================================
+# Route53 Record - Stage Admin
+# ========================================
+
+# stage-admin.set-of.com → CloudFront
+resource "aws_route53_record" "admin_stage" {
+  zone_id = local.route53_zone_id
+  name    = "stage-admin.set-of.com"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.admin_stage.domain_name
+    zone_id                = aws_cloudfront_distribution.admin_stage.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# Atlantis trigger: Stage Admin CloudFront for Strangler Fig Pattern
