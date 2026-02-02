@@ -262,6 +262,8 @@ public final class JwtTestFixture {
                             .claim("oid", organizationId)
                             .claim("permission_hash", permissionHash)
                             .claim("mfa_verified", mfaVerified)
+                            .claim("userId", extractUserIdAsLong(subject))
+                            .claim("tenantId", tenantId)
                             .expirationTime(Date.from(expiresAt))
                             .issueTime(Date.from(Instant.now()))
                             .build();
@@ -284,5 +286,26 @@ public final class JwtTestFixture {
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate RSA key pair", e);
         }
+    }
+
+    /**
+     * subject에서 userId를 Long으로 추출합니다.
+     *
+     * <p>JwtPayloadParser가 userId claim을 Long으로 파싱하므로 테스트에서도 Long 형식으로 저장합니다.
+     *
+     * @param subject 사용자 ID (예: "user-123")
+     * @return userId Long 값 (숫자 부분만 추출, 없으면 해시값)
+     */
+    private static Long extractUserIdAsLong(String subject) {
+        if (subject == null) {
+            return null;
+        }
+        // "user-123" 형식에서 숫자 부분 추출 시도
+        String numberPart = subject.replaceAll("[^0-9]", "");
+        if (!numberPart.isEmpty()) {
+            return Long.parseLong(numberPart);
+        }
+        // 숫자가 없으면 해시값 사용
+        return (long) Math.abs(subject.hashCode());
     }
 }
