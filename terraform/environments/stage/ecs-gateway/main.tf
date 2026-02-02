@@ -122,13 +122,6 @@ module "log_streaming" {
 }
 
 # ========================================
-# Sentry DSN SSM Parameter (Stage - 별도 관리)
-# ========================================
-data "aws_ssm_parameter" "sentry_dsn" {
-  name = "/${var.project_name}/${var.environment}/sentry/dsn"
-}
-
-# ========================================
 # Security Groups
 # ========================================
 resource "aws_security_group" "alb" {
@@ -506,10 +499,9 @@ module "ecs_service" {
     { name = "APP_VERSION", value = var.image_tag }
   ]
 
-  # Container Secrets (Sentry DSN from SSM Parameter)
-  container_secrets = [
-    { name = "SENTRY_DSN", valueFrom = data.aws_ssm_parameter.sentry_dsn.arn }
-  ]
+  # Container Secrets
+  # Stage: Sentry 비활성화 (application-stage.yml에서 dsn: "" 설정)
+  container_secrets = []
 
   # Health Check
   health_check_command      = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
@@ -531,12 +523,8 @@ module "ecs_service" {
   # ADOT Sidecar
   sidecars = [module.adot_sidecar.container_definition]
 
-  # Auto Scaling (Stage: 축소된 범위)
-  enable_autoscaling        = true
-  autoscaling_min_capacity  = 1
-  autoscaling_max_capacity  = 3
-  autoscaling_target_cpu    = 70
-  autoscaling_target_memory = 80
+  # Auto Scaling (Stage: 비활성화 - 고정 1대 운영)
+  enable_autoscaling = false
 
   # Enable ECS Exec for debugging
   enable_execute_command = true
@@ -554,3 +542,5 @@ module "ecs_service" {
   project      = local.common_tags.project
   data_class   = local.common_tags.data_class
 }
+
+# Atlantis trigger: Initial stage deployment

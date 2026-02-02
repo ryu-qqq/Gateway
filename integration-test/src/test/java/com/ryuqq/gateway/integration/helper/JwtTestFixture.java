@@ -262,6 +262,8 @@ public final class JwtTestFixture {
                             .claim("oid", organizationId)
                             .claim("permission_hash", permissionHash)
                             .claim("mfa_verified", mfaVerified)
+                            .claim("userId", extractUserIdAsLong(subject))
+                            .claim("tenantId", tenantId)
                             .expirationTime(Date.from(expiresAt))
                             .issueTime(Date.from(Instant.now()))
                             .build();
@@ -284,5 +286,43 @@ public final class JwtTestFixture {
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate RSA key pair", e);
         }
+    }
+
+    /**
+     * subject에서 userId를 Long으로 추출합니다.
+     *
+     * <p>JwtPayloadParser가 userId claim을 Long으로 파싱하므로 테스트에서도 Long 형식으로 저장합니다.
+     *
+     * @param subject 사용자 ID (예: "user-123")
+     * @return userId Long 값 (숫자 부분만 추출, 없으면 해시값)
+     */
+    private static Long extractUserIdAsLong(String subject) {
+        if (subject == null || subject.isBlank()) {
+            return null;
+        }
+        // "user-123" 형식에서 숫자 부분 추출 시도
+        String numberPart = subject.replaceAll("[^0-9]", "");
+        if (!numberPart.isEmpty()) {
+            try {
+                return Long.parseLong(numberPart);
+            } catch (NumberFormatException e) {
+                // 숫자가 Long 범위를 초과하면 해시값 사용
+                return generatePositiveHashCode(subject);
+            }
+        }
+        // 숫자가 없으면 해시값 사용
+        return generatePositiveHashCode(subject);
+    }
+
+    /**
+     * 항상 양수인 해시 코드를 생성합니다.
+     *
+     * @param value 해시 대상 문자열
+     * @return 양수 해시 값
+     */
+    private static Long generatePositiveHashCode(String value) {
+        int hashCode = value.hashCode();
+        // Integer.MIN_VALUE의 경우 Math.abs()가 음수를 반환하므로 별도 처리
+        return hashCode == Integer.MIN_VALUE ? 1L : (long) Math.abs(hashCode);
     }
 }

@@ -1,11 +1,15 @@
 = Connectly Gateway Documentation
 :doctype: book
 :icons: font
-:source-highlighter: highlightjs
+:source-highlighter: highlight.js
 :toc: left
 :toclevels: 3
 :sectlinks:
 :sectnums:
+:stylesdir: .
+:stylesheet: custom-style.css
+:linkcss:
+:copycss:
 
 [[overview]]
 == 개요

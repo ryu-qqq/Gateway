@@ -1,0 +1,451 @@
+/* SETOF Commerce Admin API - Custom Documentation Style */
+
+/* Base Settings */
+:root {
+    --primary-color: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --bg-color: #ffffff;
+    --bg-secondary: #f8fafc;
+    --text-color: #1e293b;
+    --text-muted: #64748b;
+    --border-color: #e2e8f0;
+    --code-bg: #f1f5f9;
+    --sidebar-width: 300px;
+}
+
+/* Body & Layout - Left TOC Layout */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+    margin: 0;
+    padding: 0;
+}
+
+body.toc2 {
+    padding-left: var(--sidebar-width);
+}
+
+body.toc2.toc-left {
+    padding-left: var(--sidebar-width);
+    padding-right: 0;
+}
+
+/* Table of Contents - Fixed Left Sidebar */
+#toc {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border-color);
+    padding: 1.5rem;
+    box-sizing: border-box;
+    font-size: 0.875rem;
+    z-index: 1000;
+}
+
+#toc ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+#toc ul ul {
+    padding-left: 1rem;
+    margin-top: 0.25rem;
+}
+
+#toc li {
+    margin: 0.25rem 0;
+}
+
+#toc a {
+    color: var(--text-color);
+    text-decoration: none;
+    display: block;
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    word-wrap: break-word;
+}
+
+#toc a:hover {
+    color: var(--primary-color);
+    background-color: rgba(37, 99, 235, 0.08);
+}
+
+#toctitle {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Content Area - Right of TOC */
+#content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 3rem;
+}
+
+/* Header */
+#header {
+    padding: 2rem 3rem;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+#header h1 {
+    margin-top: 0;
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.3;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+h1 { font-size: 2.25rem; border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; }
+h2 { font-size: 1.75rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 3rem; }
+h3 { font-size: 1.375rem; color: var(--primary-dark); }
+h4 { font-size: 1.125rem; }
+h5 { font-size: 1rem; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.95rem;
+}
+
+table th {
+    background-color: var(--bg-secondary);
+    color: var(--text-color);
+    font-weight: 600;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+}
+
+table td {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    vertical-align: top;
+}
+
+table tr:nth-child(even) {
+    background-color: var(--bg-secondary);
+}
+
+table tr:hover {
+    background-color: rgba(37, 99, 235, 0.04);
+}
+
+/* Code Blocks */
+pre, code {
+    font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.875rem;
+}
+
+code {
+    background-color: var(--code-bg);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: #e11d48;
+}
+
+pre {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    padding: 1.25rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+}
+
+/* Listing Blocks */
+.listingblock {
+    margin: 1.5rem 0;
+}
+
+.listingblock .title {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+/* Admonition Blocks */
+.admonitionblock {
+    margin: 1.5rem 0;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    border-left: 4px solid;
+}
+
+.admonitionblock.note {
+    background-color: #eff6ff;
+    border-left-color: var(--primary-color);
+}
+
+.admonitionblock.tip {
+    background-color: #ecfdf5;
+    border-left-color: var(--success-color);
+}
+
+.admonitionblock.warning {
+    background-color: #fffbeb;
+    border-left-color: var(--warning-color);
+}
+
+.admonitionblock.caution,
+.admonitionblock.important {
+    background-color: #fef2f2;
+    border-left-color: var(--error-color);
+}
+
+.admonitionblock td.icon {
+    font-weight: 600;
+    padding-right: 0.75rem;
+    vertical-align: top;
+}
+
+/* Inline Links */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: var(--primary-dark);
+}
+
+/* HTTP Method Badges */
+.http-method {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* HTTP Method Colors in TOC and Headers */
+#toc a[href*="get-"],
+#toc a[href*="-get"],
+#toc a[href*="search"],
+#toc a[href*="조회"] {
+    border-left: 3px solid #10b981;
+    padding-left: 0.75rem;
+}
+
+#toc a[href*="post-"],
+#toc a[href*="-post"],
+#toc a[href*="register"],
+#toc a[href*="등록"] {
+    border-left: 3px solid #3b82f6;
+    padding-left: 0.75rem;
+}
+
+#toc a[href*="put-"],
+#toc a[href*="-put"],
+#toc a[href*="update"],
+#toc a[href*="수정"] {
+    border-left: 3px solid #f59e0b;
+    padding-left: 0.75rem;
+}
+
+#toc a[href*="patch-"],
+#toc a[href*="-patch"],
+#toc a[href*="change"],
+#toc a[href*="변경"] {
+    border-left: 3px solid #8b5cf6;
+    padding-left: 0.75rem;
+}
+
+#toc a[href*="delete-"],
+#toc a[href*="-delete"],
+#toc a[href*="삭제"] {
+    border-left: 3px solid #ef4444;
+    padding-left: 0.75rem;
+}
+
+/* HTTP Method Labels in Content */
+h3:has(+ .listingblock),
+h4:has(+ .listingblock) {
+    position: relative;
+}
+
+/* Style section titles with HTTP methods */
+.sect2 > h3::before,
+.sect3 > h4::before {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.15rem 0.4rem;
+    border-radius: 3px;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+}
+
+/* GET Method - Green */
+h3[id*="get-"]::before, h3[id*="-get"]::before,
+h3[id*="search"]::before, h3[id*="조회"]::before,
+h4[id*="get-"]::before, h4[id*="-get"]::before,
+h4[id*="search"]::before, h4[id*="조회"]::before {
+    content: "GET";
+    background-color: #ecfdf5;
+    color: #059669;
+    border: 1px solid #10b981;
+}
+
+/* POST Method - Blue */
+h3[id*="post-"]::before, h3[id*="-post"]::before,
+h3[id*="register"]::before, h3[id*="등록"]::before,
+h4[id*="post-"]::before, h4[id*="-post"]::before,
+h4[id*="register"]::before, h4[id*="등록"]::before {
+    content: "POST";
+    background-color: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #3b82f6;
+}
+
+/* PUT Method - Orange */
+h3[id*="put-"]::before, h3[id*="-put"]::before,
+h3[id*="update"]::before, h3[id*="수정"]::before,
+h4[id*="put-"]::before, h4[id*="-put"]::before,
+h4[id*="update"]::before, h4[id*="수정"]::before {
+    content: "PUT";
+    background-color: #fffbeb;
+    color: #d97706;
+    border: 1px solid #f59e0b;
+}
+
+/* PATCH Method - Purple */
+h3[id*="patch-"]::before, h3[id*="-patch"]::before,
+h3[id*="change"]::before, h3[id*="변경"]::before,
+h4[id*="patch-"]::before, h4[id*="-patch"]::before,
+h4[id*="change"]::before, h4[id*="변경"]::before {
+    content: "PATCH";
+    background-color: #f5f3ff;
+    color: #7c3aed;
+    border: 1px solid #8b5cf6;
+}
+
+/* DELETE Method - Red */
+h3[id*="delete-"]::before, h3[id*="-delete"]::before,
+h3[id*="삭제"]::before,
+h4[id*="delete-"]::before, h4[id*="-delete"]::before,
+h4[id*="삭제"]::before {
+    content: "DELETE";
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #ef4444;
+}
+
+/* Paragraph Styling */
+p {
+    margin: 1rem 0;
+}
+
+/* Lists */
+ul, ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+li {
+    margin: 0.5rem 0;
+}
+
+/* Section Links */
+.sectlink {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-left: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+h2:hover .sectlink,
+h3:hover .sectlink,
+h4:hover .sectlink {
+    opacity: 1;
+}
+
+/* Response/Request Examples */
+.content pre.highlight {
+    position: relative;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    :root {
+        --sidebar-width: 260px;
+    }
+}
+
+@media (max-width: 768px) {
+    body.toc2,
+    body.toc2.toc-left {
+        padding-left: 0;
+    }
+
+    #toc {
+        position: relative;
+        width: 100%;
+        height: auto;
+        max-height: 50vh;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    #content,
+    #header {
+        padding: 1rem;
+    }
+
+    table {
+        font-size: 0.85rem;
+    }
+
+    table th, table td {
+        padding: 0.5rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    #toc {
+        display: none;
+    }
+
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+}

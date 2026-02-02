@@ -300,6 +300,7 @@ fetch('/api/v1/auth/login')
 
 ## 담당자
 
-- Gateway 코드: [담당자]
-- 인프라 (Route53, ALB): [담당자]
-- 프론트엔드: [담당자]
+- Gateway 코드: Platform Team
+- 인프라 (Route53, ALB): Platform Team
+- 프론트엔드: Frontend Team
+

@@ -49,3 +49,5 @@ module "ecr_gateway" {
   project      = local.common_tags.project
   data_class   = local.common_tags.data_class
 }
+
+# Atlantis trigger: Initial stage deployment

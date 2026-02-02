@@ -1,17 +1,17 @@
 # ============================================================================
-# Connectly Gateway Build & Deploy
+# Connectly Gateway Build & Deploy - STAGE
 #
-# Reusable Workflows 사용하여 단순화
-# gateway만 빌드/배포
+# Stage 환경 전용 배포 워크플로우
+# stage 브랜치 push 또는 수동 트리거
 # ============================================================================
 
-name: Build and Deploy to ECS
+name: Build and Deploy to ECS (Stage)
 
 on:
   workflow_dispatch: # 수동 트리거 허용
   push:
     branches:
-      - main
+      - stage
     paths-ignore:
       - 'terraform/**'
       - '.github/workflows/terraform-*.yml'
@@ -24,7 +24,7 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECS_CLUSTER: gateway-cluster-prod
+  ECS_CLUSTER: gateway-cluster-stage
 
 jobs:
   # ============================================================================
@@ -61,7 +61,7 @@ jobs:
     needs: test
     uses: ryu-qqq/Infrastructure/.github/workflows/reusable-build-docker.yml@main
     with:
-      ecr-repository: gateway-prod
+      ecr-repository: gateway-stage
       component: gateway
       dockerfile: bootstrap/bootstrap-gateway/Dockerfile
       gradle-task: ":bootstrap:bootstrap-gateway:bootJar"
@@ -77,21 +77,9 @@ jobs:
     needs: build-gateway
     uses: ryu-qqq/Infrastructure/.github/workflows/reusable-deploy-ecs.yml@main
     with:
-      ecs-cluster: gateway-cluster-prod
-      ecs-service: gateway-prod
+      ecs-cluster: gateway-cluster-stage
+      ecs-service: gateway-stage
       image-uri: ${{ needs.build-gateway.outputs.image-uri }}
-    secrets:
-      AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
-
-  # ============================================================================
-  # Terraform Image Tag 업데이트 (자동화)
-  # ============================================================================
-  update-terraform-tags:
-    name: Update Terraform Image Tags
-    needs: [build-gateway]
-    uses: ./.github/workflows/terraform-apply.yml
-    with:
-      gateway-image-tag: ${{ needs.build-gateway.outputs.image-tag }}
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 

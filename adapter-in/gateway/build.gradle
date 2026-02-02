@@ -72,7 +72,27 @@ asciidoctor {
     inputs.dir snippetsDir
     configurations 'asciidoctorExt'
     baseDirFollowsSourceFile()
-    attributes 'snippets': snippetsDir
+
+    // Source directory 설정 (src/docs → docs로 이동)
+    sourceDir = file('docs/asciidoc')
+
+    // Custom CSS 적용
+    attributes 'snippets': snippetsDir,
+               'stylesdir': '.',
+               'stylesheet': 'custom-style.css',
+               'linkcss': true,
+               'copycss': true,
+               'toc': 'left',
+               'toclevels': 3,
+               'icons': 'font',
+               'source-highlighter': 'highlight.js'
+
+    // CSS 파일 복사
+    resources {
+        from('docs/asciidoc') {
+            include 'custom-style.css'
+        }
+    }
 }
 
 // Copy asciidoctor output to src/main/resources for serving via DocsController

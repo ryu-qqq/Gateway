@@ -44,11 +44,39 @@ output "api_cors_policy_id" {
 }
 
 # ========================================
+# Stage Admin CloudFront Distribution
+# ========================================
+output "admin_stage_distribution_id" {
+  description = "CloudFront distribution ID for stage admin (stage-admin.set-of.com)"
+  value       = aws_cloudfront_distribution.admin_stage.id
+}
+
+output "admin_stage_distribution_arn" {
+  description = "CloudFront distribution ARN for stage admin"
+  value       = aws_cloudfront_distribution.admin_stage.arn
+}
+
+output "admin_stage_distribution_domain_name" {
+  description = "CloudFront domain name for stage admin"
+  value       = aws_cloudfront_distribution.admin_stage.domain_name
+}
+
+output "admin_stage_distribution_hosted_zone_id" {
+  description = "CloudFront hosted zone ID for stage admin (for Route53 alias)"
+  value       = aws_cloudfront_distribution.admin_stage.hosted_zone_id
+}
+
+# ========================================
 # Route53 Record Info
 # ========================================
-output "route53_record" {
-  description = "Route53 record created for CloudFront"
+output "route53_record_stage" {
+  description = "Route53 record for stage.set-of.com"
   value       = aws_route53_record.stage.fqdn
+}
+
+output "route53_record_admin_stage" {
+  description = "Route53 record for stage-admin.set-of.com"
+  value       = aws_route53_record.admin_stage.fqdn
 }
 
 # ========================================
@@ -58,10 +86,15 @@ output "routing_summary" {
   description = "Summary of CloudFront path-based routing configuration"
   value = {
     staging = {
-      domains          = ["stage.set-of.com"]
-      api_path         = "/api/v1/*"
-      api_origin       = data.aws_lb.gateway.dns_name
-      frontend_origin  = data.aws_lb.frontend_stage.dns_name
+      domains         = ["stage.set-of.com"]
+      api_path        = "/api/v1/*"
+      api_origin      = data.aws_lb.gateway.dns_name
+      frontend_origin = data.aws_lb.frontend_stage.dns_name
+    }
+    admin_staging = {
+      domains    = ["stage-admin.set-of.com"]
+      all_paths  = "/* → Gateway ALB → Legacy Admin (Strangler Fig Test)"
+      api_origin = data.aws_lb.gateway.dns_name
     }
   }
 }

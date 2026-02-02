@@ -2,57 +2,92 @@
 # Connectly Gateway - Atlantis Configuration
 # ============================================================================
 # PR-based Terraform automation for Connectly Gateway infrastructure
+#
+# 환경별 분리:
+#   - terraform/environments/prod/  : Production 환경
+#   - terraform/environments/stage/ : Stage 환경
+#
+# 배포 순서:
+#   1. ecr → 2. ecs-cluster → 3. elasticache (prod only) → 4. ecs-gateway → 5. cloudfront
 # ============================================================================
 
 version: 3
 
 automerge: false
 delete_source_branch_on_merge: false
-# Disable parallel plan to prevent plugin cache conflicts
 parallel_plan: false
 parallel_apply: false
 
 projects:
   # ============================================================================
-  # Container Registry
+  # PRODUCTION Environment
   # ============================================================================
 
-  # ECR repository for gateway
   - name: gateway-ecr-prod
-    dir: terraform/ecr
+    dir: terraform/environments/prod/ecr
     workspace: default
     autoplan:
-      when_modified: ["*.tf", "*.tfvars", "../*.tf"]
+      when_modified: ["**/*.tf", "**/*.tfvars"]
       enabled: true
 
-  # ============================================================================
-  # Core Infrastructure
-  # ============================================================================
-
-  # ECS Cluster (dedicated for gateway)
   - name: gateway-ecs-cluster-prod
-    dir: terraform/ecs-cluster
+    dir: terraform/environments/prod/ecs-cluster
     workspace: default
     autoplan:
-      when_modified: ["*.tf", "*.tfvars", "../*.tf"]
+      when_modified: ["**/*.tf", "**/*.tfvars"]
       enabled: true
 
-  # ElastiCache (Redis)
   - name: gateway-elasticache-prod
-    dir: terraform/elasticache
+    dir: terraform/environments/prod/elasticache
     workspace: default
     autoplan:
-      when_modified: ["*.tf", "*.tfvars", "../*.tf"]
+      when_modified: ["**/*.tf", "**/*.tfvars"]
+      enabled: true
+
+  - name: gateway-ecs-gateway-prod
+    dir: terraform/environments/prod/ecs-gateway
+    workspace: default
+    autoplan:
+      when_modified: ["**/*.tf", "**/*.tfvars"]
+      enabled: true
+
+  - name: gateway-cloudfront-prod
+    dir: terraform/environments/prod/cloudfront
+    workspace: default
+    autoplan:
+      when_modified: ["**/*.tf", "**/*.tfvars"]
       enabled: true
 
   # ============================================================================
-  # Application Infrastructure
+  # STAGE Environment
   # ============================================================================
 
-  # ECS Service for gateway (ALB + Auto Scaling)
-  - name: gateway-ecs-gateway-prod
-    dir: terraform/ecs-gateway
+  - name: gateway-ecr-stage
+    dir: terraform/environments/stage/ecr
     workspace: default
     autoplan:
-      when_modified: ["*.tf", "*.tfvars", "../*.tf"]
+      when_modified: ["**/*.tf", "**/*.tfvars"]
+      enabled: true
+
+  - name: gateway-ecs-cluster-stage
+    dir: terraform/environments/stage/ecs-cluster
+    workspace: default
+    autoplan:
+      when_modified: ["**/*.tf", "**/*.tfvars"]
+      enabled: true
+
+  # Stage는 공유 Redis 사용 (elasticache 없음)
+
+  - name: gateway-ecs-gateway-stage
+    dir: terraform/environments/stage/ecs-gateway
+    workspace: default
+    autoplan:
+      when_modified: ["**/*.tf", "**/*.tfvars"]
+      enabled: true
+
+  - name: gateway-cloudfront-stage
+    dir: terraform/environments/stage/cloudfront
+    workspace: default
+    autoplan:
+      when_modified: ["**/*.tf", "**/*.tfvars"]
       enabled: true
