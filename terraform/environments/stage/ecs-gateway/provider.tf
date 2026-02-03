@@ -58,13 +58,13 @@ variable "aws_region" {
 variable "gateway_cpu" {
   description = "CPU units for gateway task"
   type        = number
-  default     = 256  # Stage: 더 낮은 스펙
+  default     = 512  # Stage: Spring Cloud Gateway requires adequate CPU
 }
 
 variable "gateway_memory" {
   description = "Memory for gateway task"
   type        = number
-  default     = 512  # Stage: 더 낮은 스펙
+  default     = 1024  # Stage: 1GB minimum for Spring Cloud Gateway (JVM heap + metaspace)
 }
 
 variable "gateway_desired_count" {

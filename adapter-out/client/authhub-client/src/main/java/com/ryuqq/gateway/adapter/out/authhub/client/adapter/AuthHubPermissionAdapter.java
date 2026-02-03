@@ -16,6 +16,8 @@ import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOper
 import io.github.resilience4j.reactor.retry.RetryOperator;
 import io.github.resilience4j.retry.Retry;
 import io.github.resilience4j.retry.RetryRegistry;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -76,32 +78,13 @@ public class AuthHubPermissionAdapter implements PermissionClient {
     public Mono<PermissionSpec> fetchPermissionSpec() {
         log.debug("Fetching permission spec via SDK");
 
-        return Mono.<PermissionSpec>fromCallable(
-                        () -> {
-                            try {
-                                ApiResponse<EndpointPermissionSpecList> response =
-                                        gatewayClient.internal().getPermissionSpec();
-
-                                if (!response.success() || response.data() == null) {
-                                    throw new PermissionException(
-                                            "Failed to fetch permission spec: empty response from"
-                                                    + " AuthHub");
-                                }
-
-                                return permissionMapper.toPermissionSpec(response.data());
-                            } catch (AuthHubException e) {
-                                throw new PermissionException(
-                                        "Failed to fetch permission spec: " + e.getMessage(), e);
-                            }
-                        })
-                .transformDeferred(RetryOperator.of(retry))
-                .transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
-                .doOnSuccess(
-                        spec ->
-                                log.debug(
-                                        "Fetched permission spec: {} permissions",
-                                        spec.permissions().size()))
-                .doOnError(e -> log.error("Failed to fetch permission spec", e));
+        return executeWithResilience(
+                () -> callPermissionSpecApi(),
+                spec ->
+                        log.debug(
+                                "Fetched permission spec: {} permissions",
+                                spec.permissions().size()),
+                e -> log.error("Failed to fetch permission spec", e));
     }
 
     /**
@@ -119,33 +102,84 @@ public class AuthHubPermissionAdapter implements PermissionClient {
     public Mono<PermissionHash> fetchUserPermissions(String tenantId, String userId) {
         log.debug("Fetching user permissions via SDK: tenantId={}, userId={}", tenantId, userId);
 
-        return Mono.<PermissionHash>fromCallable(
-                        () -> {
-                            try {
-                                ApiResponse<UserPermissions> response =
-                                        gatewayClient.internal().getUserPermissions(userId);
+        return executeWithResilience(
+                () -> callUserPermissionsApi(userId),
+                hash ->
+                        log.debug(
+                                "Fetched user permissions: userId={}, hash={}",
+                                userId,
+                                hash.hash()),
+                e -> log.error("Failed to fetch user permissions: userId={}", userId, e));
+    }
 
-                                if (!response.success() || response.data() == null) {
-                                    throw new PermissionException(
-                                            "Failed to fetch user permissions: empty response from"
-                                                    + " AuthHub");
-                                }
-
-                                return permissionMapper.toPermissionHash(response.data());
-                            } catch (AuthHubException e) {
-                                throw new PermissionException(
-                                        "Failed to fetch user permissions: " + e.getMessage(), e);
-                            }
-                        })
+    /**
+     * Resilience 패턴 적용 공통 메서드
+     *
+     * <p>Retry + Circuit Breaker 패턴을 적용하여 API 호출을 수행합니다.
+     *
+     * @param apiCall API 호출 Callable
+     * @param onSuccess 성공 시 콜백
+     * @param onError 에러 시 콜백
+     * @param <T> 반환 타입
+     * @return Mono 결과
+     */
+    private <T> Mono<T> executeWithResilience(
+            Callable<T> apiCall, Consumer<T> onSuccess, Consumer<Throwable> onError) {
+        return Mono.fromCallable(apiCall)
                 .transformDeferred(RetryOperator.of(retry))
                 .transformDeferred(CircuitBreakerOperator.of(circuitBreaker))
-                .doOnSuccess(
-                        hash ->
-                                log.debug(
-                                        "Fetched user permissions: userId={}, hash={}",
-                                        userId,
-                                        hash.hash()))
-                .doOnError(
-                        e -> log.error("Failed to fetch user permissions: userId={}", userId, e));
+                .doOnSuccess(onSuccess)
+                .doOnError(onError);
+    }
+
+    /**
+     * Permission Spec API 호출
+     *
+     * @return PermissionSpec
+     * @throws PermissionException API 호출 실패 시
+     */
+    private PermissionSpec callPermissionSpecApi() {
+        try {
+            ApiResponse<EndpointPermissionSpecList> response =
+                    gatewayClient.internal().getPermissionSpec();
+
+            validateResponse(response, "permission spec");
+            return permissionMapper.toPermissionSpec(response.data());
+        } catch (AuthHubException e) {
+            throw new PermissionException("Failed to fetch permission spec: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * User Permissions API 호출
+     *
+     * @param userId 사용자 ID
+     * @return PermissionHash
+     * @throws PermissionException API 호출 실패 시
+     */
+    private PermissionHash callUserPermissionsApi(String userId) {
+        try {
+            ApiResponse<UserPermissions> response =
+                    gatewayClient.internal().getUserPermissions(userId);
+
+            validateResponse(response, "user permissions");
+            return permissionMapper.toPermissionHash(response.data());
+        } catch (AuthHubException e) {
+            throw new PermissionException("Failed to fetch user permissions: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * API 응답 유효성 검증
+     *
+     * @param response API 응답
+     * @param operation 작업명 (로깅용)
+     * @throws PermissionException 응답이 유효하지 않을 때
+     */
+    private <T> void validateResponse(ApiResponse<T> response, String operation) {
+        if (!response.success() || response.data() == null) {
+            throw new PermissionException(
+                    "Failed to fetch " + operation + ": empty response from AuthHub");
+        }
     }
 }
