@@ -170,7 +170,7 @@ resource "aws_cloudfront_distribution" "prod" {
   comment             = "set-of.com - API Gateway routing"
   default_root_object = ""
   price_class         = "PriceClass_200" # Asia, Europe, North America
-  aliases             = ["set-of.com", "www.set-of.com"]
+  aliases             = ["www.set-of.com"]
 
   # ========================================
   # Origin 1: Frontend ALB (default)
@@ -389,24 +389,8 @@ resource "aws_cloudfront_distribution" "admin" {
 # ========================================
 # Route53 Records - Point to CloudFront
 # ========================================
-
-# set-of.com → CloudFront
-import {
-  to = aws_route53_record.prod_apex
-  id = "Z104656329CL6XBYE8OIJ_set-of.com_A"
-}
-
-resource "aws_route53_record" "prod_apex" {
-  zone_id = local.route53_zone_id
-  name    = "set-of.com"
-  type    = "A"
-
-  alias {
-    name                   = aws_cloudfront_distribution.prod.domain_name
-    zone_id                = aws_cloudfront_distribution.prod.hosted_zone_id
-    evaluate_target_health = false
-  }
-}
+# NOTE: set-of.com Route53 record is managed in infrastructure repository
+# This Terraform only manages www.set-of.com
 
 # www.set-of.com → CloudFront
 import {
