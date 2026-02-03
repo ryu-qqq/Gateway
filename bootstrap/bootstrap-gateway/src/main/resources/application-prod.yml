@@ -102,12 +102,13 @@ gateway:
           - /api/v2/**
         hosts:
           - admin.set-of.com
+          - admin.set-of.net
           - admin-server.set-of.net
         public-paths:
           - /api/v2/**
 
       # Legacy Admin API Service (Host-based routing)
-      # Handles: admin.set-of.com, admin-server.set-of.net
+      # Handles: admin.set-of.com, admin.set-of.net, admin-server.set-of.net
       # Strangler Fig Pattern: v2 외 모든 경로는 레거시로 라우팅
       - id: legacy-admin
         uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-prod.connectly.local:8089}
@@ -115,6 +116,7 @@ gateway:
           - /**
         hosts:
           - admin.set-of.com
+          - admin.set-of.net
           - admin-server.set-of.net
         public-paths:
           - /**

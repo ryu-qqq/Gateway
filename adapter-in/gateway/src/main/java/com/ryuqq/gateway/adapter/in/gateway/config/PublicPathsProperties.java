@@ -63,23 +63,28 @@ public class PublicPathsProperties {
     }
 
     /**
-     * 특정 Host에 해당하는 서비스의 public-paths 반환
+     * 특정 Host에 해당하는 모든 서비스의 public-paths 통합 반환
+     *
+     * <p>동일한 host를 가진 여러 서비스가 있을 수 있습니다 (예: new-web-v2와 legacy-web). 이 경우 모든 매칭되는 서비스의
+     * public-paths를 합쳐서 반환합니다.
      *
      * @param host 요청 Host 헤더 값
-     * @return 해당 host에 적용되는 public path 목록
+     * @return 해당 host에 적용되는 모든 public path 목록
      */
     public List<String> getPublicPathsForHost(String host) {
         if (host == null || host.isEmpty()) {
             return Collections.emptyList();
         }
 
+        List<String> allPublicPaths = new ArrayList<>();
+
         for (ServiceConfig service : services) {
             if (service.matchesHost(host)) {
-                return service.getPublicPaths();
+                allPublicPaths.addAll(service.getPublicPaths());
             }
         }
 
-        return Collections.emptyList();
+        return allPublicPaths;
     }
 
     /** Service Configuration for extracting public-paths */

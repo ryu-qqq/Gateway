@@ -1,0 +1,85 @@
+// ========================================
+// Adapter-Out: AuthHub External System
+// ========================================
+// Outbound adapter for AuthHub external system communication
+// Implements AuthHub ports from application layer
+// Technology: WebClient (Reactive) + Resilience4j
+// NO Lombok allowed
+// ========================================
+
+plugins {
+    id 'java-library'
+    id 'java-test-fixtures'
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    // ========================================
+    // Core Dependencies
+    // ========================================
+    api project(':application')
+    api project(':domain')
+
+    // AuthHub SDK
+    implementation 'com.github.ryu-qqq.AuthHub:authhub-sdk-core:v2.0.3'
+
+    // WebFlux (Reactive WebClient)
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+    // Observability (TraceId propagation)
+    implementation libs.observability.starter
+
+    // Resilience4j (Retry, Circuit Breaker)
+    implementation libs.resilience4j.spring.boot3
+    implementation libs.resilience4j.reactor
+
+    // JSON
+    implementation libs.jackson.databind
+    implementation libs.jackson.datatype.jsr310
+
+    // Configuration Properties
+    implementation libs.spring.boot.configuration.processor
+
+    // ========================================
+    // Test Dependencies
+    // ========================================
+    testImplementation libs.spring.boot.starter.test
+
+    // Reactor Test (StepVerifier)
+    testImplementation 'io.projectreactor:reactor-test'
+
+    // WireMock for AuthHub mock
+    testImplementation libs.wiremock
+
+    // ArchUnit for architecture validation
+    testImplementation libs.archunit.junit5
+
+    testImplementation testFixtures(project(':domain'))
+}
+
+// ========================================
+// Test Coverage (70% for adapters)
+// ========================================
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.70
+            }
+        }
+        rule {
+            element = 'CLASS'
+            excludes = [
+                '*.config.*'  // Config classes excluded
+            ]
+        }
+    }
+}
+
+tasks.test {
+    finalizedBy tasks.jacocoTestCoverageVerification
+}
