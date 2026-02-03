@@ -317,6 +317,11 @@ resource "aws_cloudfront_distribution" "prod" {
 # ========================================
 # CloudFront Distribution - Admin (admin.set-of.com)
 # ========================================
+import {
+  to = aws_cloudfront_distribution.admin
+  id = "E1XBS551INTJTQ"
+}
+
 resource "aws_cloudfront_distribution" "admin" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -422,6 +427,11 @@ resource "aws_route53_record" "prod_www" {
 }
 
 # admin.set-of.com → CloudFront
+import {
+  to = aws_route53_record.admin
+  id = "Z104656329CL6XBYE8OIJ_admin.set-of.com_A"
+}
+
 resource "aws_route53_record" "admin" {
   zone_id = local.route53_zone_id
   name    = "admin.set-of.com"
