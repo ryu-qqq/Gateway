@@ -33,6 +33,9 @@ spring:
             allowedOriginPatterns: "*"
             allowed-methods: "*"
             allowed-headers: "*"
+            exposed-headers:
+              - "X-New-Access-Token"
+              - "X-Trace-Id"
             allow-credentials: true
             max-age: 3600
 

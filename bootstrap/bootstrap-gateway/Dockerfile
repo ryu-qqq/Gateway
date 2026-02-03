@@ -28,14 +28,14 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # JVM options for container environment
+# SPRING_PROFILES_ACTIVE는 ECS Task Definition 환경변수로 주입
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
     -XX:MaxRAMPercentage=75.0 \
     -XX:InitialRAMPercentage=50.0 \
     -XX:+UseG1GC \
     -XX:+HeapDumpOnOutOfMemoryError \
     -XX:HeapDumpPath=/tmp/heapdump.hprof \
-    -Djava.security.egd=file:/dev/./urandom \
-    -Dspring.profiles.active=prod"
+    -Djava.security.egd=file:/dev/./urandom"
 
 # Expose application port
 EXPOSE 8080

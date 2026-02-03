@@ -2,7 +2,9 @@ package com.ryuqq.gateway.integration.auth;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -13,7 +15,6 @@ import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,9 +35,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * JWT Authentication Integration Test
+ * Token Refresh Integration Test
  *
- * <p>전체 스택 E2E 테스트 (Domain → Application → Persistence → Filter)
+ * <p>Token Refresh 기능 전용 통합 테스트 (Circuit Breaker 격리를 위해 별도 클래스로 분리)
  *
  * @author development-team
  * @since 1.0.0
@@ -48,8 +49,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 @Tag("integration")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-@Import(JwtAuthenticationIntegrationTest.TestGatewayConfig.class)
-class JwtAuthenticationIntegrationTest {
+@Import(TokenRefreshIntegrationTest.TestGatewayConfig.class)
+class TokenRefreshIntegrationTest {
 
     static WireMockServer wireMockServer;
 
@@ -77,7 +78,6 @@ class JwtAuthenticationIntegrationTest {
         registry.add("spring.data.redis.port", redis::getFirstMappedPort);
         registry.add("authhub.client.base-url", () -> "http://localhost:" + wireMockServer.port());
         registry.add("gateway.rate-limit.enabled", () -> "false");
-        // Redisson 설정 (Testcontainers Redis 사용)
         registry.add(
                 "spring.redis.redisson.config",
                 () ->
@@ -104,6 +104,7 @@ class JwtAuthenticationIntegrationTest {
     void setupWireMock() {
         wireMockServer.resetAll();
 
+        // JWKS endpoint mock
         wireMockServer.stubFor(
                 get(urlEqualTo("/api/v1/auth/jwks"))
                         .willReturn(
@@ -112,7 +113,7 @@ class JwtAuthenticationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
-        // Mock Permission Spec endpoint (Internal API)
+        // Permission Spec endpoint mock (Internal API)
         wireMockServer.stubFor(
                 get(urlEqualTo("/api/v1/internal/endpoint-permissions/spec"))
                         .willReturn(
@@ -137,7 +138,7 @@ class JwtAuthenticationIntegrationTest {
                                                 }
                                                 """)));
 
-        // Mock downstream service
+        // Downstream service mock
         wireMockServer.stubFor(
                 get(urlEqualTo("/test/resource"))
                         .willReturn(
@@ -146,7 +147,7 @@ class JwtAuthenticationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody("{\"message\":\"success\"}")));
 
-        // Mock Tenant Config API (Internal API)
+        // Tenant Config API mock (Internal API)
         wireMockServer.stubFor(
                 get(WireMock.urlPathMatching("/api/v1/internal/tenants/.+/config"))
                         .willReturn(
@@ -155,129 +156,115 @@ class JwtAuthenticationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
                                                 TenantConfigTestFixture.tenantConfigResponse(
-                                                        "tenant-001"))));
+                                                        "tenant-001", false))));
+
+        // AuthHub token refresh endpoint mock
+        // accessToken must be a valid JWT format for validation to pass
+        String newAccessToken = JwtTestFixture.aValidJwt("refreshed-user-123");
+        wireMockServer.stubFor(
+                post(urlEqualTo("/api/v1/auth/refresh"))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                String.format(
+                                                        "{\"accessToken\":\"%s\","
+                                                            + "\"refreshToken\":\"new-refresh-token-from-authhub-32chars\"}",
+                                                        newAccessToken))));
     }
 
-    @Nested
-    @DisplayName("JWT 인증 성공 시나리오")
-    class JwtAuthenticationSuccessTest {
+    @Test
+    @DisplayName("만료된 토큰 + refresh_token 쿠키로 요청 시 X-New-Access-Token 헤더가 반환되어야 한다")
+    void shouldReturnNewAccessTokenHeaderOnTokenRefresh() {
+        // given
+        String expiredJwt = JwtTestFixture.anExpiredJwt();
+        // Use unique refresh token to avoid blacklist collision between tests
+        String uniqueRefreshToken = "unique-refresh-token-for-test-1-32chars";
 
-        @Test
-        @DisplayName("유효한 JWT로 인증 시 요청이 성공해야 한다")
-        void shouldAuthenticateWithValidJwt() {
-            // given
-            String validJwt = JwtTestFixture.aValidJwt();
-
-            // when & then
-            webTestClient
-                    .get()
-                    .uri("/test/resource")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
-                    .exchange()
-                    .expectStatus()
-                    .isOk();
-        }
-
-        @Test
-        @DisplayName("커스텀 subject로 JWT 인증이 성공해야 한다")
-        void shouldAuthenticateWithCustomSubject() {
-            // given
-            String validJwt = JwtTestFixture.aValidJwt("custom-user-456");
-
-            // when & then
-            webTestClient
-                    .get()
-                    .uri("/test/resource")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
-                    .exchange()
-                    .expectStatus()
-                    .isOk();
-        }
+        // when & then
+        webTestClient
+                .get()
+                .uri("/test/resource")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredJwt)
+                .cookie("refresh_token", uniqueRefreshToken)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectHeader()
+                .exists("X-New-Access-Token")
+                .expectHeader()
+                .value(
+                        "X-New-Access-Token",
+                        value -> {
+                            // JWT format: header.payload.signature (3 parts separated by dots)
+                            assertThat(value).isNotNull();
+                            assertThat(value.split("\\.")).hasSize(3);
+                        });
     }
 
-    @Nested
-    @DisplayName("JWT 인증 실패 시나리오")
-    class JwtAuthenticationFailureTest {
+    @Test
+    @DisplayName("만료된 토큰 + refresh_token 쿠키로 요청 시 새 refresh_token 쿠키가 설정되어야 한다")
+    void shouldSetNewRefreshTokenCookieOnTokenRefresh() {
+        // given
+        String expiredJwt = JwtTestFixture.anExpiredJwt();
+        // Use unique refresh token to avoid blacklist collision between tests
+        String uniqueRefreshToken = "unique-refresh-token-for-test-2-32chars";
 
-        @Test
-        @DisplayName("Authorization 헤더가 없으면 401을 반환해야 한다")
-        void shouldReturn401WhenAuthorizationHeaderMissing() {
-            webTestClient.get().uri("/test/resource").exchange().expectStatus().isUnauthorized();
-        }
-
-        @Test
-        @DisplayName("만료된 JWT로 요청 시 401을 반환해야 한다")
-        void shouldReturn401WhenJwtExpired() {
-            // given
-            String expiredJwt = JwtTestFixture.anExpiredJwt();
-
-            // when & then
-            webTestClient
-                    .get()
-                    .uri("/test/resource")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredJwt)
-                    .exchange()
-                    .expectStatus()
-                    .isUnauthorized();
-        }
-
-        @Test
-        @DisplayName("잘못된 서명의 JWT로 요청 시 401을 반환해야 한다")
-        void shouldReturn401WhenJwtSignatureInvalid() {
-            // given
-            String invalidSignatureJwt = JwtTestFixture.aJwtWithInvalidSignature();
-
-            // when & then
-            webTestClient
-                    .get()
-                    .uri("/test/resource")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + invalidSignatureJwt)
-                    .exchange()
-                    .expectStatus()
-                    .isUnauthorized();
-        }
-
-        @Test
-        @DisplayName("잘못된 형식의 토큰으로 요청 시 401을 반환해야 한다")
-        void shouldReturn401WhenTokenFormatInvalid() {
-            // given
-            String invalidToken = "not-a-valid-jwt-format";
-
-            // when & then
-            webTestClient
-                    .get()
-                    .uri("/test/resource")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + invalidToken)
-                    .exchange()
-                    .expectStatus()
-                    .isUnauthorized();
-        }
+        // when & then
+        webTestClient
+                .get()
+                .uri("/test/resource")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredJwt)
+                .cookie("refresh_token", uniqueRefreshToken)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectCookie()
+                .exists("refresh_token")
+                .expectCookie()
+                .value(
+                        "refresh_token",
+                        value ->
+                                assertThat(value)
+                                        .isEqualTo("new-refresh-token-from-authhub-32chars"))
+                .expectCookie()
+                .httpOnly("refresh_token", true)
+                .expectCookie()
+                .secure("refresh_token", true);
     }
 
-    @Nested
-    @DisplayName("Public Key 갱신 시나리오")
-    class PublicKeyRefreshTest {
+    @Test
+    @DisplayName("유효한 토큰 요청 시 X-New-Access-Token 헤더가 없어야 한다")
+    void shouldNotReturnNewAccessTokenHeaderWhenTokenValid() {
+        // given
+        String validJwt = JwtTestFixture.aValidJwt();
 
-        @Test
-        @DisplayName("POST /actuator/refresh-public-keys 호출 시 성공해야 한다")
-        void shouldRefreshPublicKeysSuccessfully() {
-            // given - 먼저 인증하여 캐시 생성
-            String validJwt = JwtTestFixture.aValidJwt();
-            webTestClient
-                    .get()
-                    .uri("/test/resource")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
-                    .exchange()
-                    .expectStatus()
-                    .isOk();
+        // when & then
+        webTestClient
+                .get()
+                .uri("/test/resource")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectHeader()
+                .doesNotExist("X-New-Access-Token");
+    }
 
-            // when & then - Public Key 갱신
-            webTestClient
-                    .post()
-                    .uri("/actuator/refresh-public-keys")
-                    .exchange()
-                    .expectStatus()
-                    .isOk();
-        }
+    @Test
+    @DisplayName("만료된 토큰 + refresh_token 없이 요청 시 401 반환")
+    void shouldReturn401WhenExpiredTokenWithoutRefreshToken() {
+        // given
+        String expiredJwt = JwtTestFixture.anExpiredJwt();
+
+        // when & then - refresh_token 쿠키 없이 요청
+        webTestClient
+                .get()
+                .uri("/test/resource")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + expiredJwt)
+                .exchange()
+                .expectStatus()
+                .isUnauthorized();
     }
 }

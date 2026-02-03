@@ -158,6 +158,24 @@ class TokenRefreshFilterTest {
         }
 
         @Test
+        @DisplayName("Access Token이 만료되지 않았으면 X-New-Access-Token 헤더 미설정")
+        void shouldNotSetNewAccessTokenHeaderWhenNotExpired() {
+            // given
+            ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
+            ExpiredTokenInfo notExpiredToken = new ExpiredTokenInfo(false, 1L, "tenant-1");
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(notExpiredToken);
+            when(chain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
+
+            // then
+            String newAccessToken =
+                    exchange.getResponse().getHeaders().getFirst("X-New-Access-Token");
+            assertThat(newAccessToken).isNull();
+        }
+
+        @Test
         @DisplayName("만료된 토큰에서 userId 또는 tenantId를 추출할 수 없으면 다음 필터로 진행")
         void shouldProceedWhenCannotExtractUserIdOrTenantId() {
             // given
@@ -227,6 +245,68 @@ class TokenRefreshFilterTest {
             assertThat(capturedCommand.refreshToken()).isEqualTo("refresh-token-456");
 
             verify(chain).filter(any(ServerWebExchange.class));
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 성공 시 X-New-Access-Token 응답 헤더 설정")
+        void shouldSetNewAccessTokenHeaderOnSuccess() {
+            // given
+            ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
+            ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
+
+            TokenPair mockTokenPair = org.mockito.Mockito.mock(TokenPair.class);
+            when(mockTokenPair.accessTokenValue()).thenReturn("new-access-token-xyz");
+            when(mockTokenPair.refreshTokenValue()).thenReturn("new-refresh-token");
+
+            RefreshAccessTokenResponse refreshResponse =
+                    new RefreshAccessTokenResponse(mockTokenPair);
+
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
+            when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
+                    .thenReturn(Mono.just(refreshResponse));
+            when(chain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
+
+            // then
+            String newAccessToken =
+                    exchange.getResponse().getHeaders().getFirst("X-New-Access-Token");
+            assertThat(newAccessToken).isEqualTo("new-access-token-xyz");
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 성공 시 refresh_token 쿠키 설정")
+        void shouldSetRefreshTokenCookieOnSuccess() {
+            // given
+            ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
+            ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
+
+            TokenPair mockTokenPair = org.mockito.Mockito.mock(TokenPair.class);
+            when(mockTokenPair.accessTokenValue()).thenReturn("new-access-token");
+            when(mockTokenPair.refreshTokenValue()).thenReturn("new-refresh-token-abc");
+
+            RefreshAccessTokenResponse refreshResponse =
+                    new RefreshAccessTokenResponse(mockTokenPair);
+
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
+            when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
+                    .thenReturn(Mono.just(refreshResponse));
+            when(chain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
+
+            // then
+            var cookies = exchange.getResponse().getCookies();
+            assertThat(cookies.containsKey("refresh_token")).isTrue();
+
+            var refreshTokenCookie = cookies.getFirst("refresh_token");
+            assertThat(refreshTokenCookie).isNotNull();
+            assertThat(refreshTokenCookie.getValue()).isEqualTo("new-refresh-token-abc");
+            assertThat(refreshTokenCookie.isHttpOnly()).isTrue();
+            assertThat(refreshTokenCookie.isSecure()).isTrue();
+            assertThat(refreshTokenCookie.getSameSite()).isEqualTo("Strict");
         }
     }
 
@@ -322,6 +402,26 @@ class TokenRefreshFilterTest {
 
             assertThat(exchange.getResponse().getStatusCode())
                     .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+        @Test
+        @DisplayName("토큰 갱신 실패 시 X-New-Access-Token 헤더 미설정")
+        void shouldNotSetNewAccessTokenHeaderOnFailure() {
+            // given
+            ServerWebExchange exchange = createExchangeWithAuthAndCookie("/api/v1/users");
+            ExpiredTokenInfo expiredToken = new ExpiredTokenInfo(true, 123L, "tenant-1");
+
+            when(jwtPayloadParser.extractTokenInfo("access-token-123")).thenReturn(expiredToken);
+            when(refreshAccessTokenUseCase.execute(any(RefreshAccessTokenCommand.class)))
+                    .thenReturn(Mono.error(new RefreshTokenExpiredException()));
+
+            // when
+            StepVerifier.create(tokenRefreshFilter.filter(exchange, chain)).verifyComplete();
+
+            // then
+            String newAccessToken =
+                    exchange.getResponse().getHeaders().getFirst("X-New-Access-Token");
+            assertThat(newAccessToken).isNull();
         }
     }
 

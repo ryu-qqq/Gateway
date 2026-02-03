@@ -95,23 +95,3 @@ jobs:
     secrets:
       AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
-  # ============================================================================
-  # 배포 완료 알림 (Slack + GitHub Summary)
-  # ============================================================================
-  notify:
-    name: Deployment Notification
-    needs: [deploy-gateway, update-terraform-tags]
-    if: always()
-    uses: ryu-qqq/Infrastructure/.github/workflows/reusable-notify-slack.yml@main
-    with:
-      project-name: Connectly Gateway
-      environment: prod
-      status: ${{ (needs.deploy-gateway.result == 'success' && needs.update-terraform-tags.result == 'success') && 'success' || 'failure' }}
-      components: |
-        [
-          {"name": "gateway", "status": "${{ needs.deploy-gateway.result }}"},
-          {"name": "terraform-tags", "status": "${{ needs.update-terraform-tags.result }}"}
-        ]
-      mention-on-failure: "@here"
-    secrets:
-      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

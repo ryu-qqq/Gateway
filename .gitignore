@@ -68,3 +68,10 @@ langfuse/tests/__pycache__/
 **/*.tfplan
 **/crash.log
 **/.terraform.lock.hcl
+
+# Generated documentation (auto-generated files)
+**/generated-docs/
+**/api-docs/
+**/openapi-spec.json
+**/openapi-spec.yaml
+
