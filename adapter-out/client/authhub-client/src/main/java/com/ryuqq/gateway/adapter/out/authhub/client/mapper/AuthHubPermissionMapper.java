@@ -26,26 +26,63 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthHubPermissionMapper {
 
+    private static final long DEFAULT_VERSION_HASH = 0L;
+
     /**
      * SDK EndpointPermissionSpecList → Domain PermissionSpec 변환
      *
      * @param specList SDK 응답
      * @return PermissionSpec
+     * @throws PermissionException specList가 null일 경우
      */
     public PermissionSpec toPermissionSpec(EndpointPermissionSpecList specList) {
-        List<EndpointPermission> endpoints =
-                specList.endpoints() != null
-                        ? specList.endpoints().stream().map(this::toEndpointPermission).toList()
-                        : List.of();
+        if (specList == null) {
+            throw new PermissionException("Empty EndpointPermissionSpecList response");
+        }
 
-        Long versionHash =
-                specList.version() != null
-                        ? (long) specList.version().hashCode()
-                        : System.currentTimeMillis();
-
-        Instant updatedAt = specList.updatedAt() != null ? specList.updatedAt() : Instant.now();
+        List<EndpointPermission> endpoints = mapEndpoints(specList.endpoints());
+        Long versionHash = computeVersionHash(specList.version());
+        Instant updatedAt = resolveUpdatedAt(specList.updatedAt());
 
         return PermissionSpec.of(versionHash, updatedAt, endpoints);
+    }
+
+    /**
+     * Endpoints 리스트 변환
+     *
+     * @param endpoints SDK endpoints
+     * @return Domain EndpointPermission 리스트
+     */
+    private List<EndpointPermission> mapEndpoints(List<EndpointPermissionSpec> endpoints) {
+        if (endpoints == null || endpoints.isEmpty()) {
+            return List.of();
+        }
+        return endpoints.stream().map(this::toEndpointPermission).toList();
+    }
+
+    /**
+     * Version Hash 계산
+     *
+     * <p>version이 null이면 DEFAULT_VERSION_HASH(0)를 반환합니다. 시간 기반 값을 사용하지 않아 테스트 가능하고 예측 가능합니다.
+     *
+     * @param version SDK version 문자열
+     * @return version hash 값
+     */
+    private Long computeVersionHash(String version) {
+        if (version == null || version.isBlank()) {
+            return DEFAULT_VERSION_HASH;
+        }
+        return (long) version.hashCode();
+    }
+
+    /**
+     * UpdatedAt 시간 결정
+     *
+     * @param updatedAt SDK updatedAt
+     * @return 유효한 Instant (null이면 현재 시간)
+     */
+    private Instant resolveUpdatedAt(Instant updatedAt) {
+        return updatedAt != null ? updatedAt : Instant.now();
     }
 
     /**
