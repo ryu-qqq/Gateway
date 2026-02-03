@@ -355,11 +355,6 @@ resource "aws_cloudfront_distribution" "stage" {
 # ========================================
 
 # stage.set-of.com → CloudFront
-import {
-  to = aws_route53_record.stage
-  id = "Z104656329CL6XBYE8OIJ_stage.set-of.com_A"
-}
-
 resource "aws_route53_record" "stage" {
   zone_id = local.route53_zone_id
   name    = "stage.set-of.com"
