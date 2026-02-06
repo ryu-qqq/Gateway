@@ -157,9 +157,9 @@ class GatewayHostRoutingIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
-        // Auth Server - Permission Spec endpoint (public endpoints)
+        // Auth Server - Permission Spec endpoint (Internal API, public endpoints)
         authServer.stubFor(
-                get(urlEqualTo("/api/v1/permissions/spec"))
+                get(urlEqualTo(PermissionTestFixture.PERMISSION_SPEC_PATH))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
@@ -168,9 +168,20 @@ class GatewayHostRoutingIntegrationTest {
                                                 PermissionTestFixture
                                                         .legacyServicesPermissionSpec())));
 
-        // Auth Server - Tenant Config
+        // Auth Server - User Permissions endpoint (Internal API)
         authServer.stubFor(
-                get(WireMock.urlPathMatching("/api/v1/tenants/.+/config"))
+                get(WireMock.urlPathMatching(PermissionTestFixture.USER_PERMISSIONS_PATH_PATTERN))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                PermissionTestFixture
+                                                        .userPermissionHashResponse())));
+
+        // Auth Server - Tenant Config (Internal API)
+        authServer.stubFor(
+                get(WireMock.urlPathMatching("/api/v1/internal/tenants/.+/config"))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
