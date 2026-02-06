@@ -3,6 +3,7 @@ package com.ryuqq.gateway.integration.base;
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
@@ -103,11 +104,7 @@ public abstract class GatewayIntegrationTest {
     /** Cleanup Redis test data to ensure test isolation. */
     protected void cleanupRedisTestData() {
         if (redisConnectionFactory != null) {
-            redisConnectionFactory
-                    .getReactiveConnection()
-                    .serverCommands()
-                    .flushDb()
-                    .block();
+            redisConnectionFactory.getReactiveConnection().serverCommands().flushDb().block();
         }
     }
 
@@ -142,6 +139,17 @@ public abstract class GatewayIntegrationTest {
                                         .withBody(
                                                 PermissionTestFixture
                                                         .legacyServicesPermissionSpec())));
+
+        // User Permissions endpoint (Internal API)
+        authHubWireMock.stubFor(
+                get(urlPathMatching(PermissionTestFixture.USER_PERMISSIONS_PATH_PATTERN))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                PermissionTestFixture
+                                                        .userPermissionHashResponse())));
 
         // Tenant Config endpoint (Internal API)
         authHubWireMock.stubFor(

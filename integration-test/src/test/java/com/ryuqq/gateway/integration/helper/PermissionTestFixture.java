@@ -8,6 +8,13 @@ import java.util.List;
  *
  * <p>Integration Test를 위한 Permission 관련 테스트 데이터 생성 유틸리티
  *
+ * <p><strong>SDK 엔드포인트 경로</strong>:
+ *
+ * <ul>
+ *   <li>Permission Spec: /api/v1/internal/endpoint-permissions/spec
+ *   <li>User Permissions: /api/v1/internal/users/{userId}/permissions
+ * </ul>
+ *
  * @author development-team
  * @since 1.0.0
  */
@@ -18,8 +25,76 @@ public final class PermissionTestFixture {
     public static final String ADMIN_USER_ID = "admin-456";
     public static final String DEFAULT_PERMISSION_HASH = "abc123hash";
 
+    /** SDK가 호출하는 Permission Spec 엔드포인트 경로 */
+    public static final String PERMISSION_SPEC_PATH = "/api/v1/internal/endpoint-permissions/spec";
+
+    /** SDK가 호출하는 User Permissions 엔드포인트 경로 패턴 (urlPathMatching용) */
+    public static final String USER_PERMISSIONS_PATH_PATTERN =
+            "/api/v1/internal/users/.+/permissions";
+
     private PermissionTestFixture() {
         throw new UnsupportedOperationException("Utility class");
+    }
+
+    /**
+     * 모든 경로를 public으로 설정하는 Permission Spec 응답 JSON 생성
+     *
+     * <p>SDK ApiResponse 형식 + EndpointPermissionSpecList 형식
+     *
+     * @param pathPattern public으로 설정할 경로 패턴 (예: "/test/.*")
+     * @return Permission Spec JSON (SDK 형식)
+     */
+    public static String allPublicPermissionSpec(String pathPattern) {
+        return """
+               {
+                   "success": true,
+                   "data": {
+                       "version": "v1.0",
+                       "updatedAt": "2025-01-01T00:00:00Z",
+                       "endpoints": [
+                           {
+                               "serviceName": "test-service",
+                               "pathPattern": "%s",
+                               "httpMethod": "GET",
+                               "requiredPermissions": [],
+                               "requiredRoles": [],
+                               "isPublic": true,
+                               "description": "All public test endpoint (GET)"
+                           },
+                           {
+                               "serviceName": "test-service",
+                               "pathPattern": "%s",
+                               "httpMethod": "POST",
+                               "requiredPermissions": [],
+                               "requiredRoles": [],
+                               "isPublic": true,
+                               "description": "All public test endpoint (POST)"
+                           },
+                           {
+                               "serviceName": "test-service",
+                               "pathPattern": "%s",
+                               "httpMethod": "PUT",
+                               "requiredPermissions": [],
+                               "requiredRoles": [],
+                               "isPublic": true,
+                               "description": "All public test endpoint (PUT)"
+                           },
+                           {
+                               "serviceName": "test-service",
+                               "pathPattern": "%s",
+                               "httpMethod": "DELETE",
+                               "requiredPermissions": [],
+                               "requiredRoles": [],
+                               "isPublic": true,
+                               "description": "All public test endpoint (DELETE)"
+                           }
+                       ]
+                   },
+                   "timestamp": "2025-01-01T00:00:00",
+                   "requestId": "test-request-id"
+               }
+               """
+                .formatted(pathPattern, pathPattern, pathPattern, pathPattern);
     }
 
     /**
@@ -27,39 +102,48 @@ public final class PermissionTestFixture {
      *
      * <p>Legacy Web/Admin 서비스의 모든 경로를 public으로 설정
      *
-     * @return Permission Spec JSON
+     * @return Permission Spec JSON (SDK 형식)
      */
     public static String legacyServicesPermissionSpec() {
         return """
                {
-                   "version": 1,
-                   "updatedAt": "2025-01-01T00:00:00Z",
-                   "permissions": [
-                       {
-                           "serviceName": "legacy-web",
-                           "path": "/.*",
-                           "method": "GET",
-                           "isPublic": true,
-                           "requiredRoles": [],
-                           "requiredPermissions": []
-                       },
-                       {
-                           "serviceName": "legacy-admin",
-                           "path": "/.*",
-                           "method": "GET",
-                           "isPublic": true,
-                           "requiredRoles": [],
-                           "requiredPermissions": []
-                       }
-                   ]
+                   "success": true,
+                   "data": {
+                       "version": "v1.0",
+                       "updatedAt": "2025-01-01T00:00:00Z",
+                       "endpoints": [
+                           {
+                               "serviceName": "legacy-web",
+                               "pathPattern": "/.*",
+                               "httpMethod": "GET",
+                               "requiredPermissions": [],
+                               "requiredRoles": [],
+                               "isPublic": true,
+                               "description": "Legacy web all public"
+                           },
+                           {
+                               "serviceName": "legacy-admin",
+                               "pathPattern": "/.*",
+                               "httpMethod": "GET",
+                               "requiredPermissions": [],
+                               "requiredRoles": [],
+                               "isPublic": true,
+                               "description": "Legacy admin all public"
+                           }
+                       ]
+                   },
+                   "timestamp": "2025-01-01T00:00:00",
+                   "requestId": "test-request-id"
                }
                """;
     }
 
     /**
-     * Permission Spec 응답 JSON 생성 (AuthHub API Response 형식)
+     * Permission Spec 응답 JSON 생성 (권한 검증 테스트용)
      *
-     * @return Permission Spec JSON
+     * <p>Public / Protected / Admin 엔드포인트를 포함
+     *
+     * @return Permission Spec JSON (SDK 형식)
      */
     public static String permissionSpecResponse() {
         return """
@@ -67,50 +151,56 @@ public final class PermissionTestFixture {
                    "success": true,
                    "data": {
                        "version": "v1.0",
+                       "updatedAt": "%s",
                        "endpoints": [
                            {
                                "serviceName": "test-service",
-                               "path": "/test/public",
-                               "method": "GET",
+                               "pathPattern": "/test/public",
+                               "httpMethod": "GET",
                                "requiredPermissions": [],
                                "requiredRoles": [],
-                               "isPublic": true
+                               "isPublic": true,
+                               "description": "Public endpoint"
                            },
                            {
                                "serviceName": "test-service",
-                               "path": "/test/resource",
-                               "method": "GET",
+                               "pathPattern": "/test/resource",
+                               "httpMethod": "GET",
                                "requiredPermissions": ["resource:read"],
                                "requiredRoles": [],
-                               "isPublic": false
+                               "isPublic": false,
+                               "description": "Protected resource read"
                            },
                            {
                                "serviceName": "test-service",
-                               "path": "/test/resource",
-                               "method": "POST",
+                               "pathPattern": "/test/resource",
+                               "httpMethod": "POST",
                                "requiredPermissions": ["resource:write"],
                                "requiredRoles": [],
-                               "isPublic": false
+                               "isPublic": false,
+                               "description": "Protected resource write"
                            },
                            {
                                "serviceName": "test-service",
-                               "path": "/test/admin",
-                               "method": "GET",
+                               "pathPattern": "/test/admin",
+                               "httpMethod": "GET",
                                "requiredPermissions": ["admin:*"],
                                "requiredRoles": ["ADMIN"],
-                               "isPublic": false
+                               "isPublic": false,
+                               "description": "Admin endpoint"
                            },
                            {
                                "serviceName": "test-service",
-                               "path": "/test/users/{userId}",
-                               "method": "GET",
+                               "pathPattern": "/test/users/{userId}",
+                               "httpMethod": "GET",
                                "requiredPermissions": ["user:read"],
                                "requiredRoles": [],
-                               "isPublic": false
+                               "isPublic": false,
+                               "description": "User detail endpoint"
                            }
                        ]
                    },
-                   "timestamp": "%s",
+                   "timestamp": "2025-01-01T00:00:00",
                    "requestId": "test-request-id"
                }
                """
@@ -118,51 +208,69 @@ public final class PermissionTestFixture {
     }
 
     /**
-     * 일반 사용자 Permission Hash 응답 JSON 생성
+     * 일반 사용자 Permission Hash 응답 JSON 생성 (SDK ApiResponse 형식)
      *
-     * @return Permission Hash JSON
+     * @return User Permission Hash JSON (SDK 형식)
      */
     public static String userPermissionHashResponse() {
         return """
                {
-                   "hash": "%s",
-                   "permissions": ["resource:read", "resource:write", "user:read"],
-                   "roles": ["USER"],
-                   "generatedAt": "%s"
+                   "success": true,
+                   "data": {
+                       "userId": "%s",
+                       "hash": "%s",
+                       "permissions": ["resource:read", "resource:write", "user:read"],
+                       "roles": ["USER"],
+                       "generatedAt": "%s"
+                   },
+                   "timestamp": "2025-01-01T00:00:00",
+                   "requestId": "test-request-id"
                }
                """
-                .formatted(DEFAULT_PERMISSION_HASH, Instant.now().toString());
+                .formatted(DEFAULT_USER_ID, DEFAULT_PERMISSION_HASH, Instant.now().toString());
     }
 
     /**
-     * 관리자 Permission Hash 응답 JSON 생성
+     * 관리자 Permission Hash 응답 JSON 생성 (SDK ApiResponse 형식)
      *
-     * @return Permission Hash JSON
+     * @return Admin Permission Hash JSON (SDK 형식)
      */
     public static String adminPermissionHashResponse() {
         return """
                {
-                   "hash": "admin-hash-456",
-                   "permissions": ["resource:read", "resource:write", "user:read", "admin:*"],
-                   "roles": ["ADMIN", "USER"],
-                   "generatedAt": "%s"
+                   "success": true,
+                   "data": {
+                       "userId": "%s",
+                       "hash": "admin-hash-456",
+                       "permissions": ["resource:read", "resource:write", "user:read", "admin:*"],
+                       "roles": ["ADMIN", "USER"],
+                       "generatedAt": "%s"
+                   },
+                   "timestamp": "2025-01-01T00:00:00",
+                   "requestId": "test-request-id"
                }
                """
-                .formatted(Instant.now().toString());
+                .formatted(ADMIN_USER_ID, Instant.now().toString());
     }
 
     /**
-     * 권한 없는 사용자 Permission Hash 응답 JSON 생성
+     * 권한 없는 사용자 Permission Hash 응답 JSON 생성 (SDK ApiResponse 형식)
      *
-     * @return Permission Hash JSON
+     * @return No Permission Hash JSON (SDK 형식)
      */
     public static String noPermissionHashResponse() {
         return """
                {
-                   "hash": "empty-hash-789",
-                   "permissions": [],
-                   "roles": [],
-                   "generatedAt": "%s"
+                   "success": true,
+                   "data": {
+                       "userId": "no-permission-user",
+                       "hash": "empty-hash-789",
+                       "permissions": [],
+                       "roles": [],
+                       "generatedAt": "%s"
+                   },
+                   "timestamp": "2025-01-01T00:00:00",
+                   "requestId": "test-request-id"
                }
                """
                 .formatted(Instant.now().toString());
