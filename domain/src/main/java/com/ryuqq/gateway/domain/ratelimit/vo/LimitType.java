@@ -133,11 +133,84 @@ public enum LimitType {
      * 표시용 이름 반환
      *
      * @return 표시용 이름
-     * @author development-team
-     * @since 1.0.0
      */
     public String displayName() {
         return displayName;
+    }
+
+    /**
+     * IP 기반 Rate Limit 타입 여부
+     *
+     * <p>IP, LOGIN, INVALID_JWT 타입은 IP 주소를 식별자로 사용
+     *
+     * @return IP 기반 타입이면 true
+     */
+    public boolean isIpBased() {
+        return this == IP || this == LOGIN || this == INVALID_JWT;
+    }
+
+    /**
+     * User 기반 Rate Limit 타입 여부
+     *
+     * <p>USER, TOKEN_REFRESH 타입은 사용자 ID를 식별자로 사용
+     *
+     * @return User 기반 타입이면 true
+     */
+    public boolean isUserBased() {
+        return this == USER || this == TOKEN_REFRESH;
+    }
+
+    /**
+     * 임계값 초과 시 IP 차단이 필요한 타입 여부
+     *
+     * <p>LOGIN, INVALID_JWT 타입은 임계값 초과 시 IP를 차단
+     *
+     * @return IP 차단이 필요하면 true
+     */
+    public boolean requiresIpBlock() {
+        return this == LOGIN || this == INVALID_JWT;
+    }
+
+    /**
+     * 기본 Rate Limit Action 반환
+     *
+     * <p>타입별 기본 조치:
+     *
+     * <ul>
+     *   <li>LOGIN, INVALID_JWT → BLOCK_IP
+     *   <li>TOKEN_REFRESH → REVOKE_TOKEN
+     *   <li>그 외 → REJECT
+     * </ul>
+     *
+     * @return 기본 RateLimitAction
+     */
+    public RateLimitAction getDefaultAction() {
+        return switch (this) {
+            case LOGIN, INVALID_JWT -> RateLimitAction.BLOCK_IP;
+            case TOKEN_REFRESH -> RateLimitAction.REVOKE_TOKEN;
+            default -> RateLimitAction.REJECT;
+        };
+    }
+
+    /**
+     * 실패 임계값 반환
+     *
+     * <p>IP 차단이 필요한 타입별 임계값:
+     *
+     * <ul>
+     *   <li>LOGIN → 5회
+     *   <li>INVALID_JWT → 10회
+     *   <li>그 외 → 기본 maxRequests
+     * </ul>
+     *
+     * @return 실패 임계값
+     */
+    public int getFailureThreshold() {
+        return switch (this) {
+            case LOGIN -> 5;
+            case INVALID_JWT -> 10;
+            default -> defaultMaxRequests;
+        };
     }
 
     /**

@@ -297,7 +297,7 @@ class TraceIdFilterTest {
         void shouldGenerateNewTraceIdWhenExistingIsInvalid() {
             // given
             String invalidTraceId = "invalid-trace-id-format";
-            String newTraceId = "20250124123456789-b1c2d3e4-f5g6-7890-hijk-lm1234567890";
+            String newTraceId = "20250124123456789-b1c2d3e4-f5a6-4890-abcd-ef1234567890";
 
             when(generateTraceIdUseCase.execute(any(GenerateTraceIdCommand.class)))
                     .thenReturn(Mono.just(new GenerateTraceIdResponse(newTraceId)));

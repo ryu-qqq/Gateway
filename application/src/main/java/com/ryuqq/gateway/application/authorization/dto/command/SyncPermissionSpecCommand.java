@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.application.authorization.dto.command;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * SyncPermissionSpecCommand - Permission Spec 동기화 요청 Command
@@ -14,7 +13,6 @@ import java.util.Objects;
 public record SyncPermissionSpecCommand(Long version, List<String> changedServices) {
 
     public SyncPermissionSpecCommand {
-        Objects.requireNonNull(version, "version cannot be null");
         changedServices = changedServices == null ? List.of() : List.copyOf(changedServices);
     }
 

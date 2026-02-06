@@ -19,16 +19,6 @@ import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
  */
 public record RecordFailureCommand(LimitType limitType, String identifier) {
 
-    /** Compact Constructor - 검증 로직 */
-    public RecordFailureCommand {
-        if (limitType == null) {
-            throw new IllegalArgumentException("LimitType cannot be null");
-        }
-        if (identifier == null || identifier.isBlank()) {
-            throw new IllegalArgumentException("Identifier cannot be null or blank");
-        }
-    }
-
     /**
      * 로그인 실패 기록 Command 생성
      *

@@ -1,12 +1,9 @@
 package com.ryuqq.gateway.application.authorization.service.query;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
-import com.ryuqq.gateway.application.authorization.port.out.client.AuthHubPermissionClient;
-import com.ryuqq.gateway.application.authorization.port.out.command.PermissionSpecCommandPort;
-import com.ryuqq.gateway.application.authorization.port.out.query.PermissionSpecQueryPort;
+import com.ryuqq.gateway.application.authorization.internal.PermissionSpecCoordinator;
 import com.ryuqq.gateway.domain.authorization.vo.EndpointPermission;
 import com.ryuqq.gateway.domain.authorization.vo.HttpMethod;
 import com.ryuqq.gateway.domain.authorization.vo.PermissionSpec;
@@ -26,25 +23,21 @@ import reactor.test.StepVerifier;
 @DisplayName("GetPermissionSpecService 단위 테스트")
 class GetPermissionSpecServiceTest {
 
-    @Mock private PermissionSpecQueryPort permissionSpecQueryPort;
-
-    @Mock private PermissionSpecCommandPort permissionSpecCommandPort;
-
-    @Mock private AuthHubPermissionClient authHubPermissionClient;
+    @Mock private PermissionSpecCoordinator permissionSpecCoordinator;
 
     @InjectMocks private GetPermissionSpecService getPermissionSpecService;
 
     @Nested
-    @DisplayName("Cache Hit 시나리오")
-    class CacheHitScenario {
+    @DisplayName("getPermissionSpec() 테스트")
+    class GetPermissionSpecTest {
 
         @Test
-        @DisplayName("캐시에 Spec이 존재하면 캐시에서 반환")
-        void returnSpecFromCacheWhenExists() {
+        @DisplayName("Coordinator를 통해 Permission Spec 조회")
+        void shouldGetPermissionSpecThroughCoordinator() {
             // given
-            PermissionSpec cachedSpec = createPermissionSpec(1L);
+            PermissionSpec spec = createPermissionSpec(1L);
 
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.just(cachedSpec));
+            given(permissionSpecCoordinator.findPermissionSpec()).willReturn(Mono.just(spec));
 
             // when
             Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
@@ -52,146 +45,20 @@ class GetPermissionSpecServiceTest {
             // then
             StepVerifier.create(result)
                     .assertNext(
-                            spec -> {
-                                assertThat(spec).isEqualTo(cachedSpec);
-                                assertThat(spec.version()).isEqualTo(1L);
+                            fetchedSpec -> {
+                                assertThat(fetchedSpec).isEqualTo(spec);
+                                assertThat(fetchedSpec.version()).isEqualTo(1L);
                             })
                     .verifyComplete();
 
-            then(authHubPermissionClient).shouldHaveNoInteractions();
-            then(permissionSpecCommandPort).shouldHaveNoInteractions();
+            then(permissionSpecCoordinator).should().findPermissionSpec();
         }
 
         @Test
-        @DisplayName("캐시 조회 성공 시 AuthHub 호출하지 않음")
-        void notCallAuthHubWhenCacheHit() {
+        @DisplayName("Coordinator에서 빈 Mono 반환 시 빈 Mono 반환")
+        void shouldReturnEmptyMonoWhenCoordinatorReturnsEmpty() {
             // given
-            PermissionSpec cachedSpec = createPermissionSpec(1L);
-
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.just(cachedSpec));
-
-            // when
-            Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
-
-            // then
-            StepVerifier.create(result).expectNextCount(1).verifyComplete();
-
-            then(authHubPermissionClient).shouldHaveNoInteractions();
-        }
-    }
-
-    @Nested
-    @DisplayName("Cache Miss 시나리오")
-    class CacheMissScenario {
-
-        @Test
-        @DisplayName("캐시에 Spec이 없으면 AuthHub에서 조회 후 캐시")
-        void fetchFromAuthHubAndCacheWhenCacheMiss() {
-            // given
-            PermissionSpec fetchedSpec = createPermissionSpec(2L);
-
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.empty());
-            given(authHubPermissionClient.fetchPermissionSpec()).willReturn(Mono.just(fetchedSpec));
-            given(permissionSpecCommandPort.save(any(PermissionSpec.class)))
-                    .willReturn(Mono.empty());
-
-            // when
-            Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
-
-            // then
-            StepVerifier.create(result)
-                    .assertNext(
-                            spec -> {
-                                assertThat(spec).isEqualTo(fetchedSpec);
-                                assertThat(spec.version()).isEqualTo(2L);
-                            })
-                    .verifyComplete();
-
-            then(authHubPermissionClient).should().fetchPermissionSpec();
-            then(permissionSpecCommandPort).should().save(fetchedSpec);
-        }
-
-        @Test
-        @DisplayName("AuthHub에서 조회한 Spec을 캐시에 저장")
-        void saveSpecToCacheAfterFetchingFromAuthHub() {
-            // given
-            PermissionSpec fetchedSpec = createPermissionSpec(3L);
-
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.empty());
-            given(authHubPermissionClient.fetchPermissionSpec()).willReturn(Mono.just(fetchedSpec));
-            given(permissionSpecCommandPort.save(fetchedSpec)).willReturn(Mono.empty());
-
-            // when
-            Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
-
-            // then
-            StepVerifier.create(result).expectNext(fetchedSpec).verifyComplete();
-
-            then(permissionSpecCommandPort).should().save(fetchedSpec);
-        }
-
-        @Test
-        @DisplayName("캐시 저장 실패해도 조회한 Spec 반환")
-        void returnFetchedSpecEvenIfCacheSaveFails() {
-            // given
-            PermissionSpec fetchedSpec = createPermissionSpec(4L);
-
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.empty());
-            given(authHubPermissionClient.fetchPermissionSpec()).willReturn(Mono.just(fetchedSpec));
-            given(permissionSpecCommandPort.save(any(PermissionSpec.class)))
-                    .willReturn(Mono.error(new RuntimeException("Cache save failed")));
-
-            // when
-            Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
-
-            // then
-            StepVerifier.create(result).expectErrorMessage("Cache save failed").verify();
-        }
-    }
-
-    @Nested
-    @DisplayName("오류 처리")
-    class ErrorHandling {
-
-        @Test
-        @DisplayName("캐시 조회 실패 시 AuthHub에서 조회")
-        void fetchFromAuthHubWhenCacheQueryFails() {
-            // given
-            PermissionSpec fetchedSpec = createPermissionSpec(5L);
-
-            given(permissionSpecQueryPort.findPermissionSpec())
-                    .willReturn(Mono.error(new RuntimeException("Cache query failed")));
-
-            // when
-            Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
-
-            // then
-            StepVerifier.create(result).expectErrorMessage("Cache query failed").verify();
-
-            then(authHubPermissionClient).shouldHaveNoInteractions();
-        }
-
-        @Test
-        @DisplayName("AuthHub 조회 실패 시 에러 전파")
-        void propagateErrorWhenAuthHubFetchFails() {
-            // given
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.empty());
-            given(authHubPermissionClient.fetchPermissionSpec())
-                    .willReturn(Mono.error(new RuntimeException("AuthHub fetch failed")));
-
-            // when
-            Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
-
-            // then
-            StepVerifier.create(result).expectErrorMessage("AuthHub fetch failed").verify();
-        }
-
-        @Test
-        @DisplayName("AuthHub가 빈 응답 반환 시 빈 Mono 반환")
-        void returnEmptyMonoWhenAuthHubReturnsEmpty() {
-            // given
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.empty());
-            given(authHubPermissionClient.fetchPermissionSpec()).willReturn(Mono.empty());
+            given(permissionSpecCoordinator.findPermissionSpec()).willReturn(Mono.empty());
 
             // when
             Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
@@ -199,50 +66,23 @@ class GetPermissionSpecServiceTest {
             // then
             StepVerifier.create(result).verifyComplete();
 
-            then(permissionSpecCommandPort).shouldHaveNoInteractions();
+            then(permissionSpecCoordinator).should().findPermissionSpec();
         }
-    }
-
-    @Nested
-    @DisplayName("Cache-aside 패턴 검증")
-    class CacheAsidePattern {
 
         @Test
-        @DisplayName("캐시 우선 조회 후 미스 시 AuthHub 조회")
-        void followCacheAsidePattern() {
+        @DisplayName("Coordinator에서 에러 발생 시 에러 전파")
+        void shouldPropagateErrorFromCoordinator() {
             // given
-            PermissionSpec fetchedSpec = createPermissionSpec(6L);
-
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.empty());
-            given(authHubPermissionClient.fetchPermissionSpec()).willReturn(Mono.just(fetchedSpec));
-            given(permissionSpecCommandPort.save(any(PermissionSpec.class)))
-                    .willReturn(Mono.empty());
+            given(permissionSpecCoordinator.findPermissionSpec())
+                    .willReturn(Mono.error(new RuntimeException("Coordinator error")));
 
             // when
             Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
 
             // then
-            StepVerifier.create(result).expectNext(fetchedSpec).verifyComplete();
+            StepVerifier.create(result).expectErrorMessage("Coordinator error").verify();
 
-            then(permissionSpecQueryPort).should().findPermissionSpec();
-            then(authHubPermissionClient).should().fetchPermissionSpec();
-            then(permissionSpecCommandPort).should().save(fetchedSpec);
-        }
-
-        @Test
-        @DisplayName("여러 번 호출 시 매번 캐시 조회")
-        void queryCacheOnEveryCall() {
-            // given
-            PermissionSpec cachedSpec = createPermissionSpec(7L);
-
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.just(cachedSpec));
-
-            // when
-            getPermissionSpecService.getPermissionSpec().block();
-            getPermissionSpecService.getPermissionSpec().block();
-
-            // then
-            then(permissionSpecQueryPort).should(times(2)).findPermissionSpec();
+            then(permissionSpecCoordinator).should().findPermissionSpec();
         }
     }
 
@@ -260,7 +100,7 @@ class GetPermissionSpecServiceTest {
             PermissionSpec spec =
                     PermissionSpec.of(1L, Instant.now(), List.of(endpoint1, endpoint2));
 
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.just(spec));
+            given(permissionSpecCoordinator.findPermissionSpec()).willReturn(Mono.just(spec));
 
             // when
             Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
@@ -282,7 +122,7 @@ class GetPermissionSpecServiceTest {
             // given
             PermissionSpec emptySpec = PermissionSpec.of(1L, Instant.now(), List.of());
 
-            given(permissionSpecQueryPort.findPermissionSpec()).willReturn(Mono.just(emptySpec));
+            given(permissionSpecCoordinator.findPermissionSpec()).willReturn(Mono.just(emptySpec));
 
             // when
             Mono<PermissionSpec> result = getPermissionSpecService.getPermissionSpec();
@@ -291,6 +131,27 @@ class GetPermissionSpecServiceTest {
             StepVerifier.create(result)
                     .assertNext(spec -> assertThat(spec.permissions()).isEmpty())
                     .verifyComplete();
+        }
+    }
+
+    @Nested
+    @DisplayName("여러 번 호출 테스트")
+    class MultipleCallsTest {
+
+        @Test
+        @DisplayName("여러 번 호출 시 매번 Coordinator 호출")
+        void shouldCallCoordinatorOnEveryCall() {
+            // given
+            PermissionSpec spec = createPermissionSpec(1L);
+
+            given(permissionSpecCoordinator.findPermissionSpec()).willReturn(Mono.just(spec));
+
+            // when
+            getPermissionSpecService.getPermissionSpec().block();
+            getPermissionSpecService.getPermissionSpec().block();
+
+            // then
+            then(permissionSpecCoordinator).should(times(2)).findPermissionSpec();
         }
     }
 

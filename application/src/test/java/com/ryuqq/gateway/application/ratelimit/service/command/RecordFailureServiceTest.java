@@ -1,101 +1,73 @@
 package com.ryuqq.gateway.application.ratelimit.service.command;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.BDDMockito.*;
 
 import com.ryuqq.gateway.application.ratelimit.dto.command.RecordFailureCommand;
-import com.ryuqq.gateway.application.ratelimit.port.out.command.IpBlockCommandPort;
-import com.ryuqq.gateway.application.ratelimit.port.out.command.RateLimitCounterCommandPort;
-import java.time.Duration;
-import org.junit.jupiter.api.BeforeEach;
+import com.ryuqq.gateway.application.ratelimit.internal.FailureRecordCoordinator;
+import com.ryuqq.gateway.fixture.ratelimit.RateLimitFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+/**
+ * RecordFailureService 단위 테스트
+ *
+ * <p>Service → Coordinator 위임 테스트
+ *
+ * <p>상세한 실패 기록 로직 테스트는 FailureRecordCoordinatorTest 참조
+ *
+ * @author development-team
+ * @since 1.0.0
+ */
 @ExtendWith(MockitoExtension.class)
 @DisplayName("RecordFailureService 단위 테스트")
 class RecordFailureServiceTest {
 
-    @Mock private RateLimitCounterCommandPort rateLimitCounterCommandPort;
+    @Mock private FailureRecordCoordinator failureRecordCoordinator;
 
-    @Mock private IpBlockCommandPort ipBlockCommandPort;
-
-    private RecordFailureService recordFailureService;
-
-    @BeforeEach
-    void setUp() {
-        recordFailureService =
-                new RecordFailureService(rateLimitCounterCommandPort, ipBlockCommandPort);
-    }
+    @InjectMocks private RecordFailureService recordFailureService;
 
     @Nested
-    @DisplayName("execute 메서드")
-    class Execute {
+    @DisplayName("Coordinator 위임 테스트")
+    class CoordinatorDelegation {
 
         @Test
-        @DisplayName("로그인 실패 기록 - 임계값 미만")
-        void shouldRecordLoginFailureBelowThreshold() {
+        @DisplayName("execute 호출 시 Coordinator.record로 위임")
+        void delegateToCoordinator() {
             // given
-            RecordFailureCommand command = RecordFailureCommand.forLoginFailure("192.168.1.1");
-            when(rateLimitCounterCommandPort.incrementAndGet(any(), any()))
-                    .thenReturn(Mono.just(3L));
+            RecordFailureCommand command = RateLimitFixture.aRecordFailureCommandForLogin();
 
-            // when & then
-            StepVerifier.create(recordFailureService.execute(command)).verifyComplete();
+            given(failureRecordCoordinator.record(command)).willReturn(Mono.empty());
 
-            verify(ipBlockCommandPort, never()).block(any(), any());
+            // when
+            Mono<Void> result = recordFailureService.execute(command);
+
+            // then
+            StepVerifier.create(result).verifyComplete();
+
+            then(failureRecordCoordinator).should().record(command);
         }
 
         @Test
-        @DisplayName("로그인 실패 기록 - 임계값 초과 시 IP 차단")
-        void shouldBlockIpWhenLoginFailureExceedsThreshold() {
+        @DisplayName("Coordinator 에러 발생 시 에러 전파")
+        void propagateCoordinatorError() {
             // given
-            RecordFailureCommand command = RecordFailureCommand.forLoginFailure("192.168.1.1");
-            when(rateLimitCounterCommandPort.incrementAndGet(any(), any()))
-                    .thenReturn(Mono.just(6L)); // 5 초과
-            when(ipBlockCommandPort.block(eq("192.168.1.1"), any())).thenReturn(Mono.just(true));
+            RecordFailureCommand command = RateLimitFixture.aRecordFailureCommandForLogin();
 
-            // when & then
-            StepVerifier.create(recordFailureService.execute(command)).verifyComplete();
+            given(failureRecordCoordinator.record(command))
+                    .willReturn(Mono.error(new RuntimeException("Record failed")));
 
-            verify(ipBlockCommandPort).block(eq("192.168.1.1"), eq(Duration.ofMinutes(30)));
-        }
+            // when
+            Mono<Void> result = recordFailureService.execute(command);
 
-        @Test
-        @DisplayName("Invalid JWT 기록 - 임계값 미만")
-        void shouldRecordInvalidJwtBelowThreshold() {
-            // given
-            RecordFailureCommand command = RecordFailureCommand.forInvalidJwt("192.168.1.1");
-            when(rateLimitCounterCommandPort.incrementAndGet(any(), any()))
-                    .thenReturn(Mono.just(8L));
-
-            // when & then
-            StepVerifier.create(recordFailureService.execute(command)).verifyComplete();
-
-            verify(ipBlockCommandPort, never()).block(any(), any());
-        }
-
-        @Test
-        @DisplayName("Invalid JWT 기록 - 임계값 초과 시 IP 차단")
-        void shouldBlockIpWhenInvalidJwtExceedsThreshold() {
-            // given
-            RecordFailureCommand command = RecordFailureCommand.forInvalidJwt("192.168.1.1");
-            when(rateLimitCounterCommandPort.incrementAndGet(any(), any()))
-                    .thenReturn(Mono.just(11L)); // 10 초과
-            when(ipBlockCommandPort.block(eq("192.168.1.1"), any())).thenReturn(Mono.just(true));
-
-            // when & then
-            StepVerifier.create(recordFailureService.execute(command)).verifyComplete();
-
-            verify(ipBlockCommandPort).block(eq("192.168.1.1"), eq(Duration.ofMinutes(30)));
+            // then
+            StepVerifier.create(result).expectErrorMessage("Record failed").verify();
         }
     }
 }

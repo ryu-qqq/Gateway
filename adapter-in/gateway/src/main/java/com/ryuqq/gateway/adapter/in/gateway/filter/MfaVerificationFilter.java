@@ -2,7 +2,7 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
-import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.aggregate.TenantConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;

@@ -5,20 +5,17 @@ package com.ryuqq.gateway.application.authentication.dto.query;
  *
  * <p>JWT Header의 kid를 기반으로 Public Key를 조회하는 Query 객체
  *
- * <p><strong>검증 규칙</strong>:
- *
- * <ul>
- *   <li>kid는 null 또는 blank일 수 없다
- * </ul>
- *
- * @param kid JWT Header의 Key ID (null/blank 불가)
+ * @param kid JWT Header의 Key ID
  */
 public record GetPublicKeyQuery(String kid) {
 
-    /** Compact Constructor - 검증 로직 */
-    public GetPublicKeyQuery {
-        if (kid == null || kid.isBlank()) {
-            throw new IllegalArgumentException("Kid cannot be null or blank");
-        }
+    /**
+     * 정적 팩토리 메서드
+     *
+     * @param kid JWT Header의 Key ID
+     * @return GetPublicKeyQuery 인스턴스
+     */
+    public static GetPublicKeyQuery of(String kid) {
+        return new GetPublicKeyQuery(kid);
     }
 }

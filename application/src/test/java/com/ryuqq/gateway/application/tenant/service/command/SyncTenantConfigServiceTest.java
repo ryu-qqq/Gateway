@@ -1,33 +1,30 @@
 package com.ryuqq.gateway.application.tenant.service.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import com.ryuqq.gateway.application.tenant.dto.command.SyncTenantConfigCommand;
-import com.ryuqq.gateway.application.tenant.port.out.command.TenantConfigCommandPort;
-import org.junit.jupiter.api.BeforeEach;
+import com.ryuqq.gateway.application.tenant.manager.TenantConfigCommandManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @ExtendWith(MockitoExtension.class)
+@Tag("unit")
 @DisplayName("SyncTenantConfigService 테스트")
 class SyncTenantConfigServiceTest {
 
-    @Mock private TenantConfigCommandPort tenantConfigCommandPort;
+    @Mock private TenantConfigCommandManager tenantConfigCommandManager;
 
-    private SyncTenantConfigService syncTenantConfigService;
-
-    @BeforeEach
-    void setUp() {
-        syncTenantConfigService = new SyncTenantConfigService(tenantConfigCommandPort);
-    }
+    @InjectMocks private SyncTenantConfigService syncTenantConfigService;
 
     @Nested
     @DisplayName("execute() 테스트")
@@ -40,7 +37,7 @@ class SyncTenantConfigServiceTest {
             String tenantId = "tenant-1";
             SyncTenantConfigCommand command = new SyncTenantConfigCommand(tenantId);
 
-            when(tenantConfigCommandPort.deleteByTenantId(tenantId)).thenReturn(Mono.empty());
+            given(tenantConfigCommandManager.deleteByTenantId(tenantId)).willReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(syncTenantConfigService.execute(command))
@@ -52,7 +49,7 @@ class SyncTenantConfigServiceTest {
                             })
                     .verifyComplete();
 
-            verify(tenantConfigCommandPort).deleteByTenantId(tenantId);
+            verify(tenantConfigCommandManager).deleteByTenantId(tenantId);
         }
 
         @Test
@@ -62,8 +59,8 @@ class SyncTenantConfigServiceTest {
             String tenantId = "tenant-2";
             SyncTenantConfigCommand command = new SyncTenantConfigCommand(tenantId);
 
-            when(tenantConfigCommandPort.deleteByTenantId(tenantId))
-                    .thenReturn(Mono.error(new RuntimeException("Redis connection failed")));
+            given(tenantConfigCommandManager.deleteByTenantId(tenantId))
+                    .willReturn(Mono.error(new RuntimeException("Redis connection failed")));
 
             // when & then
             StepVerifier.create(syncTenantConfigService.execute(command))
@@ -75,17 +72,36 @@ class SyncTenantConfigServiceTest {
                             })
                     .verifyComplete();
 
-            verify(tenantConfigCommandPort).deleteByTenantId(tenantId);
+            verify(tenantConfigCommandManager).deleteByTenantId(tenantId);
         }
 
         @Test
         @DisplayName("다양한 tenantId로 캐시 무효화")
         void shouldHandleVariousTenantIds() {
             // given
-            String tenantId = "tenant-12345";
+            String tenantId = "tenant-12345-abcde";
             SyncTenantConfigCommand command = new SyncTenantConfigCommand(tenantId);
 
-            when(tenantConfigCommandPort.deleteByTenantId(tenantId)).thenReturn(Mono.empty());
+            given(tenantConfigCommandManager.deleteByTenantId(tenantId)).willReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(syncTenantConfigService.execute(command))
+                    .assertNext(
+                            response -> {
+                                assertThat(response.success()).isTrue();
+                                assertThat(response.tenantId()).isEqualTo(tenantId);
+                            })
+                    .verifyComplete();
+        }
+
+        @Test
+        @DisplayName("특수문자 포함 tenantId로 캐시 무효화")
+        void shouldHandleSpecialCharacterTenantId() {
+            // given
+            String tenantId = "tenant_test-123.abc";
+            SyncTenantConfigCommand command = new SyncTenantConfigCommand(tenantId);
+
+            given(tenantConfigCommandManager.deleteByTenantId(tenantId)).willReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(syncTenantConfigService.execute(command))

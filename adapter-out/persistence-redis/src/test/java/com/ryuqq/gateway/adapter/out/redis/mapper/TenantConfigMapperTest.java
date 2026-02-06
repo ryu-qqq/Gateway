@@ -5,10 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.ryuqq.gateway.adapter.out.redis.entity.SessionConfigEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.TenantConfigEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.TenantRateLimitConfigEntity;
-import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.aggregate.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.id.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.SessionConfig;
 import com.ryuqq.gateway.domain.tenant.vo.SocialProvider;
-import com.ryuqq.gateway.domain.tenant.vo.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.TenantRateLimitConfig;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +74,7 @@ class TenantConfigMapperTest {
             assertThat(result.getRoleHierarchy())
                     .containsKey("ADMIN")
                     .containsEntry("ADMIN", Set.of("READ", "WRITE", "DELETE"));
-            assertThat(result.getSessionConfig().maxActiveSessions()).isEqualTo(5);
+            assertThat(result.getSessionConfig().maxActiveSessionsValue()).isEqualTo(5);
             assertThat(result.getSessionConfig().accessTokenTTLSeconds()).isEqualTo(3600L);
             assertThat(result.getSessionConfig().refreshTokenTTLSeconds()).isEqualTo(86400L);
             assertThat(result.getRateLimitConfig().loginAttemptsPerHour()).isEqualTo(100);
@@ -94,8 +94,8 @@ class TenantConfigMapperTest {
             // then
             assertThat(result).isNotNull();
             SessionConfig defaultConfig = SessionConfig.defaultConfig();
-            assertThat(result.getSessionConfig().maxActiveSessions())
-                    .isEqualTo(defaultConfig.maxActiveSessions());
+            assertThat(result.getSessionConfig().maxActiveSessionsValue())
+                    .isEqualTo(defaultConfig.maxActiveSessionsValue());
             assertThat(result.getSessionConfig().accessTokenTTLSeconds())
                     .isEqualTo(defaultConfig.accessTokenTTLSeconds());
         }
@@ -276,8 +276,8 @@ class TenantConfigMapperTest {
             assertThat(restored.getAllowedSocialLogins())
                     .containsExactlyInAnyOrderElementsOf(original.getAllowedSocialLogins());
             assertThat(restored.getRoleHierarchy()).isEqualTo(original.getRoleHierarchy());
-            assertThat(restored.getSessionConfig().maxActiveSessions())
-                    .isEqualTo(original.getSessionConfig().maxActiveSessions());
+            assertThat(restored.getSessionConfig().maxActiveSessionsValue())
+                    .isEqualTo(original.getSessionConfig().maxActiveSessionsValue());
             assertThat(restored.getSessionConfig().accessTokenTTLSeconds())
                     .isEqualTo(original.getSessionConfig().accessTokenTTLSeconds());
             assertThat(restored.getSessionConfig().refreshTokenTTLSeconds())

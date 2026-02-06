@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.application.ratelimit.dto.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
 import org.junit.jupiter.api.DisplayName;
@@ -50,27 +49,14 @@ class CheckRateLimitCommandTest {
         }
 
         @Test
-        @DisplayName("null limitType으로 생성 시 예외 발생")
-        void shouldThrowExceptionWhenLimitTypeIsNull() {
-            assertThatThrownBy(() -> new CheckRateLimitCommand(null, "identifier"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("LimitType cannot be null");
-        }
+        @DisplayName("null additionalKeyParts는 빈 배열로 변환")
+        void shouldConvertNullAdditionalKeyPartsToEmptyArray() {
+            // when
+            CheckRateLimitCommand command =
+                    new CheckRateLimitCommand(LimitType.IP, "192.168.1.1", (String[]) null);
 
-        @Test
-        @DisplayName("null identifier로 생성 시 예외 발생")
-        void shouldThrowExceptionWhenIdentifierIsNull() {
-            assertThatThrownBy(() -> new CheckRateLimitCommand(LimitType.IP, null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Identifier cannot be null or blank");
-        }
-
-        @Test
-        @DisplayName("blank identifier로 생성 시 예외 발생")
-        void shouldThrowExceptionWhenIdentifierIsBlank() {
-            assertThatThrownBy(() -> new CheckRateLimitCommand(LimitType.IP, "   "))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Identifier cannot be null or blank");
+            // then
+            assertThat(command.additionalKeyParts()).isEmpty();
         }
     }
 

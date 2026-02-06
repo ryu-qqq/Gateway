@@ -3,11 +3,12 @@ package com.ryuqq.gateway.domain.tenant;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.ryuqq.gateway.domain.tenant.aggregate.TenantConfig;
 import com.ryuqq.gateway.domain.tenant.exception.MfaRequiredException;
 import com.ryuqq.gateway.domain.tenant.exception.SocialLoginNotAllowedException;
+import com.ryuqq.gateway.domain.tenant.id.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.SessionConfig;
 import com.ryuqq.gateway.domain.tenant.vo.SocialProvider;
-import com.ryuqq.gateway.domain.tenant.vo.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.TenantRateLimitConfig;
 import java.time.Duration;
 import java.util.Map;

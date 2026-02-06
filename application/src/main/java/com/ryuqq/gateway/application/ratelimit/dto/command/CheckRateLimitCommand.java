@@ -21,14 +21,7 @@ import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
 public record CheckRateLimitCommand(
         LimitType limitType, String identifier, String... additionalKeyParts) {
 
-    /** Compact Constructor - 검증 로직 */
     public CheckRateLimitCommand {
-        if (limitType == null) {
-            throw new IllegalArgumentException("LimitType cannot be null");
-        }
-        if (identifier == null || identifier.isBlank()) {
-            throw new IllegalArgumentException("Identifier cannot be null or blank");
-        }
         if (additionalKeyParts == null) {
             additionalKeyParts = new String[0];
         }

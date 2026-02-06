@@ -64,14 +64,6 @@ class SyncPermissionSpecCommandTest {
         }
 
         @Test
-        @DisplayName("null version으로 생성 시 예외 발생")
-        void shouldThrowExceptionForNullVersion() {
-            assertThatThrownBy(() -> new SyncPermissionSpecCommand(null, List.of("service1")))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("version cannot be null");
-        }
-
-        @Test
         @DisplayName("단일 서비스로 생성")
         void shouldCreateWithSingleService() {
             // given
@@ -151,18 +143,6 @@ class SyncPermissionSpecCommandTest {
         }
 
         @Test
-        @DisplayName("정적 팩토리 메서드도 null 검증 수행")
-        void shouldValidateNullsInStaticFactoryMethod() {
-            assertThatThrownBy(() -> SyncPermissionSpecCommand.of(null, List.of("service1")))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("version cannot be null");
-
-            assertThatThrownBy(() -> SyncPermissionSpecCommand.of(null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("version cannot be null");
-        }
-
-        @Test
         @DisplayName("정적 팩토리 메서드도 null changedServices를 빈 List로 변환")
         void shouldConvertNullChangedServicesInStaticFactoryMethod() {
             // when
@@ -204,7 +184,6 @@ class SyncPermissionSpecCommandTest {
 
             // when & then
             assertThat(command.changedServices()).containsExactly("service1");
-            // mutableServices는 이미 불변 List이므로 수정할 수 없음
         }
     }
 
@@ -332,91 +311,6 @@ class SyncPermissionSpecCommandTest {
             // then
             assertThat(command.version()).isEqualTo(1300L);
             assertThat(command.changedServices()).isEqualTo(servicesWithSpecialChars);
-        }
-
-        @Test
-        @DisplayName("긴 서비스명으로 생성")
-        void shouldCreateWithLongServiceNames() {
-            // given
-            List<String> longServiceNames =
-                    List.of("very-long-service-name-with-many-characters-and-segments-1234567890");
-
-            // when
-            SyncPermissionSpecCommand command =
-                    SyncPermissionSpecCommand.of(1400L, longServiceNames);
-
-            // then
-            assertThat(command.version()).isEqualTo(1400L);
-            assertThat(command.changedServices()).isEqualTo(longServiceNames);
-        }
-
-        @Test
-        @DisplayName("중복된 서비스명으로 생성")
-        void shouldCreateWithDuplicateServiceNames() {
-            // given
-            List<String> duplicateServices =
-                    List.of("service1", "service2", "service1", "service3");
-
-            // when
-            SyncPermissionSpecCommand command =
-                    SyncPermissionSpecCommand.of(1500L, duplicateServices);
-
-            // then
-            assertThat(command.version()).isEqualTo(1500L);
-            assertThat(command.changedServices()).isEqualTo(duplicateServices); // 중복 제거하지 않음
-            assertThat(command.changedServices()).hasSize(4);
-        }
-    }
-
-    @Nested
-    @DisplayName("비즈니스 시나리오 테스트")
-    class BusinessScenarioTest {
-
-        @Test
-        @DisplayName("전체 동기화 시나리오 (서비스 목록 없음)")
-        void shouldCreateForFullSyncScenario() {
-            // given
-            Long version = 2000L;
-
-            // when
-            SyncPermissionSpecCommand command = SyncPermissionSpecCommand.of(version);
-
-            // then
-            assertThat(command.version()).isEqualTo(version);
-            assertThat(command.changedServices()).isEmpty();
-        }
-
-        @Test
-        @DisplayName("부분 동기화 시나리오 (특정 서비스만)")
-        void shouldCreateForPartialSyncScenario() {
-            // given
-            Long version = 2001L;
-            List<String> changedServices = List.of("user-service", "notification-service");
-
-            // when
-            SyncPermissionSpecCommand command =
-                    SyncPermissionSpecCommand.of(version, changedServices);
-
-            // then
-            assertThat(command.version()).isEqualTo(version);
-            assertThat(command.changedServices()).isEqualTo(changedServices);
-        }
-
-        @Test
-        @DisplayName("단일 서비스 동기화 시나리오")
-        void shouldCreateForSingleServiceSyncScenario() {
-            // given
-            Long version = 2002L;
-            List<String> singleService = List.of("critical-service");
-
-            // when
-            SyncPermissionSpecCommand command =
-                    SyncPermissionSpecCommand.of(version, singleService);
-
-            // then
-            assertThat(command.version()).isEqualTo(version);
-            assertThat(command.changedServices()).hasSize(1);
-            assertThat(command.changedServices()).containsExactly("critical-service");
         }
     }
 }

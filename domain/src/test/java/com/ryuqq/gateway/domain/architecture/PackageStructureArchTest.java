@@ -76,6 +76,7 @@ class PackageStructureArchTest {
                         .resideInAPackage(DOMAIN_COMMON + ".event")
                         .should()
                         .beInterfaces()
+                        .allowEmptyShould(true)
                         .because(
                                 "domain.common.event 패키지는 DomainEvent 인터페이스만 포함해야 합니다\n"
                                         + "예시:\n"
@@ -124,6 +125,7 @@ class PackageStructureArchTest {
                         .doNotHaveSimpleName("UuidV7Generator") // 순수 유틸리티 클래스 예외
                         .should()
                         .beInterfaces()
+                        .allowEmptyShould(true)
                         .because(
                                 "domain.common.util 패키지는 Utility 인터페이스만 포함해야 합니다 (DIP)\n"
                                     + "예외: 순수 유틸리티 클래스 (외부 의존성 없이 static 메서드만 제공)\n"

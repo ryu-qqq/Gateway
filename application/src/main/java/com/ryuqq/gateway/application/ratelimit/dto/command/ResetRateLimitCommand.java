@@ -19,18 +19,4 @@ import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
  * @param identifier 식별자
  * @param adminId 관리자 ID (감사 로그용)
  */
-public record ResetRateLimitCommand(LimitType limitType, String identifier, String adminId) {
-
-    /** Compact Constructor - 검증 로직 */
-    public ResetRateLimitCommand {
-        if (limitType == null) {
-            throw new IllegalArgumentException("LimitType cannot be null");
-        }
-        if (identifier == null || identifier.isBlank()) {
-            throw new IllegalArgumentException("Identifier cannot be null or blank");
-        }
-        if (adminId == null || adminId.isBlank()) {
-            throw new IllegalArgumentException("AdminId cannot be null or blank");
-        }
-    }
-}
+public record ResetRateLimitCommand(LimitType limitType, String identifier, String adminId) {}

@@ -5,20 +5,17 @@ package com.ryuqq.gateway.application.authentication.dto.command;
  *
  * <p>JWT Access Token 검증 요청을 나타내는 불변 Command 객체
  *
- * <p><strong>검증 규칙</strong>:
- *
- * <ul>
- *   <li>accessToken은 null 또는 blank일 수 없다
- * </ul>
- *
- * @param accessToken JWT Access Token (null/blank 불가)
+ * @param accessToken JWT Access Token
  */
 public record ValidateJwtCommand(String accessToken) {
 
-    /** Compact Constructor - 검증 로직 */
-    public ValidateJwtCommand {
-        if (accessToken == null || accessToken.isBlank()) {
-            throw new IllegalArgumentException("AccessToken cannot be null or blank");
-        }
+    /**
+     * 정적 팩토리 메서드
+     *
+     * @param accessToken JWT Access Token
+     * @return ValidateJwtCommand 인스턴스
+     */
+    public static ValidateJwtCommand of(String accessToken) {
+        return new ValidateJwtCommand(accessToken);
     }
 }

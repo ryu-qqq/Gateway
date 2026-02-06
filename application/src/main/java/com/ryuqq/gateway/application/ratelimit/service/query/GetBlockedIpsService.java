@@ -1,8 +1,8 @@
 package com.ryuqq.gateway.application.ratelimit.service.query;
 
 import com.ryuqq.gateway.application.ratelimit.dto.response.BlockedIpResponse;
+import com.ryuqq.gateway.application.ratelimit.manager.IpBlockQueryManager;
 import com.ryuqq.gateway.application.ratelimit.port.in.query.GetBlockedIpsUseCase;
-import com.ryuqq.gateway.application.ratelimit.port.out.query.IpBlockQueryPort;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -17,10 +17,10 @@ import reactor.core.publisher.Flux;
 @Service
 public class GetBlockedIpsService implements GetBlockedIpsUseCase {
 
-    private final IpBlockQueryPort ipBlockQueryPort;
+    private final IpBlockQueryManager ipBlockQueryManager;
 
-    public GetBlockedIpsService(IpBlockQueryPort ipBlockQueryPort) {
-        this.ipBlockQueryPort = ipBlockQueryPort;
+    public GetBlockedIpsService(IpBlockQueryManager ipBlockQueryManager) {
+        this.ipBlockQueryManager = ipBlockQueryManager;
     }
 
     /**
@@ -32,7 +32,7 @@ public class GetBlockedIpsService implements GetBlockedIpsUseCase {
      */
     @Override
     public Flux<BlockedIpResponse> execute() {
-        return ipBlockQueryPort
+        return ipBlockQueryManager
                 .findAllBlockedIpsWithTtl()
                 .map(dto -> BlockedIpResponse.of(dto.ip(), dto.ttlSeconds()));
     }

@@ -1,7 +1,5 @@
 package com.ryuqq.gateway.domain.ratelimit.vo;
 
-import java.util.Objects;
-
 /**
  * RateLimitKey - Rate Limit Redis Key Value Object
  *
@@ -25,9 +23,17 @@ import java.util.Objects;
  */
 public record RateLimitKey(String value) {
 
-    /** Compact Constructor (검증 로직) */
+    /**
+     * Compact Constructor - 검증 수행
+     *
+     * @param value Redis Key 문자열
+     * @throws NullPointerException key가 null인 경우
+     * @throws IllegalArgumentException key가 빈 문자열이거나 공백인 경우
+     */
     public RateLimitKey {
-        Objects.requireNonNull(value, "key cannot be null");
+        if (value == null) {
+            throw new NullPointerException("key cannot be null");
+        }
         if (value.isBlank()) {
             throw new IllegalArgumentException("key cannot be blank");
         }
@@ -39,7 +45,7 @@ public record RateLimitKey(String value) {
      * @param key Redis Key 문자열
      * @return RateLimitKey 인스턴스
      * @throws NullPointerException key가 null인 경우
-     * @throws IllegalArgumentException key가 blank인 경우
+     * @throws IllegalArgumentException key가 빈 문자열이거나 공백인 경우
      */
     public static RateLimitKey of(String key) {
         return new RateLimitKey(key);
@@ -53,7 +59,6 @@ public record RateLimitKey(String value) {
      * @return RateLimitKey 인스턴스
      */
     public static RateLimitKey of(LimitType limitType, String... keyParts) {
-        Objects.requireNonNull(limitType, "limitType cannot be null");
         String key = limitType.buildKey(keyParts);
         return new RateLimitKey(key);
     }

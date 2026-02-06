@@ -1,11 +1,11 @@
 package com.ryuqq.gateway.application.authentication.service.command;
 
 import com.ryuqq.gateway.application.authentication.assembler.JwtAssembler;
-import com.ryuqq.gateway.application.authentication.component.JwtValidator;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.dto.response.ValidateJwtResponse;
 import com.ryuqq.gateway.application.authentication.port.in.command.ValidateJwtUseCase;
 import com.ryuqq.gateway.application.authentication.service.query.GetPublicKeyService;
+import com.ryuqq.gateway.application.authentication.validator.JwtValidator;
 import com.ryuqq.gateway.domain.authentication.vo.AccessToken;
 import com.ryuqq.gateway.domain.common.exception.DomainException;
 import com.ryuqq.observability.logging.annotation.Loggable;
