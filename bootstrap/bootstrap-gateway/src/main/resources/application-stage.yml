@@ -136,6 +136,12 @@ gateway:
         port: 9090
         paths:
           - /api/v1/market/**
+        public-paths:
+          - /api/v1/market/auth/login
+          - /api/v1/market/auth/refresh
+          - /api/v1/market/api-docs/**
+          - /api/v1/market/swagger/**
+          - /api/v1/market/docs/**
 
       # Template Service
       - id: template

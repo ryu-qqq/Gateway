@@ -45,6 +45,18 @@ gateway:
           - /api/v1/auth/.well-known/**
           - /api/v1/auth/jwks
 
+      - id: marketplace
+        uri: http://localhost:9090
+        port: 9090
+        paths:
+          - /api/v1/market/**
+        public-paths:
+          - /api/v1/market/auth/login
+          - /api/v1/market/auth/refresh
+          - /api/v1/market/api-docs/**
+          - /api/v1/market/swagger/**
+          - /api/v1/market/docs/**
+
 # ===============================================
 # Logging (Test: INFO)
 # ===============================================
