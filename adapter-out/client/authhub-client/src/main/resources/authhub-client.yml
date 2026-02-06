@@ -1,0 +1,128 @@
+# ===============================================
+# AuthHub Client Configuration
+# ===============================================
+# External AuthHub service client settings
+# All endpoint paths and client configurations
+#
+# @since 1.0.0
+# ===============================================
+
+authhub:
+  client:
+    # ===============================================
+    # Service Identification
+    # ===============================================
+    # Gateway 서비스 이름 (Permission Spec 조회 시 사용)
+    service-name: ${SERVICE_NAME:gateway}
+
+    # ===============================================
+    # Service Token (Internal API 인증용)
+    # ===============================================
+    # AuthHub와 동일한 시크릿 값 공유 (AWS Secrets Manager 등)
+    service-token: ${SERVICE_TOKEN_SECRET:local-dev-service-token-secret}
+
+    # ===============================================
+    # Endpoints Configuration
+    # ===============================================
+    endpoints:
+      # Authentication endpoints
+      jwks: /api/v1/auth/jwks
+      refresh: /api/v1/auth/refresh
+
+      # Tenant endpoints (Internal API)
+      tenant-config: /api/v1/internal/tenants/{tenantId}/config
+
+      # Permission endpoints (Internal API)
+      permission-spec: /api/v1/internal/endpoint-permissions/spec
+      user-permissions: /api/v1/auth/admin/permissions/users/{userId}
+
+    # ===============================================
+    # WebClient Configuration
+    # ===============================================
+    webclient:
+      # Connection pool settings
+      max-connections: 500
+      pending-acquire-timeout: 45000  # 45 seconds
+      max-idle-time: 20000            # 20 seconds
+
+      # Timeout settings
+      connection-timeout: 3000   # 3 seconds
+      response-timeout: 3000     # 3 seconds
+
+      # Logging
+      wire-logging-enabled: false
+
+    # ===============================================
+    # Resilience4j Configuration
+    # ===============================================
+    retry:
+      max-attempts: 3
+      wait-duration: 100  # milliseconds (exponential backoff base)
+
+    circuit-breaker:
+      failure-rate-threshold: 50
+      wait-duration-in-open-state: 10000  # 10 seconds
+      sliding-window-size: 10
+      minimum-number-of-calls: 5
+      permitted-calls-in-half-open: 3
+
+---
+# ===============================================
+# Local Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: local
+
+authhub:
+  client:
+    base-url: http://localhost:8080
+    webclient:
+      wire-logging-enabled: true
+
+---
+# ===============================================
+# Test Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: test
+
+authhub:
+  client:
+    base-url: http://localhost:8080
+    webclient:
+      wire-logging-enabled: true
+
+---
+# ===============================================
+# Stage Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: stage
+
+authhub:
+  client:
+    base-url: http://authhub-web-api-stage.connectly.local:8080
+
+---
+# ===============================================
+# Production Environment
+# ===============================================
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+authhub:
+  client:
+    base-url: http://authhub-web-api-prod.connectly.local:8080
+    webclient:
+      wire-logging-enabled: false
+      max-connections: 1000
+      connection-timeout: 5000
+      response-timeout: 5000

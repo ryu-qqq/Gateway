@@ -5,10 +5,10 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
 import com.ryuqq.gateway.application.authentication.assembler.JwtAssembler;
-import com.ryuqq.gateway.application.authentication.component.JwtValidator;
 import com.ryuqq.gateway.application.authentication.dto.command.ValidateJwtCommand;
 import com.ryuqq.gateway.application.authentication.dto.response.ValidateJwtResponse;
 import com.ryuqq.gateway.application.authentication.service.query.GetPublicKeyService;
+import com.ryuqq.gateway.application.authentication.validator.JwtValidator;
 import com.ryuqq.gateway.domain.authentication.exception.JwtExpiredException;
 import com.ryuqq.gateway.domain.authentication.exception.JwtInvalidException;
 import com.ryuqq.gateway.domain.authentication.vo.AccessToken;

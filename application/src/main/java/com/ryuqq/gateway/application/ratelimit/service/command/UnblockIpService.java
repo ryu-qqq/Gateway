@@ -1,7 +1,7 @@
 package com.ryuqq.gateway.application.ratelimit.service.command;
 
+import com.ryuqq.gateway.application.ratelimit.manager.IpBlockCommandManager;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.UnblockIpUseCase;
-import com.ryuqq.gateway.application.ratelimit.port.out.command.IpBlockCommandPort;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -16,10 +16,10 @@ import reactor.core.publisher.Mono;
 @Service
 public class UnblockIpService implements UnblockIpUseCase {
 
-    private final IpBlockCommandPort ipBlockCommandPort;
+    private final IpBlockCommandManager ipBlockCommandManager;
 
-    public UnblockIpService(IpBlockCommandPort ipBlockCommandPort) {
-        this.ipBlockCommandPort = ipBlockCommandPort;
+    public UnblockIpService(IpBlockCommandManager ipBlockCommandManager) {
+        this.ipBlockCommandManager = ipBlockCommandManager;
     }
 
     /**
@@ -30,6 +30,6 @@ public class UnblockIpService implements UnblockIpUseCase {
      */
     @Override
     public Mono<Boolean> execute(String ipAddress) {
-        return ipBlockCommandPort.unblock(ipAddress);
+        return ipBlockCommandManager.unblock(ipAddress);
     }
 }

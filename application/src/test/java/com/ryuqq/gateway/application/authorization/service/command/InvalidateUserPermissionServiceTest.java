@@ -4,7 +4,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.ryuqq.gateway.application.authorization.dto.command.InvalidateUserPermissionCommand;
-import com.ryuqq.gateway.application.authorization.port.out.command.PermissionHashCommandPort;
+import com.ryuqq.gateway.application.authorization.manager.PermissionHashCommandManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,14 +19,14 @@ import reactor.test.StepVerifier;
 @DisplayName("InvalidateUserPermissionService 테스트")
 class InvalidateUserPermissionServiceTest {
 
-    @Mock private PermissionHashCommandPort permissionHashCommandPort;
+    @Mock private PermissionHashCommandManager permissionHashCommandManager;
 
     private InvalidateUserPermissionService invalidateUserPermissionService;
 
     @BeforeEach
     void setUp() {
         invalidateUserPermissionService =
-                new InvalidateUserPermissionService(permissionHashCommandPort);
+                new InvalidateUserPermissionService(permissionHashCommandManager);
     }
 
     @Nested
@@ -42,12 +42,13 @@ class InvalidateUserPermissionServiceTest {
             InvalidateUserPermissionCommand command =
                     InvalidateUserPermissionCommand.of(tenantId, userId);
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId)).thenReturn(Mono.empty());
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
+                    .thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(invalidateUserPermissionService.execute(command)).verifyComplete();
 
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
 
         @Test
@@ -60,7 +61,7 @@ class InvalidateUserPermissionServiceTest {
                     InvalidateUserPermissionCommand.of(tenantId, userId);
             RuntimeException expectedException = new RuntimeException("Cache invalidation failed");
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId))
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
                     .thenReturn(Mono.error(expectedException));
 
             // when & then
@@ -68,7 +69,7 @@ class InvalidateUserPermissionServiceTest {
                     .expectError(RuntimeException.class)
                     .verify();
 
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
 
         @Test
@@ -80,12 +81,13 @@ class InvalidateUserPermissionServiceTest {
             InvalidateUserPermissionCommand command =
                     InvalidateUserPermissionCommand.of(tenantId, userId);
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId)).thenReturn(Mono.empty());
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
+                    .thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(invalidateUserPermissionService.execute(command)).verifyComplete();
 
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
 
         @Test
@@ -97,12 +99,13 @@ class InvalidateUserPermissionServiceTest {
             InvalidateUserPermissionCommand command =
                     InvalidateUserPermissionCommand.of(tenantId, userId);
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId)).thenReturn(Mono.empty());
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
+                    .thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(invalidateUserPermissionService.execute(command)).verifyComplete();
 
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
 
         @Test
@@ -114,12 +117,13 @@ class InvalidateUserPermissionServiceTest {
             InvalidateUserPermissionCommand command =
                     InvalidateUserPermissionCommand.of(tenantId, userId);
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId)).thenReturn(Mono.empty());
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
+                    .thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(invalidateUserPermissionService.execute(command)).verifyComplete();
 
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
     }
 
@@ -137,7 +141,7 @@ class InvalidateUserPermissionServiceTest {
                     InvalidateUserPermissionCommand.of(tenantId, userId);
             RuntimeException redisException = new RuntimeException("Redis connection failed");
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId))
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
                     .thenReturn(Mono.error(redisException));
 
             // when & then
@@ -145,7 +149,7 @@ class InvalidateUserPermissionServiceTest {
                     .expectError(RuntimeException.class)
                     .verify();
 
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
 
         @Test
@@ -158,7 +162,7 @@ class InvalidateUserPermissionServiceTest {
                     InvalidateUserPermissionCommand.of(tenantId, userId);
             RuntimeException timeoutException = new RuntimeException("Operation timed out");
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId))
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
                     .thenReturn(Mono.error(timeoutException));
 
             // when & then
@@ -166,7 +170,7 @@ class InvalidateUserPermissionServiceTest {
                     .expectError(RuntimeException.class)
                     .verify();
 
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
     }
 
@@ -183,13 +187,13 @@ class InvalidateUserPermissionServiceTest {
             InvalidateUserPermissionCommand command =
                     InvalidateUserPermissionCommand.of(tenantId, userId);
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId)).thenReturn(Mono.empty());
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
+                    .thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(invalidateUserPermissionService.execute(command)).verifyComplete();
 
-            // 로그는 실제로는 검증하기 어려우므로 정상 완료만 확인
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
 
         @Test
@@ -202,7 +206,7 @@ class InvalidateUserPermissionServiceTest {
                     InvalidateUserPermissionCommand.of(tenantId, userId);
             RuntimeException expectedException = new RuntimeException("Test error");
 
-            when(permissionHashCommandPort.invalidate(tenantId, userId))
+            when(permissionHashCommandManager.invalidate(tenantId, userId))
                     .thenReturn(Mono.error(expectedException));
 
             // when & then
@@ -210,7 +214,7 @@ class InvalidateUserPermissionServiceTest {
                     .expectError(RuntimeException.class)
                     .verify();
 
-            verify(permissionHashCommandPort).invalidate(tenantId, userId);
+            verify(permissionHashCommandManager).invalidate(tenantId, userId);
         }
     }
 }

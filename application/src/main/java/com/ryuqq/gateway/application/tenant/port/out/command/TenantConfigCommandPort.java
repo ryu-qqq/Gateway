@@ -1,6 +1,6 @@
 package com.ryuqq.gateway.application.tenant.port.out.command;
 
-import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.aggregate.TenantConfig;
 import reactor.core.publisher.Mono;
 
 /**

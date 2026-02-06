@@ -3,10 +3,10 @@ package com.ryuqq.gateway.adapter.out.redis.mapper;
 import com.ryuqq.gateway.adapter.out.redis.entity.SessionConfigEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.TenantConfigEntity;
 import com.ryuqq.gateway.adapter.out.redis.entity.TenantRateLimitConfigEntity;
-import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.aggregate.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.id.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.SessionConfig;
 import com.ryuqq.gateway.domain.tenant.vo.SocialProvider;
-import com.ryuqq.gateway.domain.tenant.vo.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.TenantRateLimitConfig;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -108,7 +108,7 @@ public class TenantConfigMapper {
         }
 
         return new SessionConfigEntity(
-                sessionConfig.maxActiveSessions(),
+                sessionConfig.maxActiveSessionsValue(),
                 sessionConfig.accessTokenTTLSeconds(),
                 sessionConfig.refreshTokenTTLSeconds());
     }

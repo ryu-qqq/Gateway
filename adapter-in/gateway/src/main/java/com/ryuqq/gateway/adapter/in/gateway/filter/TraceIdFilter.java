@@ -5,7 +5,7 @@ import com.ryuqq.gateway.adapter.in.gateway.trace.TraceIdMdcContext;
 import com.ryuqq.gateway.application.trace.dto.command.GenerateTraceIdCommand;
 import com.ryuqq.gateway.application.trace.port.in.command.GenerateTraceIdUseCase;
 import com.ryuqq.gateway.domain.trace.exception.InvalidTraceIdException;
-import com.ryuqq.gateway.domain.trace.vo.TraceId;
+import com.ryuqq.gateway.domain.trace.id.TraceId;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;

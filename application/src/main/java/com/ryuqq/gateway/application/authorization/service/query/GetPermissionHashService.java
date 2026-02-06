@@ -1,16 +1,26 @@
 package com.ryuqq.gateway.application.authorization.service.query;
 
-import com.ryuqq.gateway.application.authorization.port.out.client.AuthHubPermissionClient;
-import com.ryuqq.gateway.application.authorization.port.out.command.PermissionHashCommandPort;
-import com.ryuqq.gateway.application.authorization.port.out.query.PermissionHashQueryPort;
+import com.ryuqq.gateway.application.authorization.internal.PermissionHashCoordinator;
 import com.ryuqq.gateway.domain.authorization.vo.PermissionHash;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 /**
- * GetPermissionHashService - Permission Hash 조회 Service
+ * Permission Hash 조회 Service
+ *
+ * <p>PermissionHashCoordinator를 통해 Permission Hash를 조회하는 서비스
+ *
+ * <p><strong>의존성 방향</strong>:
+ *
+ * <pre>
+ * GetPermissionHashService (Application Service)
+ *   ↓ (calls)
+ * PermissionHashCoordinator (Application Manager - internal)
+ *   ↓ (calls)
+ * PermissionHashQueryManager + PermissionClientManager + PermissionHashCommandManager
+ * </pre>
+ *
+ * <p><strong>Cache 전략</strong>:
  *
  * <p>2-Tier 캐시 전략: JWT Payload → Redis → AuthHub
  *
@@ -20,19 +30,10 @@ import reactor.core.publisher.Mono;
 @Service
 public class GetPermissionHashService {
 
-    private static final Logger log = LoggerFactory.getLogger(GetPermissionHashService.class);
+    private final PermissionHashCoordinator permissionHashCoordinator;
 
-    private final PermissionHashQueryPort permissionHashQueryPort;
-    private final PermissionHashCommandPort permissionHashCommandPort;
-    private final AuthHubPermissionClient authHubPermissionClient;
-
-    public GetPermissionHashService(
-            PermissionHashQueryPort permissionHashQueryPort,
-            PermissionHashCommandPort permissionHashCommandPort,
-            AuthHubPermissionClient authHubPermissionClient) {
-        this.permissionHashQueryPort = permissionHashQueryPort;
-        this.permissionHashCommandPort = permissionHashCommandPort;
-        this.authHubPermissionClient = authHubPermissionClient;
+    public GetPermissionHashService(PermissionHashCoordinator permissionHashCoordinator) {
+        this.permissionHashCoordinator = permissionHashCoordinator;
     }
 
     /**
@@ -49,57 +50,6 @@ public class GetPermissionHashService {
      */
     public Mono<PermissionHash> getPermissionHash(
             String tenantId, String userId, String jwtPermissionHash) {
-
-        return permissionHashQueryPort
-                .findByTenantAndUser(tenantId, userId)
-                .flatMap(cached -> validateAndReturn(cached, jwtPermissionHash, tenantId, userId))
-                .switchIfEmpty(Mono.defer(() -> fetchAndCachePermissionHash(tenantId, userId)));
-    }
-
-    private Mono<PermissionHash> validateAndReturn(
-            PermissionHash cached, String jwtPermissionHash, String tenantId, String userId) {
-
-        if (cached.matchesHash(jwtPermissionHash)) {
-            log.debug(
-                    "Permission hash validated from cache: tenantId={}, userId={}",
-                    tenantId,
-                    userId);
-            return Mono.just(cached);
-        }
-
-        log.info("Permission hash mismatch, refetching: tenantId={}, userId={}", tenantId, userId);
-        return fetchAndCachePermissionHash(tenantId, userId);
-    }
-
-    private Mono<PermissionHash> fetchAndCachePermissionHash(String tenantId, String userId) {
-        log.info(
-                "Permission hash not found in cache, fetching from AuthHub: tenantId={}, userId={}",
-                tenantId,
-                userId);
-
-        return authHubPermissionClient
-                .fetchUserPermissions(tenantId, userId)
-                .flatMap(
-                        hash ->
-                                permissionHashCommandPort
-                                        .save(tenantId, userId, hash)
-                                        .thenReturn(hash)
-                                        .doOnSuccess(
-                                                h ->
-                                                        log.info(
-                                                                "Permission hash cached:"
-                                                                        + " tenantId={}, userId={},"
-                                                                        + " permissions={}",
-                                                                tenantId,
-                                                                userId,
-                                                                h.permissions().size())))
-                .doOnError(
-                        e ->
-                                log.error(
-                                        "Failed to fetch permission hash from AuthHub: tenantId={},"
-                                                + " userId={}, error={}",
-                                        tenantId,
-                                        userId,
-                                        e.getMessage()));
+        return permissionHashCoordinator.findByTenantAndUser(tenantId, userId, jwtPermissionHash);
     }
 }

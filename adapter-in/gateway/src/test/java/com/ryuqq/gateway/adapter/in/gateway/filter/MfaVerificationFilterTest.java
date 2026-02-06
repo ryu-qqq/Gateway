@@ -8,9 +8,9 @@ import static org.mockito.Mockito.when;
 
 import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
-import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.aggregate.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.id.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.SessionConfig;
-import com.ryuqq.gateway.domain.tenant.vo.TenantId;
 import com.ryuqq.gateway.domain.tenant.vo.TenantRateLimitConfig;
 import java.util.Map;
 import java.util.Set;

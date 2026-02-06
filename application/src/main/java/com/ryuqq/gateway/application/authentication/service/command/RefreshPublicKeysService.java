@@ -1,8 +1,7 @@
 package com.ryuqq.gateway.application.authentication.service.command;
 
+import com.ryuqq.gateway.application.authentication.internal.PublicKeyCacheCoordinator;
 import com.ryuqq.gateway.application.authentication.port.in.command.RefreshPublicKeysUseCase;
-import com.ryuqq.gateway.application.authentication.port.out.client.AuthHubClient;
-import com.ryuqq.gateway.application.authentication.port.out.command.PublicKeyCommandPort;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -11,21 +10,11 @@ import reactor.core.publisher.Mono;
  *
  * <p>Public Key Cache 갱신 서비스
  *
- * <p><strong>의존성 방향</strong>:
+ * <p><strong>오케스트레이션 역할만 수행</strong>:
  *
- * <pre>
- * Service (Application)
- *   ↓ (calls)
- * AuthHubQueryPort (Application Out Port)
- *   ↓ (implemented by)
- * AuthHubAdapter (Infrastructure)
- *
- * Service (Application)
- *   ↓ (calls)
- * PublicKeyCommandPort (Application Out Port)
- *   ↓ (implemented by)
- * PublicKeyCommandAdapter (Infrastructure)
- * </pre>
+ * <ol>
+ *   <li>PublicKeyCacheCoordinator에 갱신 위임
+ * </ol>
  *
  * @author development-team
  * @since 1.0.0
@@ -33,33 +22,19 @@ import reactor.core.publisher.Mono;
 @Service
 public class RefreshPublicKeysService implements RefreshPublicKeysUseCase {
 
-    private final AuthHubClient authHubClient;
-    private final PublicKeyCommandPort publicKeyCommandPort;
+    private final PublicKeyCacheCoordinator publicKeyCacheCoordinator;
 
-    public RefreshPublicKeysService(
-            AuthHubClient authHubClient, PublicKeyCommandPort publicKeyCommandPort) {
-        this.authHubClient = authHubClient;
-        this.publicKeyCommandPort = publicKeyCommandPort;
+    public RefreshPublicKeysService(PublicKeyCacheCoordinator publicKeyCacheCoordinator) {
+        this.publicKeyCacheCoordinator = publicKeyCacheCoordinator;
     }
 
     /**
      * Public Key Cache 전체 갱신
      *
-     * <p><strong>Process</strong>:
-     *
-     * <ol>
-     *   <li>AuthHub JWKS 엔드포인트에서 Public Keys 조회
-     *   <li>PublicKeyCommandPort를 통해 Redis Cache 저장
-     * </ol>
-     *
      * @return Mono&lt;Void&gt; 완료 시그널
      */
     @Override
     public Mono<Void> execute() {
-        return authHubClient
-                .fetchPublicKeys()
-                .collectList()
-                .flatMap(publicKeyCommandPort::saveAll)
-                .onErrorMap(e -> new RuntimeException("Failed to refresh public keys", e));
+        return publicKeyCacheCoordinator.refreshAllKeys();
     }
 }

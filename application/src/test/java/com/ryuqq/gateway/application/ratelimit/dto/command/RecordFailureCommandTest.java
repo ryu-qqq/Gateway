@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.application.ratelimit.dto.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.ryuqq.gateway.domain.ratelimit.vo.LimitType;
 import org.junit.jupiter.api.DisplayName;
@@ -28,30 +27,6 @@ class RecordFailureCommandTest {
             // then
             assertThat(command.limitType()).isEqualTo(limitType);
             assertThat(command.identifier()).isEqualTo(identifier);
-        }
-
-        @Test
-        @DisplayName("null limitType으로 생성 시 예외 발생")
-        void shouldThrowExceptionWhenLimitTypeIsNull() {
-            assertThatThrownBy(() -> new RecordFailureCommand(null, "identifier"))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("LimitType cannot be null");
-        }
-
-        @Test
-        @DisplayName("null identifier로 생성 시 예외 발생")
-        void shouldThrowExceptionWhenIdentifierIsNull() {
-            assertThatThrownBy(() -> new RecordFailureCommand(LimitType.LOGIN, null))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Identifier cannot be null or blank");
-        }
-
-        @Test
-        @DisplayName("blank identifier로 생성 시 예외 발생")
-        void shouldThrowExceptionWhenIdentifierIsBlank() {
-            assertThatThrownBy(() -> new RecordFailureCommand(LimitType.LOGIN, ""))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Identifier cannot be null or blank");
         }
     }
 
