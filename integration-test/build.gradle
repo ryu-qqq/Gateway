@@ -44,7 +44,8 @@ dependencies {
     // ========================================
     testImplementation project(':adapter-in:gateway')
     testImplementation project(':adapter-out:persistence-redis')
-    testImplementation project(':adapter-out:authhub-client')
+    testImplementation project(':adapter-out:client:authhub-client')
+    testImplementation project(':adapter-out:client:id-client')
 
     // ========================================
     // Spring Boot Test

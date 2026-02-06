@@ -36,7 +36,8 @@ dependencies {
 
     // Outbound
     implementation project(':adapter-out:persistence-redis')
-    implementation project(':adapter-out:authhub-client')
+    implementation project(':adapter-out:client:authhub-client')
+    implementation project(':adapter-out:client:id-client')
 
     // ========================================
     // Spring Boot Starters (Reactive/Gateway)

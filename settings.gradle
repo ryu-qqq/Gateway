@@ -14,7 +14,8 @@ include 'adapter-in:gateway'
 
 // Outbound Adapters (Driven) - {purpose}-{technology}
 include 'adapter-out:persistence-redis'
-include 'adapter-out:authhub-client'
+include 'adapter-out:client:authhub-client'
+include 'adapter-out:client:id-client'
 
 // ========================================
 // Bootstrap Modules (Runnable Applications)
@@ -34,7 +35,8 @@ project(':application').projectDir = file('application')
 
 project(':adapter-in:gateway').projectDir = file('adapter-in/gateway')
 project(':adapter-out:persistence-redis').projectDir = file('adapter-out/persistence-redis')
-project(':adapter-out:authhub-client').projectDir = file('adapter-out/authhub-client')
+project(':adapter-out:client:authhub-client').projectDir = file('adapter-out/client/authhub-client')
+project(':adapter-out:client:id-client').projectDir = file('adapter-out/client/id-client')
 
 project(':bootstrap:bootstrap-gateway').projectDir = file('bootstrap/bootstrap-gateway')
 
