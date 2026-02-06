@@ -79,10 +79,15 @@ public class AuthHubPermissionMapper {
      * UpdatedAt 시간 결정
      *
      * @param updatedAt SDK updatedAt
-     * @return 유효한 Instant (null이면 현재 시간)
+     * @return 유효한 Instant
+     * @throws PermissionException updatedAt이 null일 경우
      */
     private Instant resolveUpdatedAt(Instant updatedAt) {
-        return updatedAt != null ? updatedAt : Instant.now();
+        if (updatedAt == null) {
+            throw new PermissionException(
+                    "updatedAt field is missing in the permission spec response from AuthHub");
+        }
+        return updatedAt;
     }
 
     /**
@@ -132,11 +137,23 @@ public class AuthHubPermissionMapper {
         Set<String> roles =
                 userPermissions.roles() != null ? Set.copyOf(userPermissions.roles()) : Set.of();
 
-        Instant generatedAt =
-                userPermissions.generatedAt() != null
-                        ? userPermissions.generatedAt()
-                        : Instant.now();
+        Instant generatedAt = resolveGeneratedAt(userPermissions.generatedAt());
 
         return PermissionHash.fromStrings(userPermissions.hash(), permissions, roles, generatedAt);
+    }
+
+    /**
+     * GeneratedAt 시간 결정
+     *
+     * @param generatedAt SDK generatedAt
+     * @return 유효한 Instant
+     * @throws PermissionException generatedAt이 null일 경우
+     */
+    private Instant resolveGeneratedAt(Instant generatedAt) {
+        if (generatedAt == null) {
+            throw new PermissionException(
+                    "generatedAt field is missing in the user permissions response from AuthHub");
+        }
+        return generatedAt;
     }
 }
