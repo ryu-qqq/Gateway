@@ -1,0 +1,14 @@
+// ========================================
+// Adapter-Out: ID Generator
+// ========================================
+
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api project(':application')
+    implementation 'org.springframework:spring-context'
+    
+    testImplementation libs.spring.boot.starter.test
+}
