@@ -53,20 +53,25 @@ gateway:
           - /api/v1/auth/logout
           - /api/v1/auth/.well-known/**
           - /api/v1/auth/jwks
+          - /api/v1/auth/api-docs/**
+          - /api/v1/auth/swagger
+          - /api/v1/auth/swagger-ui/**
+          - /api/v1/auth/docs/**
 
       # ============================================
       # MarketPlace Service
       # ============================================
       - id: marketplace
-        uri: ${MARKETPLACE_URI:http://localhost:9090}
-        port: 9090
+        uri: ${MARKETPLACE_URI:http://localhost:8080}
+        port: 8080
         paths:
           - /api/v1/market/**
         public-paths:
           - /api/v1/market/auth/login
           - /api/v1/market/auth/refresh
           - /api/v1/market/api-docs/**
-          - /api/v1/market/swagger/**
+          - /api/v1/market/swagger
+          - /api/v1/market/swagger-ui/**
           - /api/v1/market/docs/**
 
       # ============================================
@@ -76,7 +81,11 @@ gateway:
         uri: ${COMMERCE_URI:http://localhost:8081}
         paths:
           - /api/v1/commerce/**
-        public-paths: []
+        public-paths:
+          - /api/v1/commerce/api-docs/**
+          - /api/v1/commerce/swagger
+          - /api/v1/commerce/swagger-ui/**
+          - /api/v1/commerce/docs/**
 
       # ============================================
       # FileFlow Service
@@ -85,7 +94,11 @@ gateway:
         uri: ${FILEFLOW_URI:http://localhost:8082}
         paths:
           - /api/v1/file/**
-        public-paths: []
+        public-paths:
+          - /api/v1/file/api-docs/**
+          - /api/v1/file/swagger
+          - /api/v1/file/swagger-ui/**
+          - /api/v1/file/docs/**
 
       # ============================================
       # CrawlingHub Service
@@ -94,7 +107,11 @@ gateway:
         uri: ${CRAWLING_URI:http://localhost:8083}
         paths:
           - /api/v1/crawling/**
-        public-paths: []
+        public-paths:
+          - /api/v1/crawling/api-docs/**
+          - /api/v1/crawling/swagger
+          - /api/v1/crawling/swagger-ui/**
+          - /api/v1/crawling/docs/**
 
       # ============================================
       # Template Service
