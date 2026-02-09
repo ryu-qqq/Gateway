@@ -320,7 +320,7 @@ module "gateway_task_execution_role" {
             Resource = [
               "arn:aws:ssm:${var.aws_region}:*:parameter/shared/*",
               "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*",
-              "arn:aws:ssm:${var.aws_region}:*:parameter/authhub/${var.environment}/*"
+              "arn:aws:ssm:${var.aws_region}:*:parameter/authhub/${var.environment}/security/*"
             ]
           },
           {
