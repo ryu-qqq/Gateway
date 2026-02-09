@@ -38,6 +38,13 @@ data "aws_ecs_cluster" "main" {
 data "aws_caller_identity" "current" {}
 
 # ========================================
+# AuthHub Service Token Secret
+# ========================================
+data "aws_ssm_parameter" "authhub_service_token" {
+  name = "/authhub/${var.environment}/security/service-token-secret"
+}
+
+# ========================================
 # KMS Key for CloudWatch Logs Encryption
 # ========================================
 resource "aws_kms_key" "logs" {
@@ -312,7 +319,8 @@ module "gateway_task_execution_role" {
             ]
             Resource = [
               "arn:aws:ssm:${var.aws_region}:*:parameter/shared/*",
-              "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*"
+              "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*",
+              "arn:aws:ssm:${var.aws_region}:*:parameter/authhub/${var.environment}/*"
             ]
           },
           {
@@ -500,8 +508,12 @@ module "ecs_service" {
   ]
 
   # Container Secrets
-  # Stage: Sentry 비활성화 (application-stage.yml에서 dsn: "" 설정)
-  container_secrets = []
+  container_secrets = [
+    {
+      name      = "SERVICE_TOKEN_SECRET"
+      valueFrom = data.aws_ssm_parameter.authhub_service_token.arn
+    }
+  ]
 
   # Health Check
   health_check_command      = ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
