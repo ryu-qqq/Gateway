@@ -41,7 +41,7 @@ data "aws_caller_identity" "current" {}
 # AuthHub Service Token Secret
 # ========================================
 data "aws_ssm_parameter" "authhub_service_token" {
-  name = "/authhub/stage/security/service-token-secret"
+  name = "/authhub/${var.environment}/security/service-token-secret"
 }
 
 # ========================================
@@ -320,7 +320,7 @@ module "gateway_task_execution_role" {
             Resource = [
               "arn:aws:ssm:${var.aws_region}:*:parameter/shared/*",
               "arn:aws:ssm:${var.aws_region}:*:parameter/${var.project_name}/*",
-              "arn:aws:ssm:${var.aws_region}:*:parameter/authhub/*"
+              "arn:aws:ssm:${var.aws_region}:*:parameter/authhub/${var.environment}/*"
             ]
           },
           {
