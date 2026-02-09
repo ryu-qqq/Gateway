@@ -74,6 +74,12 @@ public class PermissionFilter implements GlobalFilter, Ordered {
         String permissionHash = exchange.getAttribute(PERMISSION_HASH_ATTRIBUTE);
         Set<String> roles = exchange.getAttribute(ROLES_ATTRIBUTE);
 
+        // SUPER_ADMIN은 모든 권한 검사 bypass
+        if (roles != null && roles.contains("SUPER_ADMIN")) {
+            log.debug("SUPER_ADMIN bypass: userId={}, path={}", userId, exchange.getRequest().getURI().getPath());
+            return chain.filter(exchange);
+        }
+
         String requestPath = exchange.getRequest().getURI().getPath();
         String requestMethod = exchange.getRequest().getMethod().name();
 
