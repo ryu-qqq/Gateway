@@ -29,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.http.server.reactive.MockServerHttpRequest;
@@ -317,6 +318,93 @@ class JwtAuthenticationFilterUnitTest {
             // then
             verify(filterChain, never()).filter(any());
             assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @Nested
+    @DisplayName("Authorization 헤더 다운스트림 전달")
+    class AuthorizationHeaderPropagationTest {
+
+        @Test
+        @DisplayName("Authorization 헤더로 요청 시 다운스트림에 동일한 Authorization 헤더가 전달되어야 한다")
+        void shouldPropagateAuthorizationHeaderFromBearerToken() {
+            // given
+            String token = "valid-bearer-token";
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            JwtClaims claims =
+                    JwtClaims.of(
+                            "user-123",
+                            "auth-hub",
+                            Instant.now().plusSeconds(3600),
+                            Instant.now(),
+                            List.of("ROLE_USER"),
+                            List.of("order:read"),
+                            "tenant-123",
+                            "org-789",
+                            "hash-456",
+                            false);
+            when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
+                    .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
+
+            ArgumentCaptor<ServerWebExchange> exchangeCaptor =
+                    ArgumentCaptor.forClass(ServerWebExchange.class);
+            when(filterChain.filter(exchangeCaptor.capture())).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            // then
+            ServerWebExchange capturedExchange = exchangeCaptor.getValue();
+            String authHeader =
+                    capturedExchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            assertThat(authHeader).isEqualTo("Bearer " + token);
+        }
+
+        @Test
+        @DisplayName("Cookie의 access_token으로 요청 시 다운스트림에 Authorization 헤더가 생성되어야 한다")
+        void shouldCreateAuthorizationHeaderFromCookieToken() {
+            // given
+            String token = "cookie-access-token-value";
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .cookie(new HttpCookie("access_token", token))
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            JwtClaims claims =
+                    JwtClaims.of(
+                            "user-456",
+                            "auth-hub",
+                            Instant.now().plusSeconds(3600),
+                            Instant.now(),
+                            List.of("ROLE_USER"),
+                            List.of("order:read"),
+                            "tenant-123",
+                            "org-789",
+                            "hash-456",
+                            false);
+            when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
+                    .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
+
+            ArgumentCaptor<ServerWebExchange> exchangeCaptor =
+                    ArgumentCaptor.forClass(ServerWebExchange.class);
+            when(filterChain.filter(exchangeCaptor.capture())).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            // then
+            ServerWebExchange capturedExchange = exchangeCaptor.getValue();
+            String authHeader =
+                    capturedExchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            assertThat(authHeader).isEqualTo("Bearer " + token);
         }
     }
 

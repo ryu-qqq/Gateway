@@ -131,4 +131,29 @@ class TenantHeaderPropagationIntegrationTest extends GatewayIntegrationTest {
                                 "X-User-Id",
                                 com.github.tomakehurst.wiremock.client.WireMock.equalTo(userId)));
     }
+
+    @Test
+    @DisplayName("Authorization 헤더가 downstream 서비스에 그대로 전달되어야 한다")
+    void shouldPropagateAuthorizationHeaderToDownstreamService() {
+        // given
+        String tenantId = "tenant-001";
+        String validJwt = JwtTestFixture.aValidJwtWithTenant("user-123", tenantId);
+
+        // when
+        webTestClient
+                .get()
+                .uri("/api/test/orders")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + validJwt)
+                .exchange()
+                .expectStatus()
+                .isOk();
+
+        // then - Verify downstream received Authorization header
+        authHubWireMock.verify(
+                getRequestedFor(urlPathEqualTo("/api/test/orders"))
+                        .withHeader(
+                                HttpHeaders.AUTHORIZATION,
+                                com.github.tomakehurst.wiremock.client.WireMock.equalTo(
+                                        "Bearer " + validJwt)));
+    }
 }

@@ -135,7 +135,12 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
                             // Downstream 서비스로 사용자 정보 전달 (Header)
                             ServerHttpRequest.Builder requestBuilder =
-                                    exchange.getRequest().mutate().header(X_USER_ID_HEADER, userId);
+                                    exchange.getRequest()
+                                            .mutate()
+                                            .header(
+                                                    HttpHeaders.AUTHORIZATION,
+                                                    BEARER_PREFIX + token)
+                                            .header(X_USER_ID_HEADER, userId);
 
                             // tenantId가 있는 경우 헤더 추가
                             if (claims.tenantId() != null) {
@@ -200,15 +205,13 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
      */
     private String extractToken(ServerWebExchange exchange) {
         // 1. Authorization 헤더 우선
-        String authHeader =
-                exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
             return authHeader.substring(BEARER_PREFIX.length());
         }
 
         // 2. Cookie에서 access_token 추출
-        HttpCookie cookie =
-                exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE);
+        HttpCookie cookie = exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE);
         if (cookie != null && !cookie.getValue().isEmpty()) {
             return cookie.getValue();
         }
