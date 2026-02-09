@@ -45,6 +45,7 @@ public class PermissionFilter implements GlobalFilter, Ordered {
     private static final String TENANT_ID_ATTRIBUTE = "tenantId";
     private static final String PERMISSION_HASH_ATTRIBUTE = "permissionHash";
     private static final String ROLES_ATTRIBUTE = "roles";
+    private static final String SUPER_ADMIN_ROLE = "SUPER_ADMIN";
 
     private final ValidatePermissionUseCase validatePermissionUseCase;
     private final GatewayErrorResponder errorResponder;
@@ -75,7 +76,7 @@ public class PermissionFilter implements GlobalFilter, Ordered {
         Set<String> roles = exchange.getAttribute(ROLES_ATTRIBUTE);
 
         // SUPER_ADMIN은 모든 권한 검사 bypass
-        if (roles != null && roles.contains("SUPER_ADMIN")) {
+        if (roles != null && roles.contains(SUPER_ADMIN_ROLE)) {
             log.debug("SUPER_ADMIN bypass: userId={}, path={}", userId, exchange.getRequest().getURI().getPath());
             return chain.filter(exchange);
         }
