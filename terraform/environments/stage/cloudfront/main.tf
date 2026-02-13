@@ -152,7 +152,7 @@ resource "aws_cloudfront_response_headers_policy" "api_cors" {
     }
 
     access_control_allow_origins {
-      items = ["https://set-of.com", "https://stage.set-of.com", "https://www.set-of.com", "https://stage-oms.set-of.com", "https://oms.set-of.com"]
+      items = ["https://set-of.com", "https://stage.set-of.com", "https://www.set-of.com", "https://stage-oms.set-of.com"]
     }
 
     access_control_expose_headers {
