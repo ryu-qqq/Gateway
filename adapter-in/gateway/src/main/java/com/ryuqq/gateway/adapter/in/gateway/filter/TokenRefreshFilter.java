@@ -70,6 +70,7 @@ public class TokenRefreshFilter implements GlobalFilter, Ordered {
     private static final Logger log = LoggerFactory.getLogger(TokenRefreshFilter.class);
 
     private static final String REFRESH_TOKEN_COOKIE = "refresh_token";
+    private static final String REFRESH_TOKEN_COOKIE_CAMEL = "refreshToken";
     private static final String USER_ID_ATTRIBUTE = "userId";
     private static final String TENANT_ID_ATTRIBUTE = "tenantId";
     private static final String X_USER_ID_HEADER = "X-User-Id";
@@ -108,9 +109,13 @@ public class TokenRefreshFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // Cookie에서 refresh_token 추출
+        // Cookie에서 refresh_token 또는 refreshToken 추출
         HttpCookie refreshTokenCookie =
                 exchange.getRequest().getCookies().getFirst(REFRESH_TOKEN_COOKIE);
+        if (refreshTokenCookie == null) {
+            refreshTokenCookie =
+                    exchange.getRequest().getCookies().getFirst(REFRESH_TOKEN_COOKIE_CAMEL);
+        }
 
         // Refresh Token이 없으면 갱신 불가 → 다음 필터로 (JWT_AUTH_FILTER에서 처리)
         if (refreshTokenCookie == null) {
