@@ -11,6 +11,7 @@ import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
@@ -76,6 +77,9 @@ public class JwtErrorHandler implements ErrorWebExceptionHandler {
         if (ex instanceof JwtExpiredException || ex instanceof JwtInvalidException) {
             return HttpStatus.UNAUTHORIZED;
         }
+        if (ex instanceof ResponseStatusException rse) {
+            return HttpStatus.valueOf(rse.getStatusCode().value());
+        }
         return HttpStatus.INTERNAL_SERVER_ERROR;
     }
 
@@ -85,6 +89,9 @@ public class JwtErrorHandler implements ErrorWebExceptionHandler {
         }
         if (ex instanceof JwtInvalidException) {
             return "JWT_INVALID";
+        }
+        if (ex instanceof ResponseStatusException) {
+            return "HTTP_ERROR";
         }
         return "INTERNAL_ERROR";
     }
