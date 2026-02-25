@@ -4,7 +4,6 @@ import com.ryuqq.gateway.application.authorization.dto.command.ValidatePermissio
 import com.ryuqq.gateway.application.authorization.dto.response.ValidatePermissionResponse;
 import com.ryuqq.gateway.application.authorization.internal.PermissionValidationCoordinator;
 import com.ryuqq.gateway.application.authorization.port.in.command.ValidatePermissionUseCase;
-import com.ryuqq.observability.logging.annotation.Loggable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -42,7 +41,6 @@ public class ValidatePermissionService implements ValidatePermissionUseCase {
      * @param command 검증 요청 (경로, 메서드, 테넌트, 사용자, permissionHash)
      * @return 검증 결과
      */
-    @Loggable(value = "권한 검증", includeArgs = false, slowThreshold = 300)
     @Override
     public Mono<ValidatePermissionResponse> execute(ValidatePermissionCommand command) {
         return permissionValidationCoordinator.validate(command);

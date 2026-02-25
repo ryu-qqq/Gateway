@@ -6,7 +6,6 @@ import com.ryuqq.gateway.application.authentication.factory.AuthenticationFactor
 import com.ryuqq.gateway.application.authentication.internal.TokenRefreshCoordinator;
 import com.ryuqq.gateway.application.authentication.port.in.command.RefreshAccessTokenUseCase;
 import com.ryuqq.gateway.domain.authentication.vo.RefreshToken;
-import com.ryuqq.observability.logging.annotation.Loggable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -52,7 +51,6 @@ public class RefreshAccessTokenService implements RefreshAccessTokenUseCase {
      * @param command RefreshAccessTokenCommand (tenantId, userId, refreshToken)
      * @return Mono&lt;RefreshAccessTokenResponse&gt; (새 Access Token + Refresh Token)
      */
-    @Loggable(value = "Access Token Refresh", includeArgs = false, slowThreshold = 1000)
     @Override
     public Mono<RefreshAccessTokenResponse> execute(RefreshAccessTokenCommand command) {
         String tenantId = command.tenantId();

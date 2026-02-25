@@ -2,7 +2,6 @@ package com.ryuqq.gateway.adapter.out.authhub.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.ryuqq.observability.client.webclient.TraceIdExchangeFilterFunction;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.github.resilience4j.retry.RetryConfig;
@@ -54,10 +53,9 @@ class AuthHubConfigTest {
         void shouldCreateWebClientBean() {
             // given
             WebClient.Builder builder = WebClient.builder();
-            TraceIdExchangeFilterFunction traceIdFilter = TraceIdExchangeFilterFunction.create();
 
             // when
-            WebClient webClient = config.authHubWebClient(builder, traceIdFilter);
+            WebClient webClient = config.authHubWebClient(builder);
 
             // then
             assertThat(webClient).isNotNull();

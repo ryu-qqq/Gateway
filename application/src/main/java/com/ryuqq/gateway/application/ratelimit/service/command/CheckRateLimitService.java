@@ -4,7 +4,6 @@ import com.ryuqq.gateway.application.ratelimit.dto.command.CheckRateLimitCommand
 import com.ryuqq.gateway.application.ratelimit.dto.response.CheckRateLimitResponse;
 import com.ryuqq.gateway.application.ratelimit.internal.RateLimitCheckCoordinator;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.CheckRateLimitUseCase;
-import com.ryuqq.observability.logging.annotation.Loggable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -41,7 +40,6 @@ public class CheckRateLimitService implements CheckRateLimitUseCase {
      * @param command CheckRateLimitCommand
      * @return Mono&lt;CheckRateLimitResponse&gt;
      */
-    @Loggable(value = "Rate Limit 체크", includeArgs = false, slowThreshold = 100)
     @Override
     public Mono<CheckRateLimitResponse> execute(CheckRateLimitCommand command) {
         return rateLimitCheckCoordinator.check(command);
