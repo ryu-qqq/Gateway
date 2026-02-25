@@ -30,8 +30,6 @@ dependencies {
     // WebFlux (Reactive WebClient)
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
 
-    // Observability (TraceId propagation)
-    implementation libs.observability.starter
 
     // Resilience4j (Retry, Circuit Breaker)
     implementation libs.resilience4j.spring.boot3

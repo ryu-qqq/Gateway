@@ -3,7 +3,6 @@ package com.ryuqq.gateway.application.ratelimit.service.command;
 import com.ryuqq.gateway.application.ratelimit.dto.command.RecordFailureCommand;
 import com.ryuqq.gateway.application.ratelimit.internal.FailureRecordCoordinator;
 import com.ryuqq.gateway.application.ratelimit.port.in.command.RecordFailureUseCase;
-import com.ryuqq.observability.logging.annotation.Loggable;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -40,7 +39,6 @@ public class RecordFailureService implements RecordFailureUseCase {
      * @param command RecordFailureCommand
      * @return Mono&lt;Void&gt;
      */
-    @Loggable(value = "실패 기록", includeArgs = false, slowThreshold = 100)
     @Override
     public Mono<Void> execute(RecordFailureCommand command) {
         return failureRecordCoordinator.record(command);
