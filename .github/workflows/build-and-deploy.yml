@@ -48,7 +48,7 @@ jobs:
 
       - name: Run tests
         env:
-          SKIP_INTEGRATION_TESTS: 'true'
+          TESTCONTAINERS_RYUK_DISABLED: 'true'
         run: |
           chmod +x gradlew
           ./gradlew clean test -x jacocoTestCoverageVerification --no-daemon

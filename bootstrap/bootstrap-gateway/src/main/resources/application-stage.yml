@@ -24,10 +24,28 @@ spring:
       timeout: 3s
 
 # ===============================================
-# Sentry (Disabled for Stage)
+# Sentry (Enabled for Stage)
 # ===============================================
+# DSN은 환경변수로 주입 (SSM Parameter: /gateway/sentry/dsn)
+# 노이즈 필터링: SentryConfig.java의 BeforeSendCallback 참조
 sentry:
-  dsn: ""
+  dsn: ${SENTRY_DSN:https://0a7e7ef1b90fb515e6c94c811507e7a5@o4509783165173760.ingest.us.sentry.io/4510735580135424}
+  environment: stage
+  release: ${APP_VERSION:unknown}
+  # 성능 모니터링 (트랜잭션 샘플링)
+  traces-sample-rate: 0.1
+  # 민감 정보 필터링
+  send-default-pii: false
+  # 서버 이름 (ECS Task ID 사용)
+  server-name: ${HOSTNAME:unknown}
+  # 에러 필터링 (예외 타입 기반)
+  # 추가 필터링은 SentryConfig.java의 BeforeSendCallback에서 처리
+  ignored-exceptions-for-type:
+    - org.springframework.web.server.ResponseStatusException
+  # 로그 연동
+  logging:
+    minimum-event-level: error    # ERROR 이상만 Sentry로 전송
+    minimum-breadcrumb-level: info # INFO 이상은 breadcrumb으로 저장
 
 # ===============================================
 # Gateway Routing (Stage Cloud Map Service Discovery)

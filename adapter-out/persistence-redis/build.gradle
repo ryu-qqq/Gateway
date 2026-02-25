@@ -45,14 +45,11 @@ dependencies {
     // ========================================
     testImplementation libs.spring.boot.starter.test
     testImplementation libs.reactor.test
-    testImplementation 'org.testcontainers:testcontainers:1.19.7'
+    testImplementation libs.testcontainers.core
     testImplementation libs.testcontainers.junit
 
     // WireMock for AuthHub mock
     testImplementation libs.wiremock
-
-    // Embedded Redis for testing
-    testImplementation 'it.ozimov:embedded-redis:0.7.3'
 
     // ArchUnit for architecture validation
     testImplementation libs.archunit.junit5
