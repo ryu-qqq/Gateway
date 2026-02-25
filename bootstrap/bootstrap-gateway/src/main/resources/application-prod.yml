@@ -29,7 +29,7 @@ spring:
 # DSN은 환경변수로 주입 (SSM Parameter: /gateway/prod/sentry/dsn)
 # 노이즈 필터링: SentryConfig.java의 BeforeSendCallback 참조
 sentry:
-  dsn: ${SENTRY_DSN:https://0a7e7ef1b90fb515e6c94c811507e7a5@o4509783165173760.ingest.us.sentry.io/4510735580135424}
+  dsn: ${SENTRY_DSN}
   environment: prod
   release: ${APP_VERSION:unknown}
   # 성능 모니터링 (트랜잭션 샘플링)
