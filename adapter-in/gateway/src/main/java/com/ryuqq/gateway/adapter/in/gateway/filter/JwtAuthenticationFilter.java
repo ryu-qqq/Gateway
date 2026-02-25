@@ -60,6 +60,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String X_USER_ROLES_HEADER = "X-User-Roles";
     private static final String X_USER_PERMISSIONS_HEADER = "X-User-Permissions";
     private static final String ACCESS_TOKEN_COOKIE = "access_token";
+    private static final String ACCESS_TOKEN_COOKIE_CAMEL = "accessToken";
 
     private final ValidateJwtUseCase validateJwtUseCase;
     private final RecordFailureUseCase recordFailureUseCase;
@@ -210,10 +211,16 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return authHeader.substring(BEARER_PREFIX.length());
         }
 
-        // 2. Cookie에서 access_token 추출
+        // 2. Cookie에서 access_token 또는 accessToken 추출
         HttpCookie cookie = exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE);
         if (cookie != null && !cookie.getValue().isEmpty()) {
             return cookie.getValue();
+        }
+
+        HttpCookie camelCookie =
+                exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE_CAMEL);
+        if (camelCookie != null && !camelCookie.getValue().isEmpty()) {
+            return camelCookie.getValue();
         }
 
         return null;

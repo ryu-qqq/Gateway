@@ -409,6 +409,95 @@ class JwtAuthenticationFilterUnitTest {
     }
 
     @Nested
+    @DisplayName("CamelCase Cookie 토큰 추출")
+    class CamelCaseCookieTokenExtractionTest {
+
+        @Test
+        @DisplayName("accessToken 쿠키에서 토큰을 추출하여 인증해야 한다")
+        void shouldExtractTokenFromCamelCaseAccessTokenCookie() {
+            // given
+            String token = "camel-case-cookie-token-value";
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .cookie(new HttpCookie("accessToken", token))
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            JwtClaims claims =
+                    JwtClaims.of(
+                            "user-789",
+                            "auth-hub",
+                            Instant.now().plusSeconds(3600),
+                            Instant.now(),
+                            List.of("ROLE_USER"),
+                            List.of("order:read"),
+                            "tenant-123",
+                            "org-789",
+                            "hash-456",
+                            false);
+            when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
+                    .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
+
+            ArgumentCaptor<ServerWebExchange> exchangeCaptor =
+                    ArgumentCaptor.forClass(ServerWebExchange.class);
+            when(filterChain.filter(exchangeCaptor.capture())).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            // then
+            ServerWebExchange capturedExchange = exchangeCaptor.getValue();
+            String authHeader =
+                    capturedExchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            assertThat(authHeader).isEqualTo("Bearer " + token);
+        }
+
+        @Test
+        @DisplayName("access_token 쿠키가 accessToken 쿠키보다 우선해야 한다")
+        void shouldPreferSnakeCaseCookieOverCamelCase() {
+            // given
+            String snakeToken = "snake-case-token";
+            String camelToken = "camel-case-token";
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/test")
+                            .cookie(new HttpCookie("access_token", snakeToken))
+                            .cookie(new HttpCookie("accessToken", camelToken))
+                            .build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+
+            JwtClaims claims =
+                    JwtClaims.of(
+                            "user-123",
+                            "auth-hub",
+                            Instant.now().plusSeconds(3600),
+                            Instant.now(),
+                            List.of("ROLE_USER"),
+                            List.of("order:read"),
+                            "tenant-123",
+                            "org-789",
+                            "hash-456",
+                            false);
+            when(validateJwtUseCase.execute(any(ValidateJwtCommand.class)))
+                    .thenReturn(Mono.just(new ValidateJwtResponse(claims, true)));
+
+            ArgumentCaptor<ServerWebExchange> exchangeCaptor =
+                    ArgumentCaptor.forClass(ServerWebExchange.class);
+            when(filterChain.filter(exchangeCaptor.capture())).thenReturn(Mono.empty());
+
+            // when
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            // then - snake_case가 우선
+            ArgumentCaptor<ValidateJwtCommand> commandCaptor =
+                    ArgumentCaptor.forClass(ValidateJwtCommand.class);
+            verify(validateJwtUseCase).execute(commandCaptor.capture());
+            assertThat(commandCaptor.getValue().accessToken()).isEqualTo(snakeToken);
+        }
+    }
+
+    @Nested
     @DisplayName("에러 처리")
     class ErrorHandlingTest {
 

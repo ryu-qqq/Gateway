@@ -45,6 +45,13 @@ data "aws_ssm_parameter" "authhub_service_token" {
 }
 
 # ========================================
+# Sentry DSN SSM Parameter (External - 수동 생성됨)
+# ========================================
+data "aws_ssm_parameter" "sentry_dsn" {
+  name = "/${var.project_name}/sentry/dsn"
+}
+
+# ========================================
 # KMS Key for CloudWatch Logs Encryption
 # ========================================
 resource "aws_kms_key" "logs" {
@@ -512,6 +519,10 @@ module "ecs_service" {
     {
       name      = "SERVICE_TOKEN_SECRET"
       valueFrom = data.aws_ssm_parameter.authhub_service_token.arn
+    },
+    {
+      name      = "SENTRY_DSN"
+      valueFrom = data.aws_ssm_parameter.sentry_dsn.arn
     }
   ]
 

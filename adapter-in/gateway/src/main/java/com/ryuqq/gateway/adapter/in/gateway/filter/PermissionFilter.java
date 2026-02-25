@@ -77,7 +77,10 @@ public class PermissionFilter implements GlobalFilter, Ordered {
 
         // SUPER_ADMIN은 모든 권한 검사 bypass
         if (roles != null && roles.contains(SUPER_ADMIN_ROLE)) {
-            log.debug("SUPER_ADMIN bypass: userId={}, path={}", userId, exchange.getRequest().getURI().getPath());
+            log.debug(
+                    "SUPER_ADMIN bypass: userId={}, path={}",
+                    userId,
+                    exchange.getRequest().getURI().getPath());
             return chain.filter(exchange);
         }
 
