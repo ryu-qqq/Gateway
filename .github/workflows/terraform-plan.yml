@@ -17,13 +17,13 @@ jobs:
       matrix:
         module:
           - name: ecr
-            dir: terraform/ecr
+            dir: terraform/environments/prod/ecr
           - name: ecs-cluster
-            dir: terraform/ecs-cluster
+            dir: terraform/environments/prod/ecs-cluster
           - name: elasticache
-            dir: terraform/elasticache
+            dir: terraform/environments/prod/elasticache
           - name: ecs-gateway
-            dir: terraform/ecs-gateway
+            dir: terraform/environments/prod/ecs-gateway
 
     steps:
       - name: Checkout code
