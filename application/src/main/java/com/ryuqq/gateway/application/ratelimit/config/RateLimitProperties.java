@@ -16,6 +16,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  *     endpoint-limit: 5
  *     ip-limit: 5
  *     window-seconds: 60
+ *     ip-block-enabled: true
+ *     login-failure-threshold: 10
+ *     login-block-duration-minutes: 5
+ *     invalid-jwt-failure-threshold: 10
+ *     invalid-jwt-block-duration-minutes: 10
  * }</pre>
  *
  * @author development-team
@@ -50,6 +55,21 @@ public class RateLimitProperties {
 
     /** 기본 Window (초) - 모든 타입에 적용 (설정 시) */
     private Integer windowSeconds;
+
+    /** IP 차단 기능 활성화 여부 (기본값: true) - Stage에서는 false로 설정하여 IP 차단 비활성화 */
+    private boolean ipBlockEnabled = true;
+
+    /** 로그인 실패 시 IP 차단 임계값 (기본값: LimitType.LOGIN의 failureThreshold 사용) */
+    private Integer loginFailureThreshold;
+
+    /** 로그인 실패 시 IP 차단 기간(분) (기본값: 30분) */
+    private Integer loginBlockDurationMinutes;
+
+    /** 잘못된 JWT 실패 시 IP 차단 임계값 (기본값: LimitType.INVALID_JWT의 failureThreshold 사용) */
+    private Integer invalidJwtFailureThreshold;
+
+    /** 잘못된 JWT 실패 시 IP 차단 기간(분) (기본값: 30분) */
+    private Integer invalidJwtBlockDurationMinutes;
 
     public boolean isEnabled() {
         return enabled;
@@ -121,5 +141,45 @@ public class RateLimitProperties {
 
     public void setWindowSeconds(Integer windowSeconds) {
         this.windowSeconds = windowSeconds;
+    }
+
+    public boolean isIpBlockEnabled() {
+        return ipBlockEnabled;
+    }
+
+    public void setIpBlockEnabled(boolean ipBlockEnabled) {
+        this.ipBlockEnabled = ipBlockEnabled;
+    }
+
+    public Integer getLoginFailureThreshold() {
+        return loginFailureThreshold;
+    }
+
+    public void setLoginFailureThreshold(Integer loginFailureThreshold) {
+        this.loginFailureThreshold = loginFailureThreshold;
+    }
+
+    public Integer getLoginBlockDurationMinutes() {
+        return loginBlockDurationMinutes;
+    }
+
+    public void setLoginBlockDurationMinutes(Integer loginBlockDurationMinutes) {
+        this.loginBlockDurationMinutes = loginBlockDurationMinutes;
+    }
+
+    public Integer getInvalidJwtFailureThreshold() {
+        return invalidJwtFailureThreshold;
+    }
+
+    public void setInvalidJwtFailureThreshold(Integer invalidJwtFailureThreshold) {
+        this.invalidJwtFailureThreshold = invalidJwtFailureThreshold;
+    }
+
+    public Integer getInvalidJwtBlockDurationMinutes() {
+        return invalidJwtBlockDurationMinutes;
+    }
+
+    public void setInvalidJwtBlockDurationMinutes(Integer invalidJwtBlockDurationMinutes) {
+        this.invalidJwtBlockDurationMinutes = invalidJwtBlockDurationMinutes;
     }
 }

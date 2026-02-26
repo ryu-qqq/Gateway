@@ -52,6 +52,13 @@ sentry:
 # ===============================================
 # discovery.enabled, host-mapping은 gateway.yml에서 프로파일별 설정
 gateway:
+  # Prod 환경 IP 차단 설정: 로그인 10회 초과 시 5분, 잘못된 JWT 10회 초과 시 10분 차단
+  rate-limit:
+    ip-block-enabled: true
+    login-failure-threshold: 10
+    login-block-duration-minutes: 5
+    invalid-jwt-failure-threshold: 10
+    invalid-jwt-block-duration-minutes: 10
   routing:
     services:
       # ============================================

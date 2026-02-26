@@ -61,8 +61,8 @@ public class RateLimitCheckCoordinator {
     public Mono<CheckRateLimitResponse> check(CheckRateLimitCommand command) {
         LimitType limitType = command.limitType();
 
-        // IP 기반 타입인 경우 먼저 IP 차단 여부 확인
-        if (limitType.isIpBased()) {
+        // IP 기반 타입이고, IP 차단이 활성화된 경우에만 IP 차단 여부 확인
+        if (limitType.isIpBased() && rateLimitProperties.isIpBlockEnabled()) {
             return checkIpBlockedFirst(command);
         }
 

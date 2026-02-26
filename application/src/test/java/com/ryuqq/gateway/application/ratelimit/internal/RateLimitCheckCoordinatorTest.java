@@ -13,6 +13,7 @@ import com.ryuqq.gateway.domain.ratelimit.exception.IpBlockedException;
 import com.ryuqq.gateway.domain.ratelimit.exception.RateLimitExceededException;
 import com.ryuqq.gateway.domain.ratelimit.vo.RateLimitAction;
 import com.ryuqq.gateway.fixture.ratelimit.RateLimitFixture;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,13 @@ class RateLimitCheckCoordinatorTest {
     @Mock private RateLimitProperties rateLimitProperties;
 
     @InjectMocks private RateLimitCheckCoordinator rateLimitCheckCoordinator;
+
+    @BeforeEach
+    void setUp() {
+        // IP 차단 기능 기본 활성화 (기존 동작 호환)
+        // lenient: IP 기반이 아닌 타입(User, Endpoint) 테스트에서는 사용되지 않으므로 lenient 설정
+        lenient().when(rateLimitProperties.isIpBlockEnabled()).thenReturn(true);
+    }
 
     @Nested
     @DisplayName("IP 차단 선제 확인")

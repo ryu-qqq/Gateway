@@ -4,11 +4,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
 
+import com.ryuqq.gateway.application.ratelimit.config.RateLimitProperties;
 import com.ryuqq.gateway.application.ratelimit.dto.command.RecordFailureCommand;
 import com.ryuqq.gateway.application.ratelimit.manager.IpBlockCommandManager;
 import com.ryuqq.gateway.application.ratelimit.manager.RateLimitCounterCommandManager;
 import com.ryuqq.gateway.fixture.ratelimit.RateLimitFixture;
 import java.time.Duration;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -40,9 +42,23 @@ class FailureRecordCoordinatorTest {
 
     @Mock private IpBlockCommandManager ipBlockCommandManager;
 
+    @Mock private RateLimitProperties rateLimitProperties;
+
     @InjectMocks private FailureRecordCoordinator failureRecordCoordinator;
 
     private static final Duration EXPECTED_BLOCK_DURATION = Duration.ofMinutes(30);
+
+    @BeforeEach
+    void setUp() {
+        // IP 차단 기능 기본 활성화 (기존 동작 호환)
+        // lenient: 에러 전파 테스트 등에서는 flatMap에 도달하지 않아 사용되지 않을 수 있음
+        lenient().when(rateLimitProperties.isIpBlockEnabled()).thenReturn(true);
+        // Properties 미설정 시 LimitType 기본값 사용 (기존 동작 호환: LOGIN=5회/30분, INVALID_JWT=10회/30분)
+        lenient().when(rateLimitProperties.getLoginFailureThreshold()).thenReturn(null);
+        lenient().when(rateLimitProperties.getLoginBlockDurationMinutes()).thenReturn(null);
+        lenient().when(rateLimitProperties.getInvalidJwtFailureThreshold()).thenReturn(null);
+        lenient().when(rateLimitProperties.getInvalidJwtBlockDurationMinutes()).thenReturn(null);
+    }
 
     @Nested
     @DisplayName("실패 카운터 증가")
