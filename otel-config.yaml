@@ -67,10 +67,10 @@ processors:
   resource:
     attributes:
       - key: environment
-        value: prod
+        value: ${ENVIRONMENT}
         action: upsert
       - key: cluster_name
-        value: gateway-cluster-prod
+        value: ${CLUSTER_NAME}
         action: upsert
       - key: service_name
         value: gateway
