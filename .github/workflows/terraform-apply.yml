@@ -28,16 +28,16 @@ jobs:
         module:
           # 의존성 순서대로 배치
           - name: ecr
-            dir: terraform/ecr
+            dir: terraform/environments/prod/ecr
             order: 0
           - name: ecs-cluster
-            dir: terraform/ecs-cluster
+            dir: terraform/environments/prod/ecs-cluster
             order: 1
           - name: elasticache
-            dir: terraform/elasticache
+            dir: terraform/environments/prod/elasticache
             order: 2
           - name: ecs-gateway
-            dir: terraform/ecs-gateway
+            dir: terraform/environments/prod/ecs-gateway
             order: 3
 
     steps:
