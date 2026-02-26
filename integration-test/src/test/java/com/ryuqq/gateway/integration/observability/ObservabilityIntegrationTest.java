@@ -210,7 +210,8 @@ class ObservabilityIntegrationTest {
         void shouldReuseExistingTraceId() {
             // given
             String validJwt = JwtTestFixture.aValidJwt();
-            String existingTraceId = "test-trace-id-12345";
+            // TraceId 형식: {17자리 timestamp}-{uuid}
+            String existingTraceId = "20250124123456789-a1b2c3d4-e5f6-4789-abcd-ef0123456789";
 
             // when & then
             webTestClient
