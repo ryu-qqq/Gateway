@@ -12,6 +12,7 @@ import com.ryuqq.gateway.adapter.in.gateway.common.util.ClientIpExtractor;
 import com.ryuqq.gateway.application.ratelimit.config.RateLimitProperties;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.integration.helper.JwtTestFixture;
+import com.ryuqq.gateway.integration.helper.PermissionTestFixture;
 import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
 import java.time.Duration;
 import java.util.UUID;
@@ -196,35 +197,33 @@ class RateLimitIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
-        // Mock Permission Spec endpoint (priority 1)
+        // Mock Permission Spec endpoint (priority 1, Internal API)
         wireMockServer.stubFor(
-                get(urlEqualTo("/api/v1/permissions/spec"))
+                get(urlEqualTo(PermissionTestFixture.PERMISSION_SPEC_PATH))
                         .atPriority(1)
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
-                                                """
-                                                {
-                                                    "version": 1,
-                                                    "updatedAt": "2025-01-01T00:00:00Z",
-                                                    "permissions": [
-                                                        {
-                                                            "serviceName": "test-service",
-                                                            "path": "/api/.*",
-                                                            "method": "GET",
-                                                            "isPublic": true,
-                                                            "requiredRoles": [],
-                                                            "requiredPermissions": []
-                                                        }
-                                                    ]
-                                                }
-                                                """)));
+                                                PermissionTestFixture.allPublicPermissionSpec(
+                                                        "/api/.*"))));
 
-        // Mock Tenant Config API (priority 1)
+        // Mock User Permissions endpoint (priority 1, Internal API)
         wireMockServer.stubFor(
-                get(WireMock.urlPathMatching("/api/v1/tenants/.+/config"))
+                get(WireMock.urlPathMatching(PermissionTestFixture.USER_PERMISSIONS_PATH_PATTERN))
+                        .atPriority(1)
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                PermissionTestFixture
+                                                        .userPermissionHashResponse())));
+
+        // Mock Tenant Config API (priority 1, Internal API)
+        wireMockServer.stubFor(
+                get(WireMock.urlPathMatching("/api/v1/internal/tenants/.+/config"))
                         .atPriority(1)
                         .willReturn(
                                 aResponse()

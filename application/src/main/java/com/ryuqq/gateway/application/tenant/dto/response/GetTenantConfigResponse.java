@@ -1,6 +1,6 @@
 package com.ryuqq.gateway.application.tenant.dto.response;
 
-import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.aggregate.TenantConfig;
 
 /**
  * Tenant Config 조회 응답 DTO

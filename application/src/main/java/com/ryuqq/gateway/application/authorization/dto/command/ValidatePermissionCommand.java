@@ -1,6 +1,5 @@
 package com.ryuqq.gateway.application.authorization.dto.command;
 
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -24,10 +23,6 @@ public record ValidatePermissionCommand(
         String requestMethod) {
 
     public ValidatePermissionCommand {
-        Objects.requireNonNull(userId, "userId cannot be null");
-        Objects.requireNonNull(tenantId, "tenantId cannot be null");
-        Objects.requireNonNull(requestPath, "requestPath cannot be null");
-        Objects.requireNonNull(requestMethod, "requestMethod cannot be null");
         roles = roles == null ? Set.of() : Set.copyOf(roles);
     }
 

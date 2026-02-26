@@ -14,6 +14,7 @@ import java.util.Set;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpCookie;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -58,6 +59,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private static final String X_ORGANIZATION_ID_HEADER = "X-Organization-Id";
     private static final String X_USER_ROLES_HEADER = "X-User-Roles";
     private static final String X_USER_PERMISSIONS_HEADER = "X-User-Permissions";
+    private static final String ACCESS_TOKEN_COOKIE = "access_token";
+    private static final String ACCESS_TOKEN_COOKIE_CAMEL = "accessToken";
 
     private final ValidateJwtUseCase validateJwtUseCase;
     private final RecordFailureUseCase recordFailureUseCase;
@@ -99,15 +102,11 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        String token = extractToken(exchange);
 
-        // Authorization 헤더가 없거나 Bearer prefix가 없는 경우:
-        // Invalid JWT 공격이 아니므로 실패 기록 없이 단순히 401 반환
-        if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
+        if (token == null) {
             return unauthorized(exchange);
         }
-
-        String token = authHeader.substring(BEARER_PREFIX.length());
 
         return validateJwtUseCase
                 .execute(new ValidateJwtCommand(token))
@@ -137,7 +136,12 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
                             // Downstream 서비스로 사용자 정보 전달 (Header)
                             ServerHttpRequest.Builder requestBuilder =
-                                    exchange.getRequest().mutate().header(X_USER_ID_HEADER, userId);
+                                    exchange.getRequest()
+                                            .mutate()
+                                            .header(
+                                                    HttpHeaders.AUTHORIZATION,
+                                                    BEARER_PREFIX + token)
+                                            .header(X_USER_ID_HEADER, userId);
 
                             // tenantId가 있는 경우 헤더 추가
                             if (claims.tenantId() != null) {
@@ -185,6 +189,41 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         RecordFailureCommand command = RecordFailureCommand.forInvalidJwt(clientIp);
 
         return recordFailureUseCase.execute(command).then(unauthorized(exchange));
+    }
+
+    /**
+     * Access Token 추출 (Authorization 헤더 우선, Cookie 대체)
+     *
+     * <p>다음 순서로 토큰을 추출합니다:
+     *
+     * <ol>
+     *   <li>Authorization 헤더의 Bearer 토큰
+     *   <li>access_token 쿠키
+     * </ol>
+     *
+     * @param exchange ServerWebExchange
+     * @return JWT 토큰 문자열 또는 null
+     */
+    private String extractToken(ServerWebExchange exchange) {
+        // 1. Authorization 헤더 우선
+        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+            return authHeader.substring(BEARER_PREFIX.length());
+        }
+
+        // 2. Cookie에서 access_token 또는 accessToken 추출
+        HttpCookie cookie = exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE);
+        if (cookie != null && !cookie.getValue().isEmpty()) {
+            return cookie.getValue();
+        }
+
+        HttpCookie camelCookie =
+                exchange.getRequest().getCookies().getFirst(ACCESS_TOKEN_COOKIE_CAMEL);
+        if (camelCookie != null && !camelCookie.getValue().isEmpty()) {
+            return camelCookie.getValue();
+        }
+
+        return null;
     }
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {

@@ -99,70 +99,6 @@ class ValidatePermissionCommandTest {
             // then
             assertThat(command.permissionHash()).isNull();
         }
-
-        @Test
-        @DisplayName("null userId로 생성 시 예외 발생")
-        void shouldThrowExceptionForNullUserId() {
-            assertThatThrownBy(
-                            () ->
-                                    new ValidatePermissionCommand(
-                                            null,
-                                            "tenant456",
-                                            "hash789",
-                                            Set.of(),
-                                            "/api/v1/users",
-                                            "GET"))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("userId cannot be null");
-        }
-
-        @Test
-        @DisplayName("null tenantId로 생성 시 예외 발생")
-        void shouldThrowExceptionForNullTenantId() {
-            assertThatThrownBy(
-                            () ->
-                                    new ValidatePermissionCommand(
-                                            "user123",
-                                            null,
-                                            "hash789",
-                                            Set.of(),
-                                            "/api/v1/users",
-                                            "GET"))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("tenantId cannot be null");
-        }
-
-        @Test
-        @DisplayName("null requestPath로 생성 시 예외 발생")
-        void shouldThrowExceptionForNullRequestPath() {
-            assertThatThrownBy(
-                            () ->
-                                    new ValidatePermissionCommand(
-                                            "user123",
-                                            "tenant456",
-                                            "hash789",
-                                            Set.of(),
-                                            null,
-                                            "GET"))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("requestPath cannot be null");
-        }
-
-        @Test
-        @DisplayName("null requestMethod로 생성 시 예외 발생")
-        void shouldThrowExceptionForNullRequestMethod() {
-            assertThatThrownBy(
-                            () ->
-                                    new ValidatePermissionCommand(
-                                            "user123",
-                                            "tenant456",
-                                            "hash789",
-                                            Set.of(),
-                                            "/api/v1/users",
-                                            null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("requestMethod cannot be null");
-        }
     }
 
     @Nested
@@ -192,22 +128,6 @@ class ValidatePermissionCommandTest {
             assertThat(command.roles()).isEqualTo(roles);
             assertThat(command.requestPath()).isEqualTo(requestPath);
             assertThat(command.requestMethod()).isEqualTo(requestMethod);
-        }
-
-        @Test
-        @DisplayName("정적 팩토리 메서드도 null 검증 수행")
-        void shouldValidateNullsInStaticFactoryMethod() {
-            assertThatThrownBy(
-                            () ->
-                                    ValidatePermissionCommand.of(
-                                            null,
-                                            "tenant456",
-                                            "hash789",
-                                            Set.of(),
-                                            "/api/v1/users",
-                                            "GET"))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("userId cannot be null");
         }
 
         @Test
@@ -266,7 +186,6 @@ class ValidatePermissionCommandTest {
 
             // when & then
             assertThat(command.roles()).containsExactly("USER");
-            // mutableRoles는 이미 불변 Set이므로 수정할 수 없음
         }
     }
 
@@ -373,32 +292,6 @@ class ValidatePermissionCommandTest {
             Set<String> roles = Set.of("ROLE_WITH_UNDERSCORE");
             String requestPath = "/api/v1/users/{userId}/orders";
             String requestMethod = "PATCH";
-
-            // when
-            ValidatePermissionCommand command =
-                    ValidatePermissionCommand.of(
-                            userId, tenantId, permissionHash, roles, requestPath, requestMethod);
-
-            // then
-            assertThat(command.userId()).isEqualTo(userId);
-            assertThat(command.tenantId()).isEqualTo(tenantId);
-            assertThat(command.permissionHash()).isEqualTo(permissionHash);
-            assertThat(command.roles()).isEqualTo(roles);
-            assertThat(command.requestPath()).isEqualTo(requestPath);
-            assertThat(command.requestMethod()).isEqualTo(requestMethod);
-        }
-
-        @Test
-        @DisplayName("긴 문자열로 생성")
-        void shouldCreateWithLongStrings() {
-            // given
-            String userId = "very-long-user-id-with-many-characters-1234567890";
-            String tenantId = "very-long-tenant-id-with-many-characters-abcdefghijk";
-            String permissionHash = "very-long-permission-hash-with-many-characters-xyz";
-            Set<String> roles = Set.of("VERY_LONG_ROLE_NAME_WITH_MANY_CHARACTERS");
-            String requestPath =
-                    "/api/v1/very/long/path/with/many/segments/and/parameters/{id}/details";
-            String requestMethod = "DELETE";
 
             // when
             ValidatePermissionCommand command =

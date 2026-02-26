@@ -7,6 +7,7 @@ import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import com.ryuqq.gateway.application.authentication.validator.JwtValidator;
 import com.ryuqq.gateway.domain.authentication.vo.PublicKey;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;

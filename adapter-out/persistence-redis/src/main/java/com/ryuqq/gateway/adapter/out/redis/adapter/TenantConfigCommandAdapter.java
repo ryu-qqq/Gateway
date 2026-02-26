@@ -3,7 +3,7 @@ package com.ryuqq.gateway.adapter.out.redis.adapter;
 import com.ryuqq.gateway.adapter.out.redis.mapper.TenantConfigMapper;
 import com.ryuqq.gateway.adapter.out.redis.repository.TenantConfigRedisRepository;
 import com.ryuqq.gateway.application.tenant.port.out.command.TenantConfigCommandPort;
-import com.ryuqq.gateway.domain.tenant.TenantConfig;
+import com.ryuqq.gateway.domain.tenant.aggregate.TenantConfig;
 import com.ryuqq.gateway.domain.tenant.exception.TenantConfigPersistenceException;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;

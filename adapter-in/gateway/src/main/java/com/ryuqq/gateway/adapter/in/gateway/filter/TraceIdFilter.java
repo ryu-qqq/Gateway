@@ -5,7 +5,7 @@ import com.ryuqq.gateway.adapter.in.gateway.trace.TraceIdMdcContext;
 import com.ryuqq.gateway.application.trace.dto.command.GenerateTraceIdCommand;
 import com.ryuqq.gateway.application.trace.port.in.command.GenerateTraceIdUseCase;
 import com.ryuqq.gateway.domain.trace.exception.InvalidTraceIdException;
-import com.ryuqq.gateway.domain.trace.vo.TraceId;
+import com.ryuqq.gateway.domain.trace.id.TraceId;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -112,19 +112,11 @@ public class TraceIdFilter implements GlobalFilter, Ordered {
         exchange.getAttributes().put(TRACE_ID_ATTRIBUTE, traceId);
 
         // 3. Response Header에 X-Trace-Id 추가 (Client 반환)
-        // Actuator 경로는 응답이 이미 커밋된 상태에서 beforeCommit이 호출될 수 있으므로 스킵
+        // Actuator 경로는 응답 헤더 추가 스킵
+        // 에러 응답(401 등)에서도 헤더가 포함되도록 직접 추가 방식 사용
         String path = exchange.getRequest().getURI().getPath();
         if (!isActuatorPath(path)) {
-            exchange.getResponse()
-                    .beforeCommit(
-                            () -> {
-                                if (!exchange.getResponse().isCommitted()) {
-                                    exchange.getResponse()
-                                            .getHeaders()
-                                            .add(X_TRACE_ID_HEADER, traceId);
-                                }
-                                return Mono.empty();
-                            });
+            exchange.getResponse().getHeaders().add(X_TRACE_ID_HEADER, traceId);
         }
 
         // 4. Reactor Context에 traceId 추가 (MDC 전파)

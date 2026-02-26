@@ -67,9 +67,9 @@ output "api_cors_policy_id" {
 output "route53_records" {
   description = "Route53 records created for CloudFront"
   value = {
-    prod_apex = aws_route53_record.prod_apex.fqdn
-    prod_www  = aws_route53_record.prod_www.fqdn
-    admin     = aws_route53_record.admin.fqdn
+    # NOTE: prod_apex (set-of.com) is managed in infrastructure repository
+    prod_www = aws_route53_record.prod_www.fqdn
+    admin    = aws_route53_record.admin.fqdn
   }
 }
 
@@ -80,7 +80,7 @@ output "routing_summary" {
   description = "Summary of CloudFront path-based routing configuration"
   value = {
     production = {
-      domains          = ["set-of.com", "www.set-of.com"]
+      domains          = ["www.set-of.com"]  # set-of.com managed in infrastructure repo
       api_path         = "/api/v1/*"
       api_origin       = data.aws_lb.gateway.dns_name
       frontend_origin  = data.aws_lb.frontend_prod.dns_name

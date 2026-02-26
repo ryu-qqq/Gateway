@@ -36,7 +36,8 @@ dependencies {
 
     // Outbound
     implementation project(':adapter-out:persistence-redis')
-    implementation project(':adapter-out:authhub-client')
+    implementation project(':adapter-out:client:authhub-client')
+    implementation project(':adapter-out:client:id-client')
 
     // ========================================
     // Spring Boot Starters (Reactive/Gateway)
@@ -64,11 +65,6 @@ dependencies {
     // ========================================
     // Observability
     // ========================================
-    // Observability Starter (TraceId + MDC Context propagation for WebFlux)
-    // AOP 의존성 필요 (observability-logging의 @Aspect 지원)
-    implementation libs.observability.starter
-    implementation 'org.springframework.boot:spring-boot-starter-aop'
-
     // Micrometer for metrics
     implementation libs.micrometer.prometheus
 
@@ -145,10 +141,6 @@ tasks.jacocoTestCoverageVerification {
 }
 
 tasks.test {
-    // CI 환경에서 통합 테스트 제외 (SKIP_INTEGRATION_TESTS=true)
-    if (System.getenv('SKIP_INTEGRATION_TESTS') == 'true') {
-        exclude '**/integration/**'
-    }
     finalizedBy tasks.jacocoTestCoverageVerification
 }
 

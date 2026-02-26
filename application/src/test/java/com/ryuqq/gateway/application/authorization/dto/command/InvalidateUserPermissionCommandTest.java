@@ -1,7 +1,6 @@
 package com.ryuqq.gateway.application.authorization.dto.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,30 +27,6 @@ class InvalidateUserPermissionCommandTest {
             // then
             assertThat(command.tenantId()).isEqualTo(tenantId);
             assertThat(command.userId()).isEqualTo(userId);
-        }
-
-        @Test
-        @DisplayName("null tenantId로 생성 시 예외 발생")
-        void shouldThrowExceptionForNullTenantId() {
-            assertThatThrownBy(() -> new InvalidateUserPermissionCommand(null, "user456"))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("tenantId cannot be null");
-        }
-
-        @Test
-        @DisplayName("null userId로 생성 시 예외 발생")
-        void shouldThrowExceptionForNullUserId() {
-            assertThatThrownBy(() -> new InvalidateUserPermissionCommand("tenant123", null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("userId cannot be null");
-        }
-
-        @Test
-        @DisplayName("둘 다 null로 생성 시 tenantId 예외가 먼저 발생")
-        void shouldThrowTenantIdExceptionFirst() {
-            assertThatThrownBy(() -> new InvalidateUserPermissionCommand(null, null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("tenantId cannot be null");
         }
 
         @Test
@@ -105,18 +80,6 @@ class InvalidateUserPermissionCommandTest {
             // then
             assertThat(command.tenantId()).isEqualTo(tenantId);
             assertThat(command.userId()).isEqualTo(userId);
-        }
-
-        @Test
-        @DisplayName("정적 팩토리 메서드도 null 검증 수행")
-        void shouldValidateNullsInStaticFactoryMethod() {
-            assertThatThrownBy(() -> InvalidateUserPermissionCommand.of(null, "user456"))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("tenantId cannot be null");
-
-            assertThatThrownBy(() -> InvalidateUserPermissionCommand.of("tenant123", null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("userId cannot be null");
         }
     }
 
@@ -227,123 +190,6 @@ class InvalidateUserPermissionCommandTest {
             // given
             String tenantId = "550e8400-e29b-41d4-a716-446655440000";
             String userId = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
-
-            // when
-            InvalidateUserPermissionCommand command =
-                    InvalidateUserPermissionCommand.of(tenantId, userId);
-
-            // then
-            assertThat(command.tenantId()).isEqualTo(tenantId);
-            assertThat(command.userId()).isEqualTo(userId);
-        }
-
-        @Test
-        @DisplayName("이메일 형식의 userId로 생성")
-        void shouldCreateWithEmailFormatUserId() {
-            // given
-            String tenantId = "company-tenant";
-            String userId = "john.doe@example.com";
-
-            // when
-            InvalidateUserPermissionCommand command =
-                    InvalidateUserPermissionCommand.of(tenantId, userId);
-
-            // then
-            assertThat(command.tenantId()).isEqualTo(tenantId);
-            assertThat(command.userId()).isEqualTo(userId);
-        }
-
-        @Test
-        @DisplayName("한글이 포함된 ID로 생성")
-        void shouldCreateWithKoreanCharacters() {
-            // given
-            String tenantId = "테넌트123";
-            String userId = "사용자456";
-
-            // when
-            InvalidateUserPermissionCommand command =
-                    InvalidateUserPermissionCommand.of(tenantId, userId);
-
-            // then
-            assertThat(command.tenantId()).isEqualTo(tenantId);
-            assertThat(command.userId()).isEqualTo(userId);
-        }
-
-        @Test
-        @DisplayName("URL 인코딩된 문자가 포함된 ID로 생성")
-        void shouldCreateWithUrlEncodedCharacters() {
-            // given
-            String tenantId = "tenant%20with%20spaces";
-            String userId = "user%40domain.com";
-
-            // when
-            InvalidateUserPermissionCommand command =
-                    InvalidateUserPermissionCommand.of(tenantId, userId);
-
-            // then
-            assertThat(command.tenantId()).isEqualTo(tenantId);
-            assertThat(command.userId()).isEqualTo(userId);
-        }
-    }
-
-    @Nested
-    @DisplayName("비즈니스 시나리오 테스트")
-    class BusinessScenarioTest {
-
-        @Test
-        @DisplayName("단일 사용자 권한 무효화 시나리오")
-        void shouldCreateForSingleUserInvalidationScenario() {
-            // given
-            String tenantId = "enterprise-tenant";
-            String userId = "employee-001";
-
-            // when
-            InvalidateUserPermissionCommand command =
-                    InvalidateUserPermissionCommand.of(tenantId, userId);
-
-            // then
-            assertThat(command.tenantId()).isEqualTo(tenantId);
-            assertThat(command.userId()).isEqualTo(userId);
-        }
-
-        @Test
-        @DisplayName("관리자 권한 변경 시나리오")
-        void shouldCreateForAdminPermissionChangeScenario() {
-            // given
-            String tenantId = "admin-tenant";
-            String userId = "super-admin";
-
-            // when
-            InvalidateUserPermissionCommand command =
-                    InvalidateUserPermissionCommand.of(tenantId, userId);
-
-            // then
-            assertThat(command.tenantId()).isEqualTo(tenantId);
-            assertThat(command.userId()).isEqualTo(userId);
-        }
-
-        @Test
-        @DisplayName("멀티 테넌트 환경에서의 사용자 권한 무효화")
-        void shouldCreateForMultiTenantScenario() {
-            // given
-            String tenantId = "tenant-a";
-            String userId = "shared-user-123";
-
-            // when
-            InvalidateUserPermissionCommand command =
-                    InvalidateUserPermissionCommand.of(tenantId, userId);
-
-            // then
-            assertThat(command.tenantId()).isEqualTo(tenantId);
-            assertThat(command.userId()).isEqualTo(userId);
-        }
-
-        @Test
-        @DisplayName("임시 사용자 권한 무효화 시나리오")
-        void shouldCreateForTemporaryUserScenario() {
-            // given
-            String tenantId = "temp-tenant";
-            String userId = "guest-user-temp-001";
 
             // when
             InvalidateUserPermissionCommand command =

@@ -26,8 +26,6 @@ dependencies {
     // Validation
     implementation libs.spring.boot.starter.validation
 
-    // Observability (Cross-cutting concern: @Loggable AOP)
-    implementation libs.observability.starter
 
     // Reactive (Mono/Flux for Port definitions)
     api libs.reactor.core

@@ -14,7 +14,6 @@ import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
 import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -55,7 +54,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author development-team
  * @since 1.0.0
  */
-@Disabled("PermissionFilter not yet activated - @Component is commented out")
 @SpringBootTest(
         classes = GatewayApplication.class,
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -128,18 +126,18 @@ class PermissionAuthorizationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(JwtTestFixture.jwksResponse())));
 
-        // Permission Spec 응답 설정 (query parameter 포함)
+        // Permission Spec 응답 설정 (Internal API)
         wireMockServer.stubFor(
-                get(urlPathMatching("/api/v1/permissions/spec"))
+                get(urlPathMatching(PermissionTestFixture.PERMISSION_SPEC_PATH))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(PermissionTestFixture.permissionSpecResponse())));
 
-        // 일반 사용자 Permission Hash 응답 설정
+        // 일반 사용자 Permission Hash 응답 설정 (Internal API)
         wireMockServer.stubFor(
-                get(urlPathMatching("/api/v1/permissions/users/.+"))
+                get(urlPathMatching(PermissionTestFixture.USER_PERMISSIONS_PATH_PATTERN))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
@@ -157,9 +155,9 @@ class PermissionAuthorizationIntegrationTest {
                                         .withHeader("Content-Type", "application/json")
                                         .withBody("{\"message\":\"success\"}")));
 
-        // Mock Tenant Config API
+        // Mock Tenant Config API (Internal API)
         wireMockServer.stubFor(
-                get(urlPathMatching("/api/v1/tenants/.+/config"))
+                get(urlPathMatching("/api/v1/internal/tenants/.+/config"))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
@@ -233,9 +231,9 @@ class PermissionAuthorizationIntegrationTest {
 
         @BeforeEach
         void setupNoPermissionUser() {
-            // 권한 없는 사용자 응답으로 재설정
+            // 권한 없는 사용자 응답으로 재설정 (Internal API)
             wireMockServer.stubFor(
-                    get(urlPathMatching("/api/v1/permissions/users/.+"))
+                    get(urlPathMatching(PermissionTestFixture.USER_PERMISSIONS_PATH_PATTERN))
                             .willReturn(
                                     aResponse()
                                             .withStatus(200)
@@ -346,9 +344,9 @@ class PermissionAuthorizationIntegrationTest {
 
         @BeforeEach
         void setupAdminUser() {
-            // 관리자 권한 사용자 응답으로 설정
+            // 관리자 권한 사용자 응답으로 설정 (Internal API)
             wireMockServer.stubFor(
-                    get(urlPathMatching("/api/v1/permissions/users/.+"))
+                    get(urlPathMatching(PermissionTestFixture.USER_PERMISSIONS_PATH_PATTERN))
                             .willReturn(
                                     aResponse()
                                             .withStatus(200)

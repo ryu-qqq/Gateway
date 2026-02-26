@@ -29,9 +29,9 @@ class SessionConfigTest {
 
             // then
             assertThat(config).isNotNull();
-            assertThat(config.maxActiveSessions()).isEqualTo(5);
-            assertThat(config.accessTokenTTL()).isEqualTo(Duration.ofMinutes(15));
-            assertThat(config.refreshTokenTTL()).isEqualTo(Duration.ofDays(7));
+            assertThat(config.maxActiveSessionsValue()).isEqualTo(5);
+            assertThat(config.accessTokenTTLDuration()).isEqualTo(Duration.ofMinutes(15));
+            assertThat(config.refreshTokenTTLDuration()).isEqualTo(Duration.ofDays(7));
         }
 
         @Test
@@ -42,7 +42,7 @@ class SessionConfigTest {
                     SessionConfig.of(1, Duration.ofMinutes(1), Duration.ofMinutes(1));
 
             // then
-            assertThat(config.maxActiveSessions()).isEqualTo(1);
+            assertThat(config.maxActiveSessionsValue()).isEqualTo(1);
         }
 
         @Test
@@ -67,8 +67,8 @@ class SessionConfigTest {
         @DisplayName("accessTokenTTL이 null이면 예외 발생")
         void shouldThrowExceptionWhenAccessTokenTTLIsNull() {
             assertThatThrownBy(() -> SessionConfig.of(5, null, Duration.ofDays(7)))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("accessTokenTTL cannot be null");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("accessTokenTTL must be positive");
         }
 
         @Test
@@ -92,8 +92,8 @@ class SessionConfigTest {
         @DisplayName("refreshTokenTTL이 null이면 예외 발생")
         void shouldThrowExceptionWhenRefreshTokenTTLIsNull() {
             assertThatThrownBy(() -> SessionConfig.of(5, Duration.ofMinutes(15), null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessageContaining("refreshTokenTTL cannot be null");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("refreshTokenTTL must be positive");
         }
 
         @Test
@@ -125,9 +125,9 @@ class SessionConfigTest {
             SessionConfig config = SessionConfig.defaultConfig();
 
             // then
-            assertThat(config.maxActiveSessions()).isEqualTo(5);
-            assertThat(config.accessTokenTTL()).isEqualTo(Duration.ofMinutes(15));
-            assertThat(config.refreshTokenTTL()).isEqualTo(Duration.ofDays(7));
+            assertThat(config.maxActiveSessionsValue()).isEqualTo(5);
+            assertThat(config.accessTokenTTLDuration()).isEqualTo(Duration.ofMinutes(15));
+            assertThat(config.refreshTokenTTLDuration()).isEqualTo(Duration.ofDays(7));
         }
     }
 
@@ -149,9 +149,9 @@ class SessionConfigTest {
                             maxActiveSessions, accessTokenTTLSeconds, refreshTokenTTLSeconds);
 
             // then
-            assertThat(config.maxActiveSessions()).isEqualTo(10);
-            assertThat(config.accessTokenTTL()).isEqualTo(Duration.ofSeconds(900));
-            assertThat(config.refreshTokenTTL()).isEqualTo(Duration.ofSeconds(604800));
+            assertThat(config.maxActiveSessionsValue()).isEqualTo(10);
+            assertThat(config.accessTokenTTLDuration()).isEqualTo(Duration.ofSeconds(900));
+            assertThat(config.refreshTokenTTLDuration()).isEqualTo(Duration.ofSeconds(604800));
         }
     }
 

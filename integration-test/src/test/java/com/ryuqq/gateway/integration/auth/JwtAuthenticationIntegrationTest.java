@@ -9,6 +9,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.integration.helper.JwtTestFixture;
+import com.ryuqq.gateway.integration.helper.PermissionTestFixture;
 import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -114,28 +115,25 @@ class JwtAuthenticationIntegrationTest {
 
         // Mock Permission Spec endpoint (Internal API)
         wireMockServer.stubFor(
-                get(urlEqualTo("/api/v1/internal/endpoint-permissions/spec"))
+                get(urlEqualTo(PermissionTestFixture.PERMISSION_SPEC_PATH))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
-                                                """
-                                                {
-                                                    "version": 1,
-                                                    "updatedAt": "2025-01-01T00:00:00Z",
-                                                    "permissions": [
-                                                        {
-                                                            "serviceName": "test-service",
-                                                            "path": "/test/.*",
-                                                            "method": "GET",
-                                                            "isPublic": true,
-                                                            "requiredRoles": [],
-                                                            "requiredPermissions": []
-                                                        }
-                                                    ]
-                                                }
-                                                """)));
+                                                PermissionTestFixture.allPublicPermissionSpec(
+                                                        "/test/.*"))));
+
+        // Mock User Permissions endpoint (Internal API)
+        wireMockServer.stubFor(
+                get(WireMock.urlPathMatching(PermissionTestFixture.USER_PERMISSIONS_PATH_PATTERN))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                PermissionTestFixture
+                                                        .userPermissionHashResponse())));
 
         // Mock downstream service
         wireMockServer.stubFor(

@@ -4,7 +4,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.ryuqq.gateway.application.authorization.dto.command.SyncPermissionSpecCommand;
-import com.ryuqq.gateway.application.authorization.port.out.command.PermissionSpecCommandPort;
+import com.ryuqq.gateway.application.authorization.manager.PermissionSpecCommandManager;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,13 +20,13 @@ import reactor.test.StepVerifier;
 @DisplayName("SyncPermissionSpecService 테스트")
 class SyncPermissionSpecServiceTest {
 
-    @Mock private PermissionSpecCommandPort permissionSpecCommandPort;
+    @Mock private PermissionSpecCommandManager permissionSpecCommandManager;
 
     private SyncPermissionSpecService syncPermissionSpecService;
 
     @BeforeEach
     void setUp() {
-        syncPermissionSpecService = new SyncPermissionSpecService(permissionSpecCommandPort);
+        syncPermissionSpecService = new SyncPermissionSpecService(permissionSpecCommandManager);
     }
 
     @Nested
@@ -42,12 +42,12 @@ class SyncPermissionSpecServiceTest {
             SyncPermissionSpecCommand command =
                     SyncPermissionSpecCommand.of(version, changedServices);
 
-            when(permissionSpecCommandPort.invalidate()).thenReturn(Mono.empty());
+            when(permissionSpecCommandManager.invalidate()).thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(syncPermissionSpecService.execute(command)).verifyComplete();
 
-            verify(permissionSpecCommandPort).invalidate();
+            verify(permissionSpecCommandManager).invalidate();
         }
 
         @Test
@@ -57,12 +57,12 @@ class SyncPermissionSpecServiceTest {
             Long version = 456L;
             SyncPermissionSpecCommand command = SyncPermissionSpecCommand.of(version);
 
-            when(permissionSpecCommandPort.invalidate()).thenReturn(Mono.empty());
+            when(permissionSpecCommandManager.invalidate()).thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(syncPermissionSpecService.execute(command)).verifyComplete();
 
-            verify(permissionSpecCommandPort).invalidate();
+            verify(permissionSpecCommandManager).invalidate();
         }
 
         @Test
@@ -73,14 +73,15 @@ class SyncPermissionSpecServiceTest {
             SyncPermissionSpecCommand command = SyncPermissionSpecCommand.of(version);
             RuntimeException expectedException = new RuntimeException("Cache invalidation failed");
 
-            when(permissionSpecCommandPort.invalidate()).thenReturn(Mono.error(expectedException));
+            when(permissionSpecCommandManager.invalidate())
+                    .thenReturn(Mono.error(expectedException));
 
             // when & then
             StepVerifier.create(syncPermissionSpecService.execute(command))
                     .expectError(RuntimeException.class)
                     .verify();
 
-            verify(permissionSpecCommandPort).invalidate();
+            verify(permissionSpecCommandManager).invalidate();
         }
 
         @Test
@@ -92,12 +93,12 @@ class SyncPermissionSpecServiceTest {
             SyncPermissionSpecCommand command =
                     SyncPermissionSpecCommand.of(version, emptyServices);
 
-            when(permissionSpecCommandPort.invalidate()).thenReturn(Mono.empty());
+            when(permissionSpecCommandManager.invalidate()).thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(syncPermissionSpecService.execute(command)).verifyComplete();
 
-            verify(permissionSpecCommandPort).invalidate();
+            verify(permissionSpecCommandManager).invalidate();
         }
 
         @Test
@@ -115,12 +116,12 @@ class SyncPermissionSpecServiceTest {
             SyncPermissionSpecCommand command =
                     SyncPermissionSpecCommand.of(version, multipleServices);
 
-            when(permissionSpecCommandPort.invalidate()).thenReturn(Mono.empty());
+            when(permissionSpecCommandManager.invalidate()).thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(syncPermissionSpecService.execute(command)).verifyComplete();
 
-            verify(permissionSpecCommandPort).invalidate();
+            verify(permissionSpecCommandManager).invalidate();
         }
     }
 
@@ -137,13 +138,12 @@ class SyncPermissionSpecServiceTest {
             SyncPermissionSpecCommand command =
                     SyncPermissionSpecCommand.of(version, changedServices);
 
-            when(permissionSpecCommandPort.invalidate()).thenReturn(Mono.empty());
+            when(permissionSpecCommandManager.invalidate()).thenReturn(Mono.empty());
 
             // when & then
             StepVerifier.create(syncPermissionSpecService.execute(command)).verifyComplete();
 
-            // 로그는 실제로는 검증하기 어려우므로 정상 완료만 확인
-            verify(permissionSpecCommandPort).invalidate();
+            verify(permissionSpecCommandManager).invalidate();
         }
 
         @Test
@@ -154,14 +154,15 @@ class SyncPermissionSpecServiceTest {
             SyncPermissionSpecCommand command = SyncPermissionSpecCommand.of(version);
             RuntimeException expectedException = new RuntimeException("Test error");
 
-            when(permissionSpecCommandPort.invalidate()).thenReturn(Mono.error(expectedException));
+            when(permissionSpecCommandManager.invalidate())
+                    .thenReturn(Mono.error(expectedException));
 
             // when & then
             StepVerifier.create(syncPermissionSpecService.execute(command))
                     .expectError(RuntimeException.class)
                     .verify();
 
-            verify(permissionSpecCommandPort).invalidate();
+            verify(permissionSpecCommandManager).invalidate();
         }
     }
 }

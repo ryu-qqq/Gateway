@@ -1,104 +1,141 @@
 package com.ryuqq.gateway.domain.common.exception;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
- * DomainException - Domain Layer 기본 예외 클래스
+ * DomainException - Domain Layer 예외의 최상위 클래스
  *
- * <p>모든 Domain Layer 예외는 이 클래스를 상속해야 합니다.
+ * <p>모든 비즈니스 예외는 이 클래스를 상속해야 합니다.
  *
  * <p><strong>설계 원칙:</strong>
  *
  * <ul>
- *   <li>✅ ErrorCode 객체를 통한 일관된 에러 정보 제공
- *   <li>✅ RuntimeException (Unchecked Exception) 상속
- *   <li>✅ 상세 정보(detail)를 통한 디버깅 지원
+ *   <li>Spring 의존성 금지 (HttpStatus 대신 int 사용)
+ *   <li>ErrorCode 객체 기반 (에러 코드, HTTP 상태, 메시지 캡슐화)
+ *   <li>RuntimeException 상속 (Unchecked Exception)
  * </ul>
  *
- * <p><strong>구현 예시:</strong>
+ * <p><strong>사용 예시:</strong>
  *
  * <pre>{@code
  * public class OrderNotFoundException extends DomainException {
  *     public OrderNotFoundException(Long orderId) {
- *         super(OrderErrorCode.ORDER_NOT_FOUND, "orderId: " + orderId);
+ *         super(
+ *             OrderErrorCode.ORDER_NOT_FOUND,
+ *             String.format("Order not found: %d", orderId),
+ *             Map.of("orderId", orderId)
+ *         );
  *     }
  * }
  * }</pre>
  *
- * @author development-team
- * @since 1.0.0
+ * @author ryu-qqq
+ * @since 2025-10-31
  */
-public abstract class DomainException extends RuntimeException {
+public class DomainException extends RuntimeException {
 
     private final ErrorCode errorCode;
-    private final String detail;
+    private final Map<String, Object> args;
 
     /**
-     * ErrorCode만으로 예외 생성
+     * Constructor - ErrorCode 기반 예외 생성
      *
-     * @param errorCode 에러 코드 (ErrorCode 구현체)
-     * @author development-team
-     * @since 1.0.0
+     * @param errorCode 에러 코드 (필수)
      */
     protected DomainException(ErrorCode errorCode) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
-        this.detail = null;
+        this.args = Collections.emptyMap();
     }
 
     /**
-     * ErrorCode와 상세 정보로 예외 생성
+     * Constructor - ErrorCode + 상세 정보
      *
-     * @param errorCode 에러 코드 (ErrorCode 구현체)
-     * @param detail 상세 정보 (디버깅용)
-     * @author development-team
-     * @since 1.0.0
+     * <p>기본 메시지에 상세 정보를 추가합니다: "{기본 메시지}: {상세 정보}"
+     *
+     * <p>detail이 null인 경우 기본 메시지만 사용합니다.
+     *
+     * @param errorCode 에러 코드 (필수)
+     * @param detail 상세 정보 (기본 메시지에 추가됨, null 허용)
      */
     protected DomainException(ErrorCode errorCode, String detail) {
         super(detail != null ? errorCode.getMessage() + ": " + detail : errorCode.getMessage());
         this.errorCode = errorCode;
-        this.detail = detail;
+        this.args = Collections.emptyMap();
     }
 
     /**
-     * ErrorCode 반환
+     * Constructor - ErrorCode + 상세 정보 + 컨텍스트 정보
+     *
+     * <p>기본 메시지에 상세 정보를 추가합니다: "{기본 메시지}: {상세 정보}"
+     *
+     * <p>detail이 null인 경우 기본 메시지만 사용합니다.
+     *
+     * @param errorCode 에러 코드 (필수)
+     * @param detail 상세 정보 (기본 메시지에 추가됨, null 허용)
+     * @param args 디버깅용 컨텍스트 정보
+     */
+    protected DomainException(ErrorCode errorCode, String detail, Map<String, Object> args) {
+        super(detail != null ? errorCode.getMessage() + ": " + detail : errorCode.getMessage());
+        this.errorCode = errorCode;
+        this.args = args != null ? Map.copyOf(args) : Collections.emptyMap();
+    }
+
+    /**
+     * Constructor - ErrorCode + 원인 예외
+     *
+     * @param errorCode 에러 코드 (필수)
+     * @param cause 원인 예외
+     */
+    protected DomainException(ErrorCode errorCode, Throwable cause) {
+        super(errorCode.getMessage(), cause);
+        this.errorCode = errorCode;
+        this.args = Collections.emptyMap();
+    }
+
+    /**
+     * 에러 코드 객체 반환
      *
      * @return ErrorCode 객체
-     * @author development-team
-     * @since 1.0.0
      */
     public ErrorCode getErrorCode() {
         return errorCode;
     }
 
     /**
-     * 에러 코드 문자열 반환
+     * 에러 코드 문자열 반환 (편의 메서드)
      *
-     * @return 에러 코드 문자열 (예: AUTH-001)
-     * @author development-team
-     * @since 1.0.0
+     * @return 에러 코드 문자열 (예: "ORDER-001")
+     */
+    public String code() {
+        return errorCode.getCode();
+    }
+
+    /**
+     * 에러 코드 문자열 반환 (ErrorCode 인터페이스 호환)
+     *
+     * @return 에러 코드 문자열 (예: "ORDER-001")
      */
     public String getCode() {
         return errorCode.getCode();
     }
 
     /**
-     * HTTP 상태 코드 반환
+     * HTTP 상태 코드 반환 (편의 메서드)
      *
-     * @return HTTP 상태 코드 (예: 401, 404)
-     * @author development-team
-     * @since 1.0.0
+     * @return HTTP 상태 코드 (예: 404, 400, 409)
      */
-    public int getHttpStatus() {
+    public int httpStatus() {
         return errorCode.getHttpStatus();
     }
 
     /**
-     * 상세 정보 반환
+     * 컨텍스트 정보 반환
      *
-     * @return 상세 정보 문자열 (없으면 null)
-     * @author development-team
-     * @since 1.0.0
+     * @return 디버깅용 컨텍스트 정보 (불변 Map)
      */
-    public String getDetail() {
-        return detail;
+    public Map<String, Object> args() {
+        return args;
     }
 }

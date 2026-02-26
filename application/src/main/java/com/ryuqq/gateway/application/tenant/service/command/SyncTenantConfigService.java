@@ -2,8 +2,8 @@ package com.ryuqq.gateway.application.tenant.service.command;
 
 import com.ryuqq.gateway.application.tenant.dto.command.SyncTenantConfigCommand;
 import com.ryuqq.gateway.application.tenant.dto.response.SyncTenantConfigResponse;
+import com.ryuqq.gateway.application.tenant.manager.TenantConfigCommandManager;
 import com.ryuqq.gateway.application.tenant.port.in.command.SyncTenantConfigUseCase;
-import com.ryuqq.gateway.application.tenant.port.out.command.TenantConfigCommandPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,9 +29,9 @@ import reactor.core.publisher.Mono;
  * <pre>
  * SyncTenantConfigService (Application Service)
  *   ↓ (calls)
+ * TenantConfigCommandManager (Application Manager)
+ *   ↓ (calls)
  * TenantConfigCommandPort (Application Out Port)
- *   ↓ (implemented by)
- * TenantConfigCommandAdapter (Infrastructure Adapter)
  * </pre>
  *
  * @author development-team
@@ -42,10 +42,10 @@ public class SyncTenantConfigService implements SyncTenantConfigUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(SyncTenantConfigService.class);
 
-    private final TenantConfigCommandPort tenantConfigCommandPort;
+    private final TenantConfigCommandManager tenantConfigCommandManager;
 
-    public SyncTenantConfigService(TenantConfigCommandPort tenantConfigCommandPort) {
-        this.tenantConfigCommandPort = tenantConfigCommandPort;
+    public SyncTenantConfigService(TenantConfigCommandManager tenantConfigCommandManager) {
+        this.tenantConfigCommandManager = tenantConfigCommandManager;
     }
 
     /**
@@ -58,7 +58,8 @@ public class SyncTenantConfigService implements SyncTenantConfigUseCase {
      */
     @Override
     public Mono<SyncTenantConfigResponse> execute(SyncTenantConfigCommand command) {
-        return invalidateTenantConfigCache(command.tenantId())
+        return tenantConfigCommandManager
+                .deleteByTenantId(command.tenantId())
                 .thenReturn(SyncTenantConfigResponse.success(command.tenantId()))
                 .onErrorResume(
                         e -> {
@@ -69,15 +70,5 @@ public class SyncTenantConfigService implements SyncTenantConfigUseCase {
                                     e.getMessage());
                             return Mono.just(SyncTenantConfigResponse.failure(command.tenantId()));
                         });
-    }
-
-    /**
-     * Tenant Config 캐시 무효화
-     *
-     * @param tenantId Tenant ID
-     * @return Mono&lt;Void&gt;
-     */
-    private Mono<Void> invalidateTenantConfigCache(String tenantId) {
-        return tenantConfigCommandPort.deleteByTenantId(tenantId);
     }
 }

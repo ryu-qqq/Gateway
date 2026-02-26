@@ -2,15 +2,20 @@ package com.ryuqq.gateway.integration.auth;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.ryuqq.gateway.application.authentication.port.out.client.AuthHubClient;
 import com.ryuqq.gateway.bootstrap.GatewayApplication;
+import com.ryuqq.gateway.domain.authentication.vo.PublicKey;
+import com.ryuqq.gateway.domain.authentication.vo.TokenPair;
 import com.ryuqq.gateway.integration.helper.JwtTestFixture;
+import com.ryuqq.gateway.integration.helper.PermissionTestFixture;
 import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,10 +34,13 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * Token Refresh Integration Test
@@ -64,6 +72,12 @@ class TokenRefreshIntegrationTest {
             new GenericContainer<>("redis:7-alpine").withExposedPorts(6379).withReuse(true);
 
     @Autowired private WebTestClient webTestClient;
+
+    @Autowired
+    private org.springframework.data.redis.core.ReactiveRedisTemplate<String, String> redisTemplate;
+
+    @MockitoBean private AuthHubClient authHubClient;
+
 
     @AfterAll
     static void stopWireMock() {
@@ -104,6 +118,15 @@ class TokenRefreshIntegrationTest {
     void setupWireMock() {
         wireMockServer.resetAll();
 
+        // Clear Redis blacklist data between tests
+        redisTemplate
+                .getConnectionFactory()
+                .getReactiveConnection()
+                .serverCommands()
+                .flushAll()
+                .block();
+
+
         // JWKS endpoint mock
         wireMockServer.stubFor(
                 get(urlEqualTo("/api/v1/auth/jwks"))
@@ -115,28 +138,25 @@ class TokenRefreshIntegrationTest {
 
         // Permission Spec endpoint mock (Internal API)
         wireMockServer.stubFor(
-                get(urlEqualTo("/api/v1/internal/endpoint-permissions/spec"))
+                get(urlEqualTo(PermissionTestFixture.PERMISSION_SPEC_PATH))
                         .willReturn(
                                 aResponse()
                                         .withStatus(200)
                                         .withHeader("Content-Type", "application/json")
                                         .withBody(
-                                                """
-                                                {
-                                                    "version": 1,
-                                                    "updatedAt": "2025-01-01T00:00:00Z",
-                                                    "permissions": [
-                                                        {
-                                                            "serviceName": "test-service",
-                                                            "path": "/test/.*",
-                                                            "method": "GET",
-                                                            "isPublic": true,
-                                                            "requiredRoles": [],
-                                                            "requiredPermissions": []
-                                                        }
-                                                    ]
-                                                }
-                                                """)));
+                                                PermissionTestFixture.allPublicPermissionSpec(
+                                                        "/test/.*"))));
+
+        // User Permissions endpoint mock (Internal API)
+        wireMockServer.stubFor(
+                get(WireMock.urlPathMatching(PermissionTestFixture.USER_PERMISSIONS_PATH_PATTERN))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(200)
+                                        .withHeader("Content-Type", "application/json")
+                                        .withBody(
+                                                PermissionTestFixture
+                                                        .userPermissionHashResponse())));
 
         // Downstream service mock
         wireMockServer.stubFor(
@@ -158,20 +178,17 @@ class TokenRefreshIntegrationTest {
                                                 TenantConfigTestFixture.tenantConfigResponse(
                                                         "tenant-001", false))));
 
-        // AuthHub token refresh endpoint mock
-        // accessToken must be a valid JWT format for validation to pass
+        // AuthHubClient mock (SDK uses internal HTTP client, so we mock the port)
+        // Mock fetchPublicKeys for JWT signature verification
+        PublicKey testPublicKey =
+                PublicKey.fromRSAPublicKey(JwtTestFixture.defaultKid(), JwtTestFixture.publicKey());
+        when(authHubClient.fetchPublicKeys()).thenReturn(Flux.just(testPublicKey));
+
+        // Mock refreshAccessToken for token refresh flow
         String newAccessToken = JwtTestFixture.aValidJwt("refreshed-user-123");
-        wireMockServer.stubFor(
-                post(urlEqualTo("/api/v1/auth/refresh"))
-                        .willReturn(
-                                aResponse()
-                                        .withStatus(200)
-                                        .withHeader("Content-Type", "application/json")
-                                        .withBody(
-                                                String.format(
-                                                        "{\"accessToken\":\"%s\","
-                                                            + "\"refreshToken\":\"new-refresh-token-from-authhub-32chars\"}",
-                                                        newAccessToken))));
+        String newRefreshToken = "new-refresh-token-from-authhub-32chars";
+        when(authHubClient.refreshAccessToken(anyString(), anyString()))
+                .thenReturn(Mono.just(TokenPair.of(newAccessToken, newRefreshToken)));
     }
 
     @Test
