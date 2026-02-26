@@ -78,6 +78,7 @@ class TokenRefreshIntegrationTest {
 
     @MockitoBean private AuthHubClient authHubClient;
 
+
     @AfterAll
     static void stopWireMock() {
         if (wireMockServer != null) {
@@ -124,6 +125,7 @@ class TokenRefreshIntegrationTest {
                 .serverCommands()
                 .flushAll()
                 .block();
+
 
         // JWKS endpoint mock
         wireMockServer.stubFor(

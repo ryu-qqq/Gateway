@@ -191,6 +191,42 @@ resource "aws_cloudfront_response_headers_policy" "admin_api_cors" {
       items = ["X-New-Access-Token", "X-Trace-Id"]
     }
 
+    access_control_expose_headers {
+      items = ["X-New-Access-Token", "X-Trace-Id"]
+    }
+
+    access_control_max_age_sec = 86400
+
+    origin_override = false
+  }
+}
+
+# ========================================
+# Response Headers Policy (CORS for Admin API)
+# ========================================
+resource "aws_cloudfront_response_headers_policy" "admin_api_cors" {
+  name    = "${var.project_name}-admin-api-cors-${var.environment}"
+  comment = "CORS headers for Admin API responses (${var.environment})"
+
+  cors_config {
+    access_control_allow_credentials = true
+
+    access_control_allow_headers {
+      items = ["Authorization", "Content-Type", "X-Requested-With", "Accept", "Origin"]
+    }
+
+    access_control_allow_methods {
+      items = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
+    }
+
+    access_control_allow_origins {
+      items = ["https://stage-admin.set-of.com", "https://admin.set-of.com"]
+    }
+
+    access_control_expose_headers {
+      items = ["X-New-Access-Token", "X-Trace-Id"]
+    }
+
     access_control_max_age_sec = 86400
 
     origin_override = false
