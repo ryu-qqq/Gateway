@@ -433,6 +433,14 @@ module "gateway_task_role" {
             Resource = "arn:aws:s3:::prod-connectly/otel-config/*"
           },
           {
+            Sid    = "S3ListBucket"
+            Effect = "Allow"
+            Action = [
+              "s3:ListBucket"
+            ]
+            Resource = "arn:aws:s3:::prod-connectly"
+          },
+          {
             Sid    = "KMSDecryptOtelConfig"
             Effect = "Allow"
             Action = [
