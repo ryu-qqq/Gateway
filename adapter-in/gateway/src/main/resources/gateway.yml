@@ -89,6 +89,15 @@ gateway:
     endpoint-limit: 1000 # 엔드포인트당 분당 요청 제한 (기본값 유지)
 
   routing:
+    # 글로벌 Public 패턴 (모든 서비스에 공통 적용)
+    # swagger, api-docs 등 반복되는 패턴을 서비스별로 등록하지 않고 글로벌로 관리
+    global-public-patterns:
+      - /**/public/**
+      - /**/api-docs/**
+      - /**/swagger
+      - /**/swagger-ui/**
+      - /**/docs/**
+
     discovery:
       namespace: connectly.local
       default-port: 8080

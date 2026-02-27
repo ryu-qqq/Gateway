@@ -11,7 +11,10 @@ import org.springframework.stereotype.Component;
  *
  * <p>JWT 인증이 필요하지 않은 Public 경로 설정을 관리합니다.
  *
- * <p>설정은 gateway.routing.services[*].public-paths에서 수집됩니다.
+ * <p>설정은 gateway.routing.services[*].public-paths 및 gateway.routing.global-public-patterns에서 수집됩니다.
+ *
+ * <p><strong>글로벌 패턴:</strong> global-public-patterns에 정의된 패턴은 모든 서비스에 공통 적용됩니다. swagger, api-docs 등
+ * 반복되는 패턴을 서비스별로 등록하지 않고 글로벌로 관리할 수 있습니다.
  *
  * <p><strong>Host 기반 서비스 처리:</strong>
  *
@@ -31,7 +34,21 @@ public class PublicPathsProperties {
     private static final List<String> DEFAULT_PUBLIC_PATHS =
             List.of("/actuator/**", "/**/system/**");
 
+    /** 글로벌 Public 패턴 (YAML에서 설정, 모든 서비스에 공통 적용) */
+    private List<String> globalPublicPatterns = new ArrayList<>();
+
     private List<ServiceConfig> services = new ArrayList<>();
+
+    public List<String> getGlobalPublicPatterns() {
+        return globalPublicPatterns;
+    }
+
+    public void setGlobalPublicPatterns(List<String> globalPublicPatterns) {
+        this.globalPublicPatterns =
+                globalPublicPatterns == null
+                        ? new ArrayList<>()
+                        : new ArrayList<>(globalPublicPatterns);
+    }
 
     public List<ServiceConfig> getServices() {
         return services;
@@ -51,6 +68,7 @@ public class PublicPathsProperties {
      */
     public List<String> getAllPublicPaths() {
         List<String> allPaths = new ArrayList<>(DEFAULT_PUBLIC_PATHS);
+        allPaths.addAll(globalPublicPatterns);
 
         for (ServiceConfig service : services) {
             // Host가 정의된 서비스는 전역 public-paths에서 제외
