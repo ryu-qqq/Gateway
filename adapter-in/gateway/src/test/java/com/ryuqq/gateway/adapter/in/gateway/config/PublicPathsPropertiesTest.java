@@ -40,6 +40,41 @@ class PublicPathsPropertiesTest {
         }
 
         @Test
+        @DisplayName("글로벌 패턴이 포함되어야 한다")
+        void shouldIncludeGlobalPublicPatterns() {
+            // given
+            properties.setGlobalPublicPatterns(
+                    List.of("/**/public/**", "/**/api-docs/**", "/**/swagger"));
+
+            // when
+            List<String> result = properties.getAllPublicPaths();
+
+            // then
+            assertThat(result).contains("/**/public/**", "/**/api-docs/**", "/**/swagger");
+        }
+
+        @Test
+        @DisplayName("글로벌 패턴이 비어있으면 기존 동작을 유지해야 한다")
+        void shouldWorkWithEmptyGlobalPatterns() {
+            // given
+            PublicPathsProperties.ServiceConfig authService =
+                    new PublicPathsProperties.ServiceConfig();
+            authService.setId("authhub");
+            authService.setPublicPaths(List.of("/api/v1/auth/login"));
+
+            properties.setServices(List.of(authService));
+            // globalPublicPatterns는 기본값 빈 리스트
+
+            // when
+            List<String> result = properties.getAllPublicPaths();
+
+            // then
+            assertThat(result)
+                    .contains("/actuator/**", "/**/system/**", "/api/v1/auth/login")
+                    .hasSize(3);
+        }
+
+        @Test
         @DisplayName("hosts가 없는 서비스의 public-paths가 포함되어야 한다")
         void shouldIncludePublicPathsFromServicesWithoutHosts() {
             // given

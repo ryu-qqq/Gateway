@@ -132,43 +132,24 @@ gateway:
           - /api/v1/auth/logout
           - /api/v1/auth/.well-known/**
           - /api/v1/auth/jwks
-          - /api/v1/auth/api-docs/**
-          - /api/v1/auth/swagger
-          - /api/v1/auth/swagger-ui/**
-          - /api/v1/auth/docs/**
 
       # FileFlow Service
       - id: fileflow
         uri: http://fileflow-web-api-stage.connectly.local:8080
         paths:
           - /api/v1/file/**
-        public-paths:
-          - /api/v1/file/api-docs/**
-          - /api/v1/file/swagger
-          - /api/v1/file/swagger-ui/**
-          - /api/v1/file/docs/**
 
       # Commerce Service
       - id: commerce
         uri: http://commerce-web-api-stage.connectly.local:8080
         paths:
           - /api/v1/commerce/**
-        public-paths:
-          - /api/v1/commerce/api-docs/**
-          - /api/v1/commerce/swagger
-          - /api/v1/commerce/swagger-ui/**
-          - /api/v1/commerce/docs/**
 
       # CrawlingHub Service
       - id: crawling
         uri: http://crawlinghub-web-api-stage.connectly.local:8080
         paths:
           - /api/v1/crawling/**
-        public-paths:
-          - /api/v1/crawling/api-docs/**
-          - /api/v1/crawling/swagger
-          - /api/v1/crawling/swagger-ui/**
-          - /api/v1/crawling/docs/**
 
       # MarketPlace Service
       - id: marketplace
@@ -179,10 +160,6 @@ gateway:
         public-paths:
           - /api/v1/market/auth/login
           - /api/v1/market/auth/refresh
-          - /api/v1/market/api-docs/**
-          - /api/v1/market/swagger
-          - /api/v1/market/swagger-ui/**
-          - /api/v1/market/docs/**
 
       # Template Service
       - id: template
