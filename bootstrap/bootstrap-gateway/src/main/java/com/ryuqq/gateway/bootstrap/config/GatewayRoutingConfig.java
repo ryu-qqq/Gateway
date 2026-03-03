@@ -161,8 +161,14 @@ public class GatewayRoutingConfig {
                                     return predicateSpec
                                             .filters(
                                                     f -> {
+                                                        if (service.hasRewritePath()) {
+                                                            f.rewritePath(
+                                                                    service.getRewritePathPattern(),
+                                                                    service
+                                                                            .getRewritePathReplacement());
+                                                        }
                                                         if (service.isStripPrefix()) {
-                                                            return f.stripPrefix(
+                                                            f.stripPrefix(
                                                                     service.getStripPrefixParts());
                                                         }
                                                         return f;
@@ -364,6 +370,12 @@ public class GatewayRoutingConfig {
         /** Public paths that don't require JWT authentication */
         private List<String> publicPaths = List.of();
 
+        /** Regex pattern for path rewriting (e.g., "/api/v1/(?<remaining>.*)") */
+        private String rewritePathPattern;
+
+        /** Replacement for path rewriting (e.g., "/api/v1/legacy/${remaining}") */
+        private String rewritePathReplacement;
+
         /** Host patterns for host-based routing (e.g., "*.set-of.com", "server.set-of.net") */
         private List<String> hosts = List.of();
 
@@ -421,6 +433,29 @@ public class GatewayRoutingConfig {
 
         public void setPublicPaths(List<String> publicPaths) {
             this.publicPaths = publicPaths == null ? List.of() : new ArrayList<>(publicPaths);
+        }
+
+        public String getRewritePathPattern() {
+            return rewritePathPattern;
+        }
+
+        public void setRewritePathPattern(String rewritePathPattern) {
+            this.rewritePathPattern = rewritePathPattern;
+        }
+
+        public String getRewritePathReplacement() {
+            return rewritePathReplacement;
+        }
+
+        public void setRewritePathReplacement(String rewritePathReplacement) {
+            this.rewritePathReplacement = rewritePathReplacement;
+        }
+
+        public boolean hasRewritePath() {
+            return rewritePathPattern != null
+                    && !rewritePathPattern.isBlank()
+                    && rewritePathReplacement != null
+                    && !rewritePathReplacement.isBlank();
         }
 
         public List<String> getHosts() {
