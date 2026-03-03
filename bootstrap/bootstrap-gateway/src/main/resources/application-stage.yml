@@ -125,7 +125,7 @@ gateway:
         hosts:
           - stage-admin.set-of.com
         public-paths:
-          - /api/v1/**
+          - /api/v1/auth/authentication
         rewrite-path-pattern: /api/v1/(?<remaining>.*)
         rewrite-path-replacement: /api/v1/legacy/${remaining}
 
