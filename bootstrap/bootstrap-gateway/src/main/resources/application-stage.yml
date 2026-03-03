@@ -104,6 +104,31 @@ gateway:
         public-paths:
           - /api/v2/**
 
+      # ============================================
+      # MarketPlace OMS Legacy (Strangler Fig Pattern)
+      # OMS(사방넷/셀릭)가 호출하는 레거시 어드민 엔드포인트를
+      # MarketPlace로 리라우팅
+      # Path Rewrite: /api/v1/{path} → /api/v1/legacy/{path}
+      # 반드시 legacy-admin보다 먼저 등록되어야 함!
+      # ============================================
+      - id: marketplace-oms-legacy
+        uri: ${MARKETPLACE_OMS_URI:http://marketplace-web-api-stage.connectly.local:9090}
+        paths:
+          - /api/v1/auth/authentication
+          - /api/v1/seller
+          - /api/v1/product/group/**
+          - /api/v1/order/**
+          - /api/v1/orders
+          - /api/v1/qnas
+          - /api/v1/shipment/**
+          - /api/v1/image/presigned
+        hosts:
+          - stage-admin.set-of.com
+        public-paths:
+          - /api/v1/**
+        rewrite-path-pattern: /api/v1/(?<remaining>.*)
+        rewrite-path-replacement: /api/v1/legacy/${remaining}
+
       # Legacy Admin API Service (Host-based routing)
       # Handles: stage-admin.set-of.com
       # Strangler Fig Pattern: v2 외 모든 경로는 레거시로 라우팅
