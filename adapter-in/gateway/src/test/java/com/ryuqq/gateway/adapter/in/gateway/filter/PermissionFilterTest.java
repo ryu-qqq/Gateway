@@ -3,11 +3,13 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
+import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authorization.dto.command.ValidatePermissionCommand;
 import com.ryuqq.gateway.application.authorization.dto.response.ValidatePermissionResponse;
 import com.ryuqq.gateway.application.authorization.port.in.command.ValidatePermissionUseCase;
@@ -42,6 +44,8 @@ class PermissionFilterTest {
 
     @Mock private GatewayErrorResponder errorResponder;
 
+    @Mock private PublicPathsProperties publicPathsProperties;
+
     private PermissionFilter permissionFilter;
 
     @BeforeEach
@@ -62,7 +66,9 @@ class PermissionFilterTest {
                             exchange.getResponse().setStatusCode(HttpStatus.INTERNAL_SERVER_ERROR);
                             return Mono.empty();
                         });
-        permissionFilter = new PermissionFilter(validatePermissionUseCase, errorResponder);
+        permissionFilter =
+                new PermissionFilter(
+                        validatePermissionUseCase, errorResponder, publicPathsProperties);
     }
 
     private EndpointPermission createMockEndpoint() {
@@ -315,6 +321,87 @@ class PermissionFilterTest {
             StepVerifier.create(permissionFilter.filter(exchange, chain)).verifyComplete();
 
             assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        }
+    }
+
+    @Nested
+    @DisplayName("skip-permission-check 테스트")
+    class SkipPermissionCheckTest {
+
+        @Test
+        @DisplayName("skip-permission-check 경로 매칭 시 권한 검사를 스킵해야 한다")
+        void shouldSkipPermissionCheckWhenPathMatches() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/v1/order/123")
+                            .header("Host", "stage-admin.set-of.com")
+                            .build();
+            ServerWebExchange exchange = MockServerWebExchange.from(request);
+            setUserAttributes(exchange, "user123", "tenant456", "hash789", Set.of("USER"));
+
+            when(publicPathsProperties.shouldSkipPermissionCheck(
+                            "/api/v1/order/123", "stage-admin.set-of.com"))
+                    .thenReturn(true);
+            when(chain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(permissionFilter.filter(exchange, chain)).verifyComplete();
+
+            verify(chain).filter(exchange);
+            verify(validatePermissionUseCase, never())
+                    .execute(any(ValidatePermissionCommand.class));
+        }
+
+        @Test
+        @DisplayName("skip-permission-check 경로 미매칭 시 정상 권한 검사를 수행해야 한다")
+        void shouldPerformPermissionCheckWhenPathDoesNotMatch() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/v1/users")
+                            .header("Host", "stage-admin.set-of.com")
+                            .build();
+            ServerWebExchange exchange = MockServerWebExchange.from(request);
+            setUserAttributes(exchange, "user123", "tenant456", "hash789", Set.of("USER"));
+
+            when(publicPathsProperties.shouldSkipPermissionCheck(
+                            "/api/v1/users", "stage-admin.set-of.com"))
+                    .thenReturn(false);
+
+            ValidatePermissionResponse successResponse =
+                    ValidatePermissionResponse.authorized(createMockEndpoint());
+            when(validatePermissionUseCase.execute(any(ValidatePermissionCommand.class)))
+                    .thenReturn(Mono.just(successResponse));
+            when(chain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(permissionFilter.filter(exchange, chain)).verifyComplete();
+
+            verify(validatePermissionUseCase).execute(any(ValidatePermissionCommand.class));
+        }
+
+        @Test
+        @DisplayName("X-Forwarded-Host 헤더를 사용한 호스트 추출")
+        void shouldUseXForwardedHostHeader() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/v1/order/123")
+                            .header("X-Forwarded-Host", "stage-admin.set-of.com")
+                            .header("Host", "internal-gateway.local")
+                            .build();
+            ServerWebExchange exchange = MockServerWebExchange.from(request);
+            setUserAttributes(exchange, "user123", "tenant456", "hash789", Set.of("USER"));
+
+            when(publicPathsProperties.shouldSkipPermissionCheck(
+                            "/api/v1/order/123", "stage-admin.set-of.com"))
+                    .thenReturn(true);
+            when(chain.filter(exchange)).thenReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(permissionFilter.filter(exchange, chain)).verifyComplete();
+
+            verify(chain).filter(exchange);
+            verify(validatePermissionUseCase, never())
+                    .execute(any(ValidatePermissionCommand.class));
         }
     }
 

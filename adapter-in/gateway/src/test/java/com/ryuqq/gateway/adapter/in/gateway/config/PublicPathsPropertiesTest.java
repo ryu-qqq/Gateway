@@ -222,6 +222,123 @@ class PublicPathsPropertiesTest {
     }
 
     @Nested
+    @DisplayName("shouldSkipPermissionCheck() 테스트")
+    class ShouldSkipPermissionCheckTest {
+
+        @Test
+        @DisplayName("호스트와 경로가 매칭되고 skipPermissionCheck=true이면 true를 반환해야 한다")
+        void shouldReturnTrueWhenHostAndPathMatchAndFlagIsTrue() {
+            // given
+            PublicPathsProperties.ServiceConfig service = new PublicPathsProperties.ServiceConfig();
+            service.setId("legacy-admin");
+            service.setPaths(List.of("/**"));
+            service.setHosts(List.of("stage-admin.set-of.com"));
+            service.setSkipPermissionCheck(true);
+
+            properties.setServices(List.of(service));
+
+            // when & then
+            assertThat(
+                            properties.shouldSkipPermissionCheck(
+                                    "/api/v1/users", "stage-admin.set-of.com"))
+                    .isTrue();
+        }
+
+        @Test
+        @DisplayName("특정 경로 패턴에 매칭되는 경우 true를 반환해야 한다")
+        void shouldReturnTrueWhenSpecificPathPatternMatches() {
+            // given
+            PublicPathsProperties.ServiceConfig service = new PublicPathsProperties.ServiceConfig();
+            service.setId("marketplace-oms-legacy");
+            service.setPaths(List.of("/api/v1/order/**", "/api/v1/seller"));
+            service.setHosts(List.of("stage-admin.set-of.com"));
+            service.setSkipPermissionCheck(true);
+
+            properties.setServices(List.of(service));
+
+            // when & then
+            assertThat(
+                            properties.shouldSkipPermissionCheck(
+                                    "/api/v1/order/123", "stage-admin.set-of.com"))
+                    .isTrue();
+            assertThat(
+                            properties.shouldSkipPermissionCheck(
+                                    "/api/v1/seller", "stage-admin.set-of.com"))
+                    .isTrue();
+        }
+
+        @Test
+        @DisplayName("skipPermissionCheck=false이면 false를 반환해야 한다")
+        void shouldReturnFalseWhenFlagIsFalse() {
+            // given
+            PublicPathsProperties.ServiceConfig service = new PublicPathsProperties.ServiceConfig();
+            service.setId("authhub");
+            service.setPaths(List.of("/api/v1/auth/**"));
+            service.setHosts(List.of("stage-admin.set-of.com"));
+            service.setSkipPermissionCheck(false);
+
+            properties.setServices(List.of(service));
+
+            // when & then
+            assertThat(
+                            properties.shouldSkipPermissionCheck(
+                                    "/api/v1/auth/login", "stage-admin.set-of.com"))
+                    .isFalse();
+        }
+
+        @Test
+        @DisplayName("호스트가 매칭되지 않으면 false를 반환해야 한다")
+        void shouldReturnFalseWhenHostDoesNotMatch() {
+            // given
+            PublicPathsProperties.ServiceConfig service = new PublicPathsProperties.ServiceConfig();
+            service.setId("legacy-admin");
+            service.setPaths(List.of("/**"));
+            service.setHosts(List.of("stage-admin.set-of.com"));
+            service.setSkipPermissionCheck(true);
+
+            properties.setServices(List.of(service));
+
+            // when & then
+            assertThat(properties.shouldSkipPermissionCheck("/api/v1/users", "stage.set-of.com"))
+                    .isFalse();
+        }
+
+        @Test
+        @DisplayName("경로가 매칭되지 않으면 false를 반환해야 한다")
+        void shouldReturnFalseWhenPathDoesNotMatch() {
+            // given
+            PublicPathsProperties.ServiceConfig service = new PublicPathsProperties.ServiceConfig();
+            service.setId("marketplace-oms-legacy");
+            service.setPaths(List.of("/api/v1/order/**"));
+            service.setHosts(List.of("stage-admin.set-of.com"));
+            service.setSkipPermissionCheck(true);
+
+            properties.setServices(List.of(service));
+
+            // when & then
+            assertThat(
+                            properties.shouldSkipPermissionCheck(
+                                    "/api/v1/users", "stage-admin.set-of.com"))
+                    .isFalse();
+        }
+
+        @Test
+        @DisplayName("null path는 false를 반환해야 한다")
+        void shouldReturnFalseForNullPath() {
+            // when & then
+            assertThat(properties.shouldSkipPermissionCheck(null, "stage-admin.set-of.com"))
+                    .isFalse();
+        }
+
+        @Test
+        @DisplayName("null host는 false를 반환해야 한다")
+        void shouldReturnFalseForNullHost() {
+            // when & then
+            assertThat(properties.shouldSkipPermissionCheck("/api/v1/users", null)).isFalse();
+        }
+    }
+
+    @Nested
     @DisplayName("ServiceConfig 테스트")
     class ServiceConfigTest {
 

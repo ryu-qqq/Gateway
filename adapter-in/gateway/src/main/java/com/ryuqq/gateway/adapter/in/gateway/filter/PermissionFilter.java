@@ -2,6 +2,7 @@ package com.ryuqq.gateway.adapter.in.gateway.filter;
 
 import com.ryuqq.gateway.adapter.in.gateway.common.util.GatewayErrorResponder;
 import com.ryuqq.gateway.adapter.in.gateway.config.GatewayFilterOrder;
+import com.ryuqq.gateway.adapter.in.gateway.config.PublicPathsProperties;
 import com.ryuqq.gateway.application.authorization.dto.command.ValidatePermissionCommand;
 import com.ryuqq.gateway.application.authorization.port.in.command.ValidatePermissionUseCase;
 import com.ryuqq.gateway.domain.authorization.exception.PermissionDeniedException;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
@@ -49,12 +51,15 @@ public class PermissionFilter implements GlobalFilter, Ordered {
 
     private final ValidatePermissionUseCase validatePermissionUseCase;
     private final GatewayErrorResponder errorResponder;
+    private final PublicPathsProperties publicPathsProperties;
 
     public PermissionFilter(
             ValidatePermissionUseCase validatePermissionUseCase,
-            GatewayErrorResponder errorResponder) {
+            GatewayErrorResponder errorResponder,
+            PublicPathsProperties publicPathsProperties) {
         this.validatePermissionUseCase = validatePermissionUseCase;
         this.errorResponder = errorResponder;
+        this.publicPathsProperties = publicPathsProperties;
     }
 
     @Override
@@ -71,6 +76,19 @@ public class PermissionFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
+        // skip-permission-check 플래그가 설정된 서비스의 경로는 권한 검사 스킵
+        // downstream 서비스가 자체 @PreAuthorize로 권한을 처리하는 경우
+        String requestPath = exchange.getRequest().getURI().getPath();
+        String host = extractHost(exchange);
+        if (publicPathsProperties.shouldSkipPermissionCheck(requestPath, host)) {
+            log.debug(
+                    "Skip permission check: userId={}, path={}, host={}",
+                    userId,
+                    requestPath,
+                    host);
+            return chain.filter(exchange);
+        }
+
         String tenantId = exchange.getAttribute(TENANT_ID_ATTRIBUTE);
         String permissionHash = exchange.getAttribute(PERMISSION_HASH_ATTRIBUTE);
         Set<String> roles = exchange.getAttribute(ROLES_ATTRIBUTE);
@@ -84,7 +102,6 @@ public class PermissionFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String requestPath = exchange.getRequest().getURI().getPath();
         String requestMethod = exchange.getRequest().getMethod().name();
 
         ValidatePermissionCommand command =
@@ -144,5 +161,46 @@ public class PermissionFilter implements GlobalFilter, Ordered {
 
     private Mono<Void> internalError(ServerWebExchange exchange) {
         return errorResponder.internalServerError(exchange, "INTERNAL_ERROR", "권한 검증 중 오류가 발생했습니다");
+    }
+
+    /**
+     * 요청에서 Host 추출 (X-Forwarded-Host 우선)
+     *
+     * <p>JwtAuthenticationFilter와 동일한 패턴으로 Host를 추출합니다.
+     *
+     * @param exchange ServerWebExchange
+     * @return Host 값 (포트 제외)
+     */
+    private String extractHost(ServerWebExchange exchange) {
+        HttpHeaders headers = exchange.getRequest().getHeaders();
+
+        String forwardedHost = headers.getFirst("X-Forwarded-Host");
+        if (forwardedHost != null && !forwardedHost.isEmpty()) {
+            String firstHost = extractFirstValidHost(forwardedHost);
+            if (firstHost != null) {
+                return removePort(firstHost);
+            }
+        }
+
+        String host = headers.getFirst(HttpHeaders.HOST);
+        return removePort(host);
+    }
+
+    private String extractFirstValidHost(String hosts) {
+        for (String host : hosts.split(",")) {
+            String trimmed = host.trim();
+            if (!trimmed.isEmpty()) {
+                return trimmed;
+            }
+        }
+        return null;
+    }
+
+    private String removePort(String host) {
+        if (host == null) {
+            return null;
+        }
+        int colonIndex = host.indexOf(':');
+        return colonIndex > 0 ? host.substring(0, colonIndex) : host;
     }
 }

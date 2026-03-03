@@ -126,6 +126,7 @@ gateway:
           - stage-admin.set-of.com
         public-paths:
           - /api/v1/auth/authentication
+        skip-permission-check: true
         rewrite-path-pattern: /api/v1/(?<remaining>.*)
         rewrite-path-replacement: /api/v1/legacy/${remaining}
 
@@ -138,6 +139,7 @@ gateway:
           - /**
         hosts:
           - stage-admin.set-of.com
+        skip-permission-check: true
 
       # ============================================
       # Path-based Routes (API Gateway services)

@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 
 /**
  * Public Paths Configuration Properties
@@ -33,6 +34,8 @@ public class PublicPathsProperties {
     /** 기본 Public 경로 (항상 포함) */
     private static final List<String> DEFAULT_PUBLIC_PATHS =
             List.of("/actuator/**", "/**/system/**");
+
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
     /** 글로벌 Public 패턴 (YAML에서 설정, 모든 서비스에 공통 적용) */
     private List<String> globalPublicPatterns = new ArrayList<>();
@@ -105,12 +108,41 @@ public class PublicPathsProperties {
         return allPublicPaths;
     }
 
+    /**
+     * 해당 요청이 Permission 검사를 스킵해야 하는지 확인
+     *
+     * <p>Host와 매칭되는 서비스 중 skipPermissionCheck=true인 서비스의 paths와 AntPathMatcher로 비교하여, 매칭되면 true를
+     * 반환합니다. downstream 서비스가 자체 {@code @PreAuthorize}로 권한을 처리하는 경우 Gateway에서는 JWT 인증만 수행하고 권한 검사를
+     * 스킵합니다.
+     *
+     * @param path 요청 경로
+     * @param host 요청 Host 헤더 값
+     * @return Permission 검사를 스킵해야 하면 true
+     */
+    public boolean shouldSkipPermissionCheck(String path, String host) {
+        if (path == null || host == null || host.isEmpty()) {
+            return false;
+        }
+
+        for (ServiceConfig service : services) {
+            if (service.isSkipPermissionCheck()
+                    && service.matchesHost(host)
+                    && service.matchesPath(path)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** Service Configuration for extracting public-paths */
     public static class ServiceConfig {
 
         private String id;
+        private List<String> paths = new ArrayList<>();
         private List<String> publicPaths = new ArrayList<>();
         private List<String> hosts = new ArrayList<>();
+        private boolean skipPermissionCheck;
 
         public String getId() {
             return id;
@@ -118,6 +150,14 @@ public class PublicPathsProperties {
 
         public void setId(String id) {
             this.id = id;
+        }
+
+        public List<String> getPaths() {
+            return Collections.unmodifiableList(paths);
+        }
+
+        public void setPaths(List<String> paths) {
+            this.paths = paths == null ? new ArrayList<>() : new ArrayList<>(paths);
         }
 
         public List<String> getPublicPaths() {
@@ -135,6 +175,14 @@ public class PublicPathsProperties {
 
         public void setHosts(List<String> hosts) {
             this.hosts = hosts == null ? new ArrayList<>() : new ArrayList<>(hosts);
+        }
+
+        public boolean isSkipPermissionCheck() {
+            return skipPermissionCheck;
+        }
+
+        public void setSkipPermissionCheck(boolean skipPermissionCheck) {
+            this.skipPermissionCheck = skipPermissionCheck;
         }
 
         /**
@@ -157,6 +205,19 @@ public class PublicPathsProperties {
                 return false;
             }
             return hosts.stream().anyMatch(h -> h.equalsIgnoreCase(host));
+        }
+
+        /**
+         * 주어진 경로가 이 서비스의 paths 패턴에 매칭되는지 확인
+         *
+         * @param path 확인할 경로
+         * @return 매칭되면 true
+         */
+        public boolean matchesPath(String path) {
+            if (paths == null || paths.isEmpty()) {
+                return false;
+            }
+            return paths.stream().anyMatch(pattern -> PATH_MATCHER.match(pattern, path));
         }
     }
 }
