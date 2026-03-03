@@ -112,7 +112,7 @@ gateway:
       # 반드시 legacy-admin보다 먼저 등록되어야 함!
       # ============================================
       - id: marketplace-oms-legacy
-        uri: ${MARKETPLACE_OMS_URI:http://marketplace-web-api-stage.connectly.local:9090}
+        uri: ${MARKETPLACE_OMS_URI:http://marketplace-api-stage.connectly.local:8080}
         paths:
           - /api/v1/auth/authentication
           - /api/v1/seller
