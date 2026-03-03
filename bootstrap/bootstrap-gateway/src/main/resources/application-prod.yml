@@ -172,6 +172,7 @@ gateway:
         public-paths:
           - /api/v1/market/auth/login
           - /api/v1/market/auth/refresh
+          - /api/v1/market/seller-applications
 
       # Template Service
       - id: template
