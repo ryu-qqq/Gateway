@@ -138,8 +138,6 @@ gateway:
           - /**
         hosts:
           - stage-admin.set-of.com
-        public-paths:
-          - /**
 
       # ============================================
       # Path-based Routes (API Gateway services)
