@@ -63,8 +63,8 @@ gateway:
       # ============================================
 
       # ============================================
-      # New Web API v2 (Strangler Fig Pattern)
-      # /api/v2/** 경로만 새 서비스로 라우팅
+      # New Web API (Strangler Fig Pattern)
+      # 이관 완료된 경로를 새 서비스로 라우팅
       # 반드시 legacy-web보다 먼저 등록되어야 함!
       # NOTE: 인증은 downstream 서비스에서 처리
       # ============================================
@@ -72,10 +72,20 @@ gateway:
         uri: ${NEW_WEB_URI:http://setof-commerce-web-api-stage.connectly.local:8080}
         paths:
           - /api/v2/**
+          - /api/v1/seller/**
+          - /api/v1/brand/**
+          - /api/v1/category/**
+          - /api/v1/faq/**
+          - /api/v1/board/**
         hosts:
           - stage.set-of.com
         public-paths:
           - /api/v2/**
+          - /api/v1/seller/**
+          - /api/v1/brand/**
+          - /api/v1/category/**
+          - /api/v1/faq/**
+          - /api/v1/board/**
 
       # Legacy Web API Service (Host-based routing)
       # Handles: stage.set-of.com
