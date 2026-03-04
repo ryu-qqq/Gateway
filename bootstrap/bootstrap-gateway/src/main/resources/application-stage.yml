@@ -186,6 +186,7 @@ gateway:
           - /api/v1/market/auth/login
           - /api/v1/market/auth/refresh
           - POST:/api/v1/market/seller-applications
+          - POST:/api/v1/market/seller-admin-applications
 
       # Template Service
       - id: template
