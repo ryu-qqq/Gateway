@@ -77,6 +77,9 @@ gateway:
           - /api/v1/category/**
           - /api/v1/faq/**
           - /api/v1/board/**
+          - /api/v1/products/**
+          - /api/v1/product/**
+          - /api/v1/search/**
         hosts:
           - stage.set-of.com
         public-paths:
@@ -86,6 +89,9 @@ gateway:
           - /api/v1/category/**
           - /api/v1/faq/**
           - /api/v1/board/**
+          - /api/v1/products/**
+          - /api/v1/product/**
+          - /api/v1/search/**
 
       # Legacy Web API Service (Host-based routing)
       # Handles: stage.set-of.com
