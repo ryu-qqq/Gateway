@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -60,7 +61,11 @@ class JwtAuthenticationFilterTest {
 
     /** 테스트용 Public Paths */
     private static final List<String> TEST_PUBLIC_PATHS =
-            List.of("/actuator/**", "/api/v1/auth/login", "/api/v1/auth/register");
+            List.of(
+                    "/actuator/**",
+                    "/api/v1/auth/login",
+                    "/api/v1/auth/register",
+                    "POST:/api/v1/market/seller-applications");
 
     @BeforeEach
     void setUp() {
@@ -221,5 +226,59 @@ class JwtAuthenticationFilterTest {
         StepVerifier.create(result).verifyComplete();
 
         assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Nested
+    @DisplayName("Method-aware Public Paths 테스트")
+    class MethodAwarePublicPathsTest {
+
+        @Test
+        @DisplayName("POST:/path 패턴은 POST 요청에서 JWT 검증을 스킵해야 한다")
+        void shouldSkipJwtForPostWhenMethodPrefixIsPost() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.post("/api/v1/market/seller-applications").build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            verify(filterChain).filter(any(ServerWebExchange.class));
+            verify(validateJwtUseCase, never()).execute(any());
+        }
+
+        @Test
+        @DisplayName("POST:/path 패턴은 GET 요청에서 JWT 검증을 수행해야 한다")
+        void shouldRequireJwtForGetWhenMethodPrefixIsPost() {
+            // given
+            MockServerHttpRequest request =
+                    MockServerHttpRequest.get("/api/v1/market/seller-applications").build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            exchange.getAttributes().put(TraceIdFilter.TRACE_ID_ATTRIBUTE, "test-trace-id");
+
+            // when & then (토큰 없으므로 401)
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            assertThat(exchange.getResponse().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+
+        @Test
+        @DisplayName("메서드 접두사 없는 패턴은 모든 메서드에서 JWT 검증을 스킵해야 한다")
+        void shouldSkipJwtForAllMethodsWhenNoMethodPrefix() {
+            // given
+            MockServerHttpRequest request = MockServerHttpRequest.get("/api/v1/auth/login").build();
+            MockServerWebExchange exchange = MockServerWebExchange.from(request);
+            when(filterChain.filter(any(ServerWebExchange.class))).thenReturn(Mono.empty());
+
+            // when & then
+            StepVerifier.create(jwtAuthenticationFilter.filter(exchange, filterChain))
+                    .verifyComplete();
+
+            verify(filterChain).filter(any(ServerWebExchange.class));
+            verify(validateJwtUseCase, never()).execute(any());
+        }
     }
 }
