@@ -72,26 +72,10 @@ gateway:
         uri: ${NEW_WEB_URI:http://setof-commerce-web-api-stage.connectly.local:8080}
         paths:
           - /api/v2/**
-          - /api/v1/seller/**
-          - /api/v1/brand/**
-          - /api/v1/category/**
-          - /api/v1/faq/**
-          - /api/v1/board/**
-          - /api/v1/products/**
-          - /api/v1/product/**
-          - /api/v1/search/**
         hosts:
           - stage.set-of.com
         public-paths:
           - /api/v2/**
-          - /api/v1/seller/**
-          - /api/v1/brand/**
-          - /api/v1/category/**
-          - /api/v1/faq/**
-          - /api/v1/board/**
-          - /api/v1/products/**
-          - /api/v1/product/**
-          - /api/v1/search/**
 
       # Legacy Web API Service (Host-based routing)
       # Handles: stage.set-of.com
