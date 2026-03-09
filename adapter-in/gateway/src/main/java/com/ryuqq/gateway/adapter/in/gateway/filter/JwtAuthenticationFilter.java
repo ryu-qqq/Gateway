@@ -96,13 +96,24 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getURI().getPath();
         String host = extractHost(exchange);
-
-        // Public Path인 경우 JWT 검증 없이 통과
-        if (isPublicPath(path, host)) {
-            return chain.filter(exchange);
-        }
+        String method = exchange.getRequest().getMethod().name();
 
         String token = extractToken(exchange);
+
+        // Public Path인 경우 JWT 검증은 건너뛰되, 쿠키 토큰은 Authorization 헤더로 전달
+        if (isPublicPath(path, host, method)) {
+            if (token == null
+                    || exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+                return chain.filter(exchange);
+            }
+
+            ServerHttpRequest passthroughRequest =
+                    exchange.getRequest()
+                            .mutate()
+                            .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + token)
+                            .build();
+            return chain.filter(exchange.mutate().request(passthroughRequest).build());
+        }
 
         if (token == null) {
             return unauthorized(exchange);
@@ -231,7 +242,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
 
     /**
-     * Public Path 여부 확인 (Host 인식)
+     * Public Path 여부 확인 (Host + Method 인식)
      *
      * <p>다음 순서로 Public Path 여부를 확인합니다:
      *
@@ -240,21 +251,51 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
      *   <li>Host 기반 서비스의 Public Paths 매칭
      * </ol>
      *
+     * <p>Public path 패턴은 {@code METHOD:/path} 형식으로 특정 HTTP 메서드만 public으로 지정할 수 있습니다. 메서드 접두사가 없으면
+     * 모든 메서드에 대해 public으로 처리됩니다.
+     *
      * @param path 요청 경로
      * @param host 요청 Host 헤더 (X-Forwarded-Host 우선)
+     * @param method 요청 HTTP 메서드
      * @return Public Path이면 true
      */
-    private boolean isPublicPath(String path, String host) {
+    private boolean isPublicPath(String path, String host, String method) {
         // 1. 전역 Public Paths 체크 (Host 기반 서비스 제외됨)
         boolean isGlobalPublic =
-                globalPublicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+                globalPublicPaths.stream()
+                        .anyMatch(pattern -> matchesPublicPathPattern(pattern, path, method));
         if (isGlobalPublic) {
             return true;
         }
 
         // 2. Host 기반 서비스의 Public Paths 체크
         List<String> hostPublicPaths = publicPathsProperties.getPublicPathsForHost(host);
-        return hostPublicPaths.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+        return hostPublicPaths.stream()
+                .anyMatch(pattern -> matchesPublicPathPattern(pattern, path, method));
+    }
+
+    /**
+     * Public path 패턴 매칭 (Method-aware)
+     *
+     * <p>{@code POST:/api/v1/market/seller-applications} 형식은 POST 메서드만 매칭합니다. 메서드 접두사가 없는 {@code
+     * /api/v1/auth/login} 형식은 모든 메서드에 매칭됩니다.
+     *
+     * @param pattern public path 패턴 (METHOD:/path 또는 /path)
+     * @param path 요청 경로
+     * @param method 요청 HTTP 메서드
+     * @return 매칭되면 true
+     */
+    private boolean matchesPublicPathPattern(String pattern, String path, String method) {
+        int colonIndex = pattern.indexOf(':');
+        // ':' 뒤에 '/'가 오면 METHOD 접두사로 판단 (일반 경로는 '/'로 시작)
+        if (colonIndex > 0
+                && colonIndex < pattern.length() - 1
+                && pattern.charAt(colonIndex + 1) == '/') {
+            String patternMethod = pattern.substring(0, colonIndex);
+            String patternPath = pattern.substring(colonIndex + 1);
+            return patternMethod.equalsIgnoreCase(method) && pathMatcher.match(patternPath, path);
+        }
+        return pathMatcher.match(pattern, path);
     }
 
     /**
@@ -311,6 +352,14 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private String removePort(String host) {
         if (host == null) {
             return null;
+        }
+        // IPv6: [::1]:8080 → [::1]
+        if (host.startsWith("[")) {
+            int bracketClose = host.indexOf(']');
+            if (bracketClose > 0) {
+                return host.substring(0, bracketClose + 1);
+            }
+            return host;
         }
         int colonIndex = host.indexOf(':');
         return colonIndex > 0 ? host.substring(0, colonIndex) : host;
