@@ -8,8 +8,8 @@ environments/
 │   ├── ecr/                 # ECR Repository
 │   ├── ecs-cluster/         # ECS Cluster
 │   ├── ecs-gateway/         # ECS Service (gateway)
-│   ├── elasticache/         # Redis (전용)
-│   └── cloudfront/          # CloudFront (prod + admin)
+│   └── elasticache/         # Redis (전용)
+│   # Note: CloudFront/Route53은 infrastructure 레포에서 관리
 │
 └── stage/                   # 스테이징 환경
     ├── ecr/                 # ECR Repository
@@ -37,10 +37,9 @@ environments/
 
 ## CloudFront 구성
 
-> **NOTE**: Stage CloudFront/Route53은 infrastructure 레포로 이전 완료.
-> Prod CloudFront도 이전 예정 (state 이전 필요).
+> **NOTE**: 모든 CloudFront/Route53은 infrastructure 레포로 이전 완료.
 
-### Prod CloudFront (이전 예정)
+### Prod CloudFront (infrastructure 레포에서 관리)
 - **www.set-of.com**: Frontend + Gateway ALB (Prod)
 - **admin.set-of.com**: Gateway ALB (Prod) - Admin API only
 
@@ -72,9 +71,7 @@ cd ../ecs-gateway
 terraform init
 terraform plan
 
-cd ../cloudfront
-terraform init
-terraform plan
+# CloudFront — infrastructure 레포에서 관리
 ```
 
 ### Stage 환경 최초 배포
@@ -133,7 +130,7 @@ setof-commerce-legacy-admin-stage.connectly.local:8089
 | prod | ecs-cluster | `gateway/ecs-cluster/terraform.tfstate` |
 | prod | ecs-gateway | `gateway/ecs-gateway/terraform.tfstate` |
 | prod | elasticache | `gateway/elasticache/terraform.tfstate` |
-| prod | cloudfront | `gateway/cloudfront/terraform.tfstate` |
+| prod | cloudfront | `gateway/cloudfront/terraform.tfstate` (infrastructure 레포로 이전됨) |
 | stage | ecr | `gateway/stage/ecr/terraform.tfstate` |
 | stage | ecs-cluster | `gateway/stage/ecs-cluster/terraform.tfstate` |
 | stage | ecs-gateway | `gateway/stage/ecs-gateway/terraform.tfstate` |
@@ -144,7 +141,7 @@ setof-commerce-legacy-admin-stage.connectly.local:8089
 1. **Prod Backend Key**: Prod 환경은 기존 state 호환성을 위해 레거시 경로 유지
 2. **Shared Resources**: VPC, Service Discovery Namespace는 `/shared/` 경로의 SSM 파라미터 공유
 3. **Stage Redis**: 공유 Redis 사용 (`/shared/stage/elasticache/*`)
-4. **Stage CloudFront 이전 완료**: infrastructure 레포에서 관리 (prod도 이전 예정)
+4. **CloudFront 이전 완료**: prod/stage 모두 infrastructure 레포에서 관리
 5. **Stage Gateway ALB**: `gateway-alb-stage` 이름으로 생성됨
 
 ## 도메인 구성
