@@ -14,9 +14,9 @@ environments/
 └── stage/                   # 스테이징 환경
     ├── ecr/                 # ECR Repository
     ├── ecs-cluster/         # ECS Cluster
-    ├── ecs-gateway/         # ECS Service (gateway)
-    └── cloudfront/          # CloudFront (stage only)
+    └── ecs-gateway/         # ECS Service (gateway)
     # Note: elasticache 없음 - 공유 Redis 사용
+    # Note: CloudFront/Route53은 infrastructure 레포에서 관리
 ```
 
 ## 환경별 차이점
@@ -37,12 +37,16 @@ environments/
 
 ## CloudFront 구성
 
-### Prod CloudFront
-- **set-of.com, www.set-of.com**: Frontend + Gateway ALB (Prod)
+> **NOTE**: Stage CloudFront/Route53은 infrastructure 레포로 이전 완료.
+> Prod CloudFront도 이전 예정 (state 이전 필요).
+
+### Prod CloudFront (이전 예정)
+- **www.set-of.com**: Frontend + Gateway ALB (Prod)
 - **admin.set-of.com**: Gateway ALB (Prod) - Admin API only
 
-### Stage CloudFront
+### Stage CloudFront (infrastructure 레포에서 관리)
 - **stage.set-of.com**: Frontend (Stage) + Gateway ALB (Stage)
+- **stage-admin.set-of.com**: Gateway ALB (Stage) - Admin API only
 
 ## 배포 순서
 
@@ -91,10 +95,7 @@ cd ../ecs-gateway
 terraform init
 terraform apply
 
-# 4. CloudFront 생성
-cd ../cloudfront
-terraform init
-terraform apply
+# 4. CloudFront — infrastructure 레포에서 관리
 ```
 
 ## 사전 요구사항 (Stage)
@@ -136,14 +137,14 @@ setof-commerce-legacy-admin-stage.connectly.local:8089
 | stage | ecr | `gateway/stage/ecr/terraform.tfstate` |
 | stage | ecs-cluster | `gateway/stage/ecs-cluster/terraform.tfstate` |
 | stage | ecs-gateway | `gateway/stage/ecs-gateway/terraform.tfstate` |
-| stage | cloudfront | `gateway/stage/cloudfront/terraform.tfstate` |
+| stage | cloudfront | `gateway/stage/cloudfront/terraform.tfstate` (infrastructure 레포로 이전됨) |
 
 ## 주의사항
 
 1. **Prod Backend Key**: Prod 환경은 기존 state 호환성을 위해 레거시 경로 유지
 2. **Shared Resources**: VPC, Service Discovery Namespace는 `/shared/` 경로의 SSM 파라미터 공유
 3. **Stage Redis**: 공유 Redis 사용 (`/shared/stage/elasticache/*`)
-4. **CloudFront State 분리**: stage.set-of.com Route53 레코드 import 주의
+4. **Stage CloudFront 이전 완료**: infrastructure 레포에서 관리 (prod도 이전 예정)
 5. **Stage Gateway ALB**: `gateway-alb-stage` 이름으로 생성됨
 
 ## 도메인 구성
