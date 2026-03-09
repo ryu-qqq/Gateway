@@ -92,6 +92,8 @@ gateway:
     # 글로벌 Public 패턴 (모든 서비스에 공통 적용)
     # swagger, api-docs 등 반복되는 패턴을 서비스별로 등록하지 않고 글로벌로 관리
     global-public-patterns:
+      # NOTE: /**/public/** 패턴은 모든 서비스의 /public/ 경로를 JWT 인증 없이 허용합니다.
+      # downstream 서비스에서 /public/ 경로를 사용하지 않는다면 제거를 검토하세요.
       - /**/public/**
       - /**/api-docs/**
       - /**/swagger

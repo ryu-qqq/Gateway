@@ -204,7 +204,12 @@ public class PublicPathsProperties {
             if (hosts == null || hosts.isEmpty()) {
                 return false;
             }
-            return hosts.stream().anyMatch(h -> h.equalsIgnoreCase(host));
+            return hosts.stream()
+                    .anyMatch(
+                            h ->
+                                    h.equalsIgnoreCase(host)
+                                            || PATH_MATCHER.match(
+                                                    h.toLowerCase(), host.toLowerCase()));
         }
 
         /**

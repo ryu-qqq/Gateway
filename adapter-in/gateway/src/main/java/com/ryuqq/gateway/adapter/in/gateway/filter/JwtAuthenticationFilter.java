@@ -98,12 +98,22 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         String host = extractHost(exchange);
         String method = exchange.getRequest().getMethod().name();
 
-        // Public Path인 경우 JWT 검증 없이 통과
-        if (isPublicPath(path, host, method)) {
-            return chain.filter(exchange);
-        }
-
         String token = extractToken(exchange);
+
+        // Public Path인 경우 JWT 검증은 건너뛰되, 쿠키 토큰은 Authorization 헤더로 전달
+        if (isPublicPath(path, host, method)) {
+            if (token == null
+                    || exchange.getRequest().getHeaders().containsKey(HttpHeaders.AUTHORIZATION)) {
+                return chain.filter(exchange);
+            }
+
+            ServerHttpRequest passthroughRequest =
+                    exchange.getRequest()
+                            .mutate()
+                            .header(HttpHeaders.AUTHORIZATION, BEARER_PREFIX + token)
+                            .build();
+            return chain.filter(exchange.mutate().request(passthroughRequest).build());
+        }
 
         if (token == null) {
             return unauthorized(exchange);
@@ -342,6 +352,14 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     private String removePort(String host) {
         if (host == null) {
             return null;
+        }
+        // IPv6: [::1]:8080 → [::1]
+        if (host.startsWith("[")) {
+            int bracketClose = host.indexOf(']');
+            if (bracketClose > 0) {
+                return host.substring(0, bracketClose + 1);
+            }
+            return host;
         }
         int colonIndex = host.indexOf(':');
         return colonIndex > 0 ? host.substring(0, colonIndex) : host;

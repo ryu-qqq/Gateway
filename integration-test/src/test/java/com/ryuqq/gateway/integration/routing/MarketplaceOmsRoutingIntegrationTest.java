@@ -17,6 +17,7 @@ import com.ryuqq.gateway.bootstrap.GatewayApplication;
 import com.ryuqq.gateway.bootstrap.config.GatewayRoutingConfig.GatewayRoutingProperties;
 import com.ryuqq.gateway.integration.helper.JwtTestFixture;
 import com.ryuqq.gateway.integration.helper.TenantConfigTestFixture;
+import java.time.Duration;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -84,6 +86,8 @@ class MarketplaceOmsRoutingIntegrationTest {
     @Autowired private WebTestClient webTestClient;
 
     @Autowired private GatewayRoutingProperties routingProperties;
+
+    @Autowired private ReactiveRedisTemplate<String, String> redisTemplate;
 
     @AfterAll
     static void stopWireMock() {
@@ -158,6 +162,11 @@ class MarketplaceOmsRoutingIntegrationTest {
         authServer.resetAll();
         marketplaceServer.resetAll();
         legacyAdminServer.resetAll();
+
+        // Clean up Redis before each test
+        redisTemplate
+                .execute(connection -> connection.serverCommands().flushAll())
+                .blockLast(Duration.ofSeconds(5));
 
         // Auth Server - JWKS endpoint
         authServer.stubFor(

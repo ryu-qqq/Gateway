@@ -200,6 +200,14 @@ public class PermissionFilter implements GlobalFilter, Ordered {
         if (host == null) {
             return null;
         }
+        // IPv6: [::1]:8080 → [::1]
+        if (host.startsWith("[")) {
+            int bracketClose = host.indexOf(']');
+            if (bracketClose > 0) {
+                return host.substring(0, bracketClose + 1);
+            }
+            return host;
+        }
         int colonIndex = host.indexOf(':');
         return colonIndex > 0 ? host.substring(0, colonIndex) : host;
     }

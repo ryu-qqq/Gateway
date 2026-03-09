@@ -117,7 +117,7 @@ OMS 호출:      POST /api/v1/auth/authentication
 
 ### 옵션 A: 경로별 개별 매칭
 
-각 경로를 개별 라우트로 등록. 정밀하지만 라우트 수가 많음(18개).
+각 경로를 개별 라우트로 등록. 정밀하지만 라우트 수가 많음(19개).
 
 ### 옵션 B: Path Prefix 그룹 매칭 + 리라이트
 
@@ -137,8 +137,9 @@ routes:
       - /api/v1/qnas                   # GET
       - /api/v1/shipment/**            # GET
       - /api/v1/image/presigned         # POST
-    target: marketplace-web-api-prod:9090
-    rewrite: /api/v1/(.*) → /api/v1/legacy/$1
+    uri: http://marketplace-web-api-prod:9090
+    rewrite-path-pattern: /api/v1/(?<remaining>.*)
+    rewrite-path-replacement: /api/v1/legacy/${remaining}
 ```
 
 7개의 path prefix로 19개 엔드포인트를 커버. 단, `/api/v1/product/group/**` 패턴은 OMS가 호출하지 않는 경로도 매칭될 수 있으나 MarketPlace에 해당 엔드포인트가 없으면 404 반환되므로 안전.
@@ -174,5 +175,12 @@ routes:
 
 ## 롤백 계획
 
-게이트웨이 라우팅 규칙을 원복하면 즉시 레거시 어드민으로 복구 가능.
+게이트웨이 라우팅 규칙은 `GatewayRoutingConfig`에서 부팅 시점에 고정 등록되며, 런타임 토글이 없습니다.
+따라서 롤백 시 **YAML 설정 변경 후 게이트웨이 재배포가 필요**합니다.
+
+**롤백 절차:**
+1. `application-{env}.yml`에서 marketplace-oms-legacy 라우트를 제거 또는 비활성화
+2. 게이트웨이 재배포 (ECS 롤링 업데이트)
+3. 레거시 어드민으로 트래픽 복구 확인
+
 MarketPlace 레거시 컨트롤러는 세토프 어드민과 동일한 요청/응답 스펙을 유지하므로 클라이언트 변경 불필요.

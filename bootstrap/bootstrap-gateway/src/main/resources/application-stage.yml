@@ -133,6 +133,8 @@ gateway:
       # Legacy Admin API Service (Host-based routing)
       # Handles: stage-admin.set-of.com
       # Strangler Fig Pattern: v2 외 모든 경로는 레거시로 라우팅
+      # NOTE: skip-permission-check=true - 레거시 admin이 자체 권한 검사 수행
+      # prod 이전 시 레거시 서비스의 권한 검사 범위 재확인 필요
       - id: legacy-admin
         uri: ${LEGACY_ADMIN_URI:http://setof-commerce-legacy-admin-stage.connectly.local:8089}
         paths:
@@ -187,7 +189,7 @@ gateway:
           - /api/v1/market/auth/refresh
           - POST:/api/v1/market/seller-applications
           - POST:/api/v1/market/seller-admin-applications
-          - /api/v1/market/seller-admin-applications/*/change-password
+          - PATCH:/api/v1/market/seller-admin-applications/*/change-password
 
       # Template Service
       - id: template
